@@ -1,0 +1,43 @@
+[hidden] { display: none !important; }
+:root { --ink:#0d0907; --panel:#17110d; --line:rgba(243,233,215,.14); --cream:#f3e9d7; --dim:rgba(243,233,215,.6); --amber:#e3a95c; --red:#e0705a; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--ink); color: var(--cream); font: 300 14px/1.6 'Be Vietnam Pro', system-ui, sans-serif; min-height: 100vh; }
+h1 { font: 300 40px/1 'Cormorant Garamond', serif; } h1 em { color: var(--amber); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 1px solid var(--amber); background: var(--amber); color: var(--ink); padding: 9px 18px; border-radius: 999px; font-size: 12px; letter-spacing: .08em; transition: all .3s; }
+button:hover { filter: brightness(1.1); }
+button.ghost, a.ghost { background: none; color: var(--cream); border: 1px solid var(--line); padding: 9px 18px; border-radius: 999px; font-size: 12px; text-decoration: none; }
+button.ghost:hover, a.ghost:hover { border-color: var(--cream); }
+button:disabled { opacity: .5; cursor: wait; }
+.login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.login form { width: min(360px, 100%); display: grid; gap: 14px; }
+.eyebrow { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--amber); }
+input, textarea { width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; outline: none; }
+input:focus, textarea:focus { border-color: var(--amber); }
+textarea { min-height: 84px; resize: vertical; }
+.msg { color: var(--red); min-height: 1.6em; font-size: 13px; }
+.app header { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px 28px; background: rgba(13,9,7,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.state { font-size: 12px; color: var(--dim); }
+.state.dirty { color: var(--amber); }
+.layout { display: grid; grid-template-columns: 220px 1fr; gap: 28px; padding: 28px; max-width: 1200px; margin: 0 auto; }
+#tabs { display: grid; gap: 4px; align-content: start; position: sticky; top: 96px; }
+#tabs button { background: none; border: 0; color: var(--dim); text-align: left; border-radius: 6px; padding: 9px 12px; font-size: 14px; letter-spacing: 0; }
+#tabs button.active { background: var(--panel); color: var(--cream); box-shadow: inset 2px 0 var(--amber); }
+.field { display: grid; gap: 6px; margin-bottom: 16px; }
+.field > label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.group { border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; background: rgba(23,17,13,.5); }
+.group > .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
+.group > .head b { font: 400 20px 'Cormorant Garamond', serif; }
+.item { border-left: 2px solid var(--line); padding: 4px 0 4px 16px; margin-bottom: 14px; }
+.item-bar { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 8px; align-items: center; }
+.item-bar span { margin-right: auto; font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--amber); font-size: 18px; }
+.item-bar button { padding: 3px 10px; font-size: 12px; }
+.row { display: flex; gap: 8px; align-items: flex-start; }
+.row > :first-child { flex: 1; }
+.thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); }
+.help { font-size: 12px; color: var(--dim); }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 30px); opacity: 0; background: var(--cream); color: var(--ink); padding: 12px 20px; border-radius: 999px; transition: all .4s; font-size: 13px; max-width: 90vw; z-index: 9; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.err { background: var(--red); color: #fff; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; padding: 16px; } #tabs { position: static; display: flex; overflow-x: auto; } #tabs button { white-space: nowrap; } .app header { padding: 14px 16px; } }

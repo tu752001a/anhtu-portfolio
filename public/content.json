@@ -1,0 +1,267 @@
+{
+  "site": {
+    "title": "Trần Thanh Anh Tú — Video Editor / Producer",
+    "brand": "AT®",
+    "description": "Portfolio của Trần Thanh Anh Tú, Video Editor / Producer với hơn 3 năm kinh nghiệm Social Media, Mỹ phẩm và Commercial."
+  },
+  "intro": {
+    "greeting": "Một hành trình qua từng khung hình",
+    "enterLabel": "Bước vào",
+    "hint": "Cuộn để du hành · Kéo để nhìn quanh 720°"
+  },
+  "hero": {
+    "eyebrow": "Video Editor / Producer",
+    "name": "Trần Thanh Anh Tú",
+    "taglines": [
+      "Thái độ đi trước, trình độ theo sau",
+      "Biến thước phim thành ngôn ngữ",
+      "Mỗi khung hình là một lời hứa với người xem",
+      "Giữ chân · Chạm cảm xúc · Thúc đẩy hành động"
+    ],
+    "intro": "Tôi tin một editor giỏi bắt đầu từ thái độ: lắng nghe đến cùng và chịu trách nhiệm đến khung hình cuối. Kỹ thuật dựng, âm thanh và AI chỉ là công cụ để câu chuyện của thương hiệu được kể rõ ràng, có cảm xúc và tạo ra kết quả.",
+    "particleName": "Trần Thanh\nAnh Tú"
+  },
+  "about": {
+    "heading": "Về tôi",
+    "lead": "Trình độ làm nên sản phẩm. Thái độ làm nên người cộng sự.",
+    "paragraphs": [
+      "Hơn 3 năm dựng video cho mỹ phẩm, social media và thương mại dạy tôi một điều: khách hàng không chỉ cần một bản dựng đẹp, họ cần một người hiểu mục tiêu kinh doanh và chịu trách nhiệm với nó như của chính mình.",
+      "Tôi đến với mỗi dự án bằng sự tôn trọng. Tôn trọng thời gian của bạn bằng tiến độ rõ ràng, tôn trọng thương hiệu bằng sự chỉn chu đến từng khung hình, và tôn trọng người xem bằng một câu chuyện đáng để họ dừng lại.",
+      "Tôi không ngại nghe góp ý khó, càng không ngại sửa đến khi đúng. Với tôi, cái tôi của người dựng phim luôn đứng sau thành công của thương hiệu."
+    ],
+    "facts": [
+      {
+        "label": "Kinh nghiệm",
+        "value": "03+ năm"
+      },
+      {
+        "label": "Ngày sinh",
+        "value": "07/05/2001"
+      },
+      {
+        "label": "Giới tính",
+        "value": "Nam"
+      },
+      {
+        "label": "Lĩnh vực",
+        "value": "Social Media · Mỹ phẩm · Commercial"
+      }
+    ],
+    "photos": [
+      "/photos/anhtu-1.jpg",
+      "/photos/anhtu-2.jpg",
+      "/photos/anhtu-3.jpg",
+      "/photos/anhtu-4.jpg"
+    ]
+  },
+  "showreel": {
+    "heading": "Showreel",
+    "subheading": "Thước phim giới thiệu",
+    "note": "Sáng tác: Phương Anh Tú · Sản xuất âm nhạc: Fillinus. Dựng và hậu kỳ bởi Anh Tú.",
+    "video": "/showreel/livotec.mp4",
+    "title": "LIVOTEC — Music Video",
+    "poster": "/showreel/livotec-poster.jpg"
+  },
+  "projects": {
+    "heading": "Dự án",
+    "subheading": "Khám phá tác phẩm",
+    "items": [
+      {
+        "title": "ĐỪNG NHƯ THẾ — Phương Anh Tú",
+        "type": "Music Video · Tự sản xuất & dựng",
+        "client": "Dự án cá nhân",
+        "date": "Chưa cập nhật ngày",
+        "description": "Dự án âm nhạc cá nhân, nơi âm nhạc, hình ảnh và nhịp kể chuyện kết nối với nhau, song song với các công việc thương mại.",
+        "video": "https://www.youtube.com/watch?v=x34-0uG1odQ",
+        "anim": "vinyl"
+      },
+      {
+        "title": "VIFON Social Video 01",
+        "type": "Social Video",
+        "client": "VIFON",
+        "date": "",
+        "description": "Video social cho VIFON.",
+        "video": "https://www.tiktok.com/@vifon1963/video/7494577013114621192",
+        "anim": "bowl"
+      },
+      {
+        "title": "VIFON Social Video 02",
+        "type": "Social Video",
+        "client": "VIFON",
+        "date": "",
+        "description": "Video social cho VIFON.",
+        "video": "https://www.tiktok.com/@vifon1963/video/7494577414228544776",
+        "anim": "phone"
+      },
+      {
+        "title": "VIFON Social Video 03",
+        "type": "Social Video",
+        "client": "VIFON",
+        "date": "",
+        "description": "Video social cho VIFON.",
+        "video": "https://www.tiktok.com/@vifon1963/video/7494578117776854280",
+        "anim": "cup"
+      },
+      {
+        "title": "G.G.G Cosmetic — Beauty Video",
+        "type": "Beauty Video",
+        "client": "G.G.G Cosmetic",
+        "date": "",
+        "description": "Video beauty cho G.G.G Cosmetic.",
+        "video": "https://www.tiktok.com/@gggcosmeticsofficial/video/7604834901581417749",
+        "anim": "beauty"
+      }
+    ]
+  },
+  "skills": {
+    "heading": "Kỹ năng & công cụ",
+    "groups": [
+      {
+        "name": "Dựng phim",
+        "items": [
+          "CapCut PC",
+          "Adobe After Effects",
+          "Adobe Premiere Pro"
+        ]
+      },
+      {
+        "name": "Âm thanh",
+        "items": [
+          "FL Studio",
+          "Cakewalk"
+        ]
+      },
+      {
+        "name": "Ứng dụng AI",
+        "items": [
+          "Sáng tạo video AI",
+          "Vibe code website"
+        ]
+      }
+    ],
+    "services": [
+      "Sản xuất & dựng video social media",
+      "Nội dung quảng cáo mỹ phẩm & thương mại",
+      "Motion Graphics",
+      "Hậu kì âm thanh"
+    ]
+  },
+  "clients": {
+    "heading": "Khách hàng & đối tác",
+    "groups": [
+      {
+        "name": "Thương hiệu",
+        "items": [
+          {
+            "name": "VIFON",
+            "url": "https://vifon.com.vn"
+          },
+          {
+            "name": "WildAid Vietnam",
+            "url": "https://wildaidvietnam.org"
+          },
+          {
+            "name": "Livotec",
+            "url": "https://livotec.com"
+          },
+          {
+            "name": "G.G.G Cosmetic",
+            "url": "https://gggcos.com"
+          },
+          {
+            "name": "CUTEM",
+            "url": ""
+          }
+        ]
+      },
+      {
+        "name": "Agency",
+        "items": [
+          {
+            "name": "TMRW",
+            "url": "https://tmrw.vn"
+          },
+          {
+            "name": "TAAD",
+            "url": "https://taad.vn"
+          },
+          {
+            "name": "DC",
+            "url": ""
+          },
+          {
+            "name": "CLIMAX",
+            "url": "http://www.thinkclimax.com"
+          }
+        ]
+      },
+      {
+        "name": "Nhà sản xuất",
+        "items": [
+          {
+            "name": "U Creative",
+            "url": ""
+          },
+          {
+            "name": "TA Production",
+            "url": ""
+          }
+        ]
+      }
+    ],
+    "note": "Chạm vào tên để ghé trang chủ của thương hiệu."
+  },
+  "process": {
+    "heading": "Quy trình",
+    "steps": [
+      {
+        "title": "Lắng nghe trước khi đề xuất",
+        "text": "Tôi bắt đầu bằng câu hỏi chứ không phải bằng timeline: mục tiêu kinh doanh, khán giả, và chỉ số nào đo thành công. Mọi thứ được chốt thành brief ngắn gọn trước khi dựng, để bạn không bao giờ phải nghe câu \"em tưởng anh muốn thế này\"."
+      },
+      {
+        "title": "Duyệt hướng kể và 3 giây đầu",
+        "text": "Tôi phác hướng kể chuyện, hook mở đầu và các điểm nhấn hình ảnh để bạn duyệt trước. Bạn thấy rõ video sẽ đi đâu ngay từ đầu, không phải chờ đến bản dựng mới biết."
+      },
+      {
+        "title": "Dựng, âm thanh, hoàn thiện trong một tay",
+        "text": "Dựng, motion graphics, mix voice, nhạc, SFX và màu được làm trong cùng một tay nên tông và nhịp luôn thống nhất. AI giúp tiết kiệm thời gian ở khâu kỹ thuật, còn mọi quyết định sáng tạo vẫn do con người chịu trách nhiệm."
+      },
+      {
+        "title": "Phản hồi nhanh, sửa đến khi đúng",
+        "text": "Mỗi phiên bản đi kèm ghi chú thay đổi rõ ràng. Góp ý được phản hồi trong ngày và được sửa đúng tinh thần chứ không chỉ đúng chữ. Từng định dạng nền tảng được kiểm tra trước khi bàn giao."
+      },
+      {
+        "title": "Bàn giao và cùng đo hiệu quả",
+        "text": "Bàn giao đủ file, đúng hạn, đúng chuẩn kỹ thuật. Sau khi đăng, tôi cùng bạn xem lại dữ liệu giữ chân và tương tác để bản sau luôn tốt hơn bản trước."
+      }
+    ],
+    "lead": "Làm việc với tôi, bạn luôn biết video đang ở đâu và vì sao nó được làm như thế.",
+    "promise": "Cam kết: đúng hạn, minh bạch tiến độ, và không bàn giao thứ gì mà chính tôi chưa hài lòng."
+  },
+  "contact": {
+    "heading": "Lời cảm ơn",
+    "text": "Cảm ơn bạn đã đi cùng tôi đến tận khung hình cuối cùng. Sự kiên nhẫn của bạn hôm nay là điều tôi trân trọng nhất, và tôi mong được đáp lại bằng những thước phim xứng đáng với thương hiệu của bạn.",
+    "email": "tu752001a@gmail.com",
+    "phone": "0708980705",
+    "socials": [
+      {
+        "label": "Facebook",
+        "url": "https://www.facebook.com/phuonganhtupat/"
+      },
+      {
+        "label": "YouTube",
+        "url": "https://www.youtube.com/@phuonganhtu.patmusic"
+      },
+      {
+        "label": "TikTok",
+        "url": "https://www.tiktok.com/@phuonganhtu.pat?lang=en"
+      }
+    ],
+    "loopLabel": "Xuất phát điểm",
+    "keyHint": "Chạm vào chiếc chìa khóa để mở cánh cửa hợp tác"
+  },
+  "footer": {
+    "motto": "Lắng nghe · Học hỏi · Phát triển",
+    "copyright": "© 2026 Trần Thanh Anh Tú"
+  }
+}

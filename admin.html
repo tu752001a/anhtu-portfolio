@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Quản trị — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="login" class="login">
+    <form id="loginForm">
+      <p class="eyebrow">Khu vực chủ sở hữu</p>
+      <h1>Quản <em>trị</em></h1>
+      <input type="password" id="password" placeholder="Mật khẩu" autocomplete="current-password" required />
+      <button type="submit">Đăng nhập</button>
+      <p class="msg" id="loginMsg"></p>
+    </form>
+  </div>
+  <div id="app" class="app" hidden>
+    <header>
+      <h1>Quản <em>trị</em></h1>
+      <div class="actions">
+        <span class="state" id="state"></span>
+        <a href="/" target="_blank" class="ghost">Xem trang ↗</a>
+        <button class="ghost" id="downloadBtn">Tải JSON</button>
+        <button id="saveBtn">Lưu & xuất bản</button>
+        <button class="ghost" id="logoutBtn">Đăng xuất</button>
+      </div>
+    </header>
+    <div class="layout">
+      <nav id="tabs"></nav>
+      <section id="editor"></section>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

@@ -13,7 +13,7 @@ Website portfolio dạng không gian 3D: màn hình chờ, bay qua 8 chương (M
 4. Trước khi bấm Deploy, thêm Environment Variables:
    - `ADMIN_PASSWORD` — mật khẩu đăng nhập trang quản trị (đặt dài, khó đoán)
    - `GITHUB_TOKEN` — token ở bước 2
-   - `GITHUB_REPO` — `tên-github/tên-repo`, ví dụ `davidvic0705/anhtu-portfolio-3d`
+   - `GITHUB_REPO` — `tên-github/tên-repo`, ví dụ `tu752001a/anhtu-portfolio`
    - `GITHUB_BRANCH` — (tuỳ chọn) mặc định `main`
 5. Deploy. Trang quản trị ở `https://<tên-miền>/admin`.
 

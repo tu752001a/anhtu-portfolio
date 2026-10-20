@@ -1042,6 +1042,19 @@ export class World {
     const r = this.renderer;
     this.composer = new EffectComposer(r);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
+    // chặn điểm ảnh lỗi (NaN/Inf) trên một số GPU: nếu lọt vào bloom chúng loang thành mảng đen chớp tắt
+    this.composer.addPass(new ShaderPass({
+      uniforms: { tDiffuse: { value: null } },
+      vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D tDiffuse; varying vec2 vUv;
+        void main(){
+          vec4 c = texture2D(tDiffuse, vUv);
+          bvec4 bad = bvec4(isnan(c.r) || isinf(c.r), isnan(c.g) || isinf(c.g), isnan(c.b) || isinf(c.b), isnan(c.a) || isinf(c.a));
+          if (any(bad) || !(c.r + c.g + c.b < 1e4)) c = vec4(0.0, 0.0, 0.0, 1.0);
+          gl_FragColor = vec4(clamp(c.rgb, 0.0, 48.0), clamp(c.a, 0.0, 1.0));
+        }`,
+    }));
     this.bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), this.isMobile ? 0.5 : 0.7, 0.7, 0.72);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());

@@ -194,7 +194,7 @@ const BUILD = {
     g.add(body);
     const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.2, 0.9), DARK);
     cockpit.position.set(0, 0.66, -0.15); g.add(cockpit);
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.34), new THREE.MeshPhysicalMaterial({ color: '#9fd3ff', transmission: 0.5, transparent: true, opacity: 0.45, roughness: 0.05 }));
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.34), new THREE.MeshStandardMaterial({ color: '#9fd3ff', transparent: true, opacity: 0.4, roughness: 0.05, metalness: 0.3, depthWrite: false }));
     glass.position.set(0, 0.86, 0.38); glass.rotation.x = -0.9; g.add(glass);
     const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.28), DARK);
     wing.position.set(0, 1.0, -1.5); g.add(wing);

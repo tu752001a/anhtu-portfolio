@@ -379,7 +379,7 @@ const MAKERS = {
     const jar = new THREE.Group();
     jar.rotation.y = Math.PI; // nhãn G.G.G hướng ra trước
     g.add(jar);
-    const bodyMat = new THREE.MeshPhysicalMaterial({ map: tex, color: '#ffffff', roughness: 0.55, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.6, sheen: 0.4, sheenColor: new THREE.Color('#bfeaff') });
+    const bodyMat = new THREE.MeshPhysicalMaterial({ map: tex, color: '#ffffff', roughness: 0.55, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.6 });
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.7, 0.8, 64, 1, true), bodyMat);
     jar.add(body);
     const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.7, 48), new THREE.MeshStandardMaterial({ color: '#7fd0f2', roughness: 0.6 }));
@@ -397,7 +397,7 @@ const MAKERS = {
     lidTop.rotation.x = Math.PI / 2; lidTop.position.y = 0.24; lid.add(lidTop);
     lid.position.y = 0.64;
     jar.add(lid);
-    const bubbleMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0, metalness: 0, transmission: 0.6, iridescence: 1, iridescenceIOR: 1.6, transparent: true, opacity: 0.55 });
+    const bubbleMat = new THREE.MeshStandardMaterial({ color: '#e8f6ff', emissive: '#4a7a99', roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.45, depthWrite: false });
     const bubbles = Array.from({ length: 7 }, (_, i) => {
       const b = new THREE.Mesh(new THREE.SphereGeometry(0.08 + (i % 3) * 0.05, 16, 12), bubbleMat);
       b.userData.ph = i / 7; b.userData.x = (Math.random() - 0.5) * 1.2;

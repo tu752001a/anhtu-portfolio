@@ -442,7 +442,9 @@ export class Avatar {
     locks.forEach((l, i) => {
       // trục y của lọn hướng ngược chiều mọc (gốc ở trên), trục z là chiều cong của ngọn
       by.copy(l.dir).negate();
-      bz.copy(l.curl).addScaledVector(by, -l.curl.dot(by)).normalize();
+      bz.copy(l.curl).addScaledVector(by, -l.curl.dot(by));
+      if (bz.lengthSq() < 1e-6) bz.set(0, 0, 1).addScaledVector(by, -by.z); // tránh ma trận suy biến → pháp tuyến NaN
+      bz.normalize();
       bx.crossVectors(by, bz);
       m4.makeBasis(bx.multiplyScalar(l.w), by.multiplyScalar(l.len), bz.multiplyScalar(l.w));
       m4.setPosition(l.pos);

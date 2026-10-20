@@ -64,11 +64,12 @@
   C.ads = C.ads || [];
   C.photos = (C.photos || []).filter((p) => p && p.src);
   C.socials = C.socials || [];
-  C.bgMusic = Object.assign({ src: "", youtubeId: "", volume: 0.5, duckVolume: 0.08 }, C.bgMusic || {});
+  C.bgMusic = Object.assign({ src: "", youtubeId: "", volume: 0.5, quietSeconds: 20 }, C.bgMusic || {});
   if (C.bgMusic.volume > 1) C.bgMusic.volume /= 100;
-  if (C.bgMusic.duckVolume > 1) C.bgMusic.duckVolume /= 100;
   C.spotify = Object.assign({ api: "/api/spotify", autoTracks: true }, C.spotify || {});
   const PENDING = "Đang cập nhật";
+  // singles live in the constellation; EP tracks wait in the EP chapter (unlocked by the gift)
+  const SINGLES = C.tracks.filter((t) => !t.ep).map((t) => t._i);
   const trackTitle = (t, i) => (t.title && t.title.trim()) || "Track " + pad2(i + 1);
   const hasYT = (id) => !!(id && /^[\w-]{6,}$/.test(id));
 
@@ -224,6 +225,30 @@
       this.tone(f * 1.005, { type: "triangle", dur: 1.4, vol: 0.08 });
     },
     unlock() { [0, 2, 4, 7].forEach((n, k) => setTimeout(() => this.chime(n), k * 110)); },
+    // a short overdriven guitar lick: E5 · G5 · A5 · E5, then a ringing high note
+    riff() {
+      if (!this.ctx || this.muted) return;
+      const c = this.ctx;
+      if (!this._drive) {
+        const ws = c.createWaveShaper(), n = 1024, curve = new Float32Array(n);
+        for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = Math.tanh(x * 6); }
+        ws.curve = curve; const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+        const g = c.createGain(); g.gain.value = 0.22; ws.connect(lp); lp.connect(g); g.connect(this.master); this._drive = ws;
+      }
+      const hit = (root, when, dur) => {
+        const t = c.currentTime + when;
+        [1, 1.5, 2].forEach((m) => {
+          const o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = root * m; o.detune.value = (Math.random() - 0.5) * 8;
+          const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(this._drive); o.start(t); o.stop(t + dur + 0.05);
+        });
+      };
+      [[82.41, 0, 0.32], [98, 0.36, 0.32], [110, 0.72, 0.5], [82.41, 1.3, 0.28], [82.41, 1.62, 0.28], [110, 1.95, 0.3], [123.47, 2.3, 1.6]].forEach(([f, w, d]) => hit(f, w, d));
+      const t = c.currentTime + 2.3, o = c.createOscillator(); o.type = "square"; o.frequency.setValueAtTime(587, t); o.frequency.linearRampToValueAtTime(659, t + 0.25);
+      const vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = 6; vg.gain.value = 8; vib.connect(vg); vg.connect(o.frequency);
+      const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+      o.connect(g); g.connect(this._drive); o.start(t); vib.start(t); o.stop(t + 2.3); vib.stop(t + 2.3);
+    },
     pop() { this.tone(880, { type: "sine", dur: 0.18, vol: 0.06 }); this.tone(1320, { type: "sine", dur: 0.12, vol: 0.03, when: 0.04 }); },
     tick() { this.tone(2200, { type: "sine", dur: 0.05, vol: 0.02 }); },
   };
@@ -322,19 +347,29 @@
       if (this.el) { if (this.gain) this.gain.gain.value = this.vol; else this.el.volume = clamp(this.vol, 0, 1); }
       else if (this.player) { const v = Math.round(this.vol * 100); if (v !== this._lastSent) { this.player.volume(v); this._lastSent = v; } }
     },
+    // any other sound (a song, a video, the band) switches the bed off completely;
+    // it only comes back after C.bgMusic.quietSeconds of silence. `force` keeps it up (the gift dance).
+    lastNoise: -1e9, force: false,
+    quiet() { return this.force || (!this.ducks.size && performance.now() - this.lastNoise > C.bgMusic.quietSeconds * 1000); },
     retarget() {
-      this.target = Audio.muted || !this.wanted ? 0 : this.ducks.size ? C.bgMusic.duckVolume : C.bgMusic.volume;
-      if (this.wanted && !Audio.muted) this._play();
+      this.target = Audio.muted || !this.wanted || !this.quiet() ? 0 : C.bgMusic.volume;
+      if (this.target > 0) this._play();
     },
-    duck(key, on) { on ? this.ducks.add(key) : this.ducks.delete(key); this.retarget(); },
+    duck(key, on) {
+      if (on) this.ducks.add(key); else if (this.ducks.has(key)) { this.ducks.delete(key); this.lastNoise = performance.now(); }
+      this.retarget();
+    },
+    // a one-shot sound (a drum pad, a note): restarts the silence timer
+    ping() { this.lastNoise = performance.now(); this.retarget(); },
     tick(dt) {
       if (!this.el && !this.player) return;
-      // fade down in ~0.6s when another sound starts, come back gently over ~2.5s
-      const speed = this.target < this.vol ? 1.0 : 0.22;
+      if (this.ducks.size === 0 && this.target === 0) this.retarget();
+      // fade out in ~0.5s when another sound starts, come back gently over ~2.5s
+      const speed = this.target < this.vol ? 1.2 : 0.22;
       const before = this.vol;
       this.vol += clamp(this.target - this.vol, -speed * dt, speed * dt);
       if (before !== this.vol) this._apply();
-      if (this.vol <= 0.002 && this.target === 0 && Audio.muted) this._pause();
+      if (this.vol <= 0.002 && this.target === 0) this._pause();
     },
   };
 
@@ -569,18 +604,44 @@
       const led = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), basic(0xff2a40)); led.position.set(0, 0.0, 0.032); g.add(led);
       return g;
     },
+    // dreadnought-style acoustic: spruce top, mahogany sides, rosewood board, frets, bridge pins, six tuners
     acoustic() {
       const g = new THREE.Group();
-      const wood = toon(0xc98a4b), dark = toon(0x3a2416);
-      const lower = new THREE.Mesh(new THREE.SphereGeometry(0.3, 28, 18), wood); lower.scale.set(1, 1, 0.26); g.add(lower);
-      const upper = new THREE.Mesh(new THREE.SphereGeometry(0.23, 28, 18), wood); upper.scale.set(1, 1, 0.26); upper.position.y = 0.3; g.add(upper);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.012, 6, 40), dark); g.add(rim);
-      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.075, 24), basic(0x120a06)); hole.position.set(0, 0.16, 0.079); g.add(hole);
-      const rosette = new THREE.Mesh(new THREE.RingGeometry(0.08, 0.095, 32), basic(0xe0102c)); rosette.position.set(0, 0.16, 0.08); g.add(rosette);
-      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.58, 0.04), dark); neck.position.y = 0.76; g.add(neck);
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.035), dark); head.position.y = 1.1; g.add(head);
-      const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, 0.02), dark); bridge.position.set(0, -0.1, 0.08); g.add(bridge);
-      g.add(strings(6, 0.05, -0.1, 1.04, 0.085));
+      const top = toon(0xe8bf84), sides = toon(0x6e3518), board = toon(0x241510), cream = toon(0xf2e6cc), metal = M.silver;
+      const s = new THREE.Shape();
+      s.moveTo(0, -0.34);
+      s.bezierCurveTo(0.2, -0.34, 0.33, -0.24, 0.32, -0.07);
+      s.bezierCurveTo(0.31, 0.03, 0.2, 0.07, 0.19, 0.13);
+      s.bezierCurveTo(0.18, 0.19, 0.26, 0.24, 0.25, 0.34);
+      s.bezierCurveTo(0.24, 0.43, 0.13, 0.47, 0, 0.47);
+      s.bezierCurveTo(-0.13, 0.47, -0.24, 0.43, -0.25, 0.34);
+      s.bezierCurveTo(-0.26, 0.24, -0.18, 0.19, -0.19, 0.13);
+      s.bezierCurveTo(-0.2, 0.07, -0.31, 0.03, -0.32, -0.07);
+      s.bezierCurveTo(-0.33, -0.24, -0.2, -0.34, 0, -0.34);
+      const body = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.11, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2, curveSegments: 28 }), sides);
+      body.position.z = -0.07; g.add(body);
+      const binding = new THREE.Mesh(new THREE.ShapeGeometry(s, 28), cream); binding.position.z = 0.052; g.add(binding);
+      const face = new THREE.Mesh(new THREE.ShapeGeometry(s, 28), top); face.scale.set(0.965, 0.975, 1); face.position.set(0, 0.002, 0.054); g.add(face);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.072, 32), basic(0x0b0705)); hole.position.set(0, 0.2, 0.056); g.add(hole);
+      [[0.078, 0.084, board], [0.09, 0.094, cream], [0.1, 0.106, board]].forEach(([r0, r1, m]) => { const r = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 40), m); r.position.set(0, 0.2, 0.057); g.add(r); });
+      const pgS = new THREE.Shape(); pgS.moveTo(0.02, 0.12); pgS.bezierCurveTo(0.14, 0.1, 0.18, 0.02, 0.15, -0.05); pgS.bezierCurveTo(0.12, -0.1, 0.06, -0.05, 0.07, 0.04); pgS.closePath();
+      const pg = new THREE.Mesh(new THREE.ShapeGeometry(pgS), toon(0x1a100b)); pg.position.z = 0.056; g.add(pg);
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.045, 0.016), board); bridge.position.set(0, -0.16, 0.062); g.add(bridge);
+      const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.008, 0.012), cream); saddle.position.set(0, -0.145, 0.072); g.add(saddle);
+      for (let i = 0; i < 6; i++) { const pin = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), cream); pin.position.set(-0.04 + i * 0.016, -0.172, 0.072); g.add(pin); }
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.64, 0.045), sides); neck.position.set(0, 0.79, -0.01); g.add(neck);
+      const fb = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.7, 0.01), board); fb.position.set(0, 0.76, 0.017); g.add(fb);
+      let y = 1.1;
+      for (let i = 0; i < 14; i++) { const fr = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.005, 0.006), metal); fr.position.set(0, y, 0.024); g.add(fr); if ([2, 4, 6, 8, 11].includes(i)) { const d = new THREE.Mesh(new THREE.CircleGeometry(0.008, 10), cream); d.position.set(0, y - 0.022, 0.0225); g.add(d); } y -= 0.052 * Math.pow(0.95, i); }
+      const nut = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.008, 0.014), cream); nut.position.set(0, 1.11, 0.022); g.add(nut);
+      const hs = new THREE.Shape(); hs.moveTo(-0.04, 0); hs.lineTo(-0.058, 0.18); hs.quadraticCurveTo(0, 0.2, 0.058, 0.18); hs.lineTo(0.04, 0); hs.closePath();
+      const head = new THREE.Mesh(new THREE.ExtrudeGeometry(hs, { depth: 0.03, bevelEnabled: false }), board); head.position.set(0, 1.11, -0.012); head.rotation.x = -0.18; g.add(head);
+      for (let i = 0; i < 3; i++) [-1, 1].forEach((sd) => {
+        const py = 1.16 + i * 0.05;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.03, 6), metal); post.rotation.x = Math.PI / 2; post.position.set(sd * 0.03, py, 0.02); g.add(post);
+        const key = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.022, 0.01), metal); key.position.set(sd * 0.075, py, 0.0); g.add(key);
+      });
+      g.add(strings(6, 0.04, -0.15, 1.11, 0.074));
       return g;
     },
     electric() {
@@ -673,6 +734,25 @@
     m.position.copy(mid);
     m.scale.set(1, 1, flat);
     return m;
+  }
+  // a tapered, slightly flattened lock of hair following control points [az, el, r] over the head
+  function hairLock(ctrl, w0, w1, th, mat) {
+    const curve = new THREE.CatmullRomCurve3(ctrl.map(([a, e, r]) => headPt(a, e, r)));
+    const N = 18, R = 8, pos = [], idx = [];
+    const t = new THREE.Vector3(), n = new THREE.Vector3(), b = new THREE.Vector3(), q = new THREE.Vector3();
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, p = curve.getPointAt(u); curve.getTangentAt(u, t);
+      n.copy(p).normalize(); b.crossVectors(t, n).normalize(); n.crossVectors(b, t).normalize();
+      const k = Math.pow(1 - u, 0.85), w = w1 + (w0 - w1) * k * Math.min(1, 0.55 + u * 4), h = th * (0.3 + 0.7 * k);
+      for (let j = 0; j < R; j++) {
+        const a = (j / R) * Math.PI * 2, sn = Math.sin(a);
+        q.copy(p).addScaledVector(b, Math.cos(a) * w).addScaledVector(n, sn * h * (sn > 0 ? 1 : 0.35));
+        pos.push(q.x, q.y, q.z);
+      }
+    }
+    for (let i = 0; i < N; i++) for (let j = 0; j < R; j++) { const a = i * R + j, c = i * R + ((j + 1) % R); idx.push(a, a + R, c, c, a + R, c + R); }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    return new THREE.Mesh(g, mat);
   }
   function chibiTextures() {
     if (TEX.anger) return;
@@ -859,8 +939,8 @@
     const eyes = [-1, 1].map((s) => {
       const g = new THREE.Group(); g.position.set(s * 0.19, -0.05, 0.462); g.rotation.y = s * 0.33; head.add(g);
       const open = new THREE.Group(); g.add(open);
-      const e = new THREE.Mesh(new THREE.SphereGeometry(0.078, 18, 14), M.eye); e.scale.set(0.95, 1.0, 0.45); open.add(e);
-      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.026, 0.05), C2.lid); lid.position.set(0, 0.07, 0.01); lid.rotation.z = -s * 0.1; open.add(lid);
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.078, 18, 14), M.eye); e.scale.set(0.95, 0.84, 0.45); open.add(e);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.032, 0.05), C2.lid); lid.position.set(0, 0.058, 0.01); lid.rotation.z = s * 0.1; open.add(lid);
       const lash = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.016, 0.04), C2.lid); lash.position.set(s * 0.1, 0.055, 0.01); lash.rotation.z = -s * 0.5; open.add(lash);
       const hl = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), C2.white); hl.position.set(-0.022, 0.03, 0.03); open.add(hl);
       const hl2 = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), C2.white); hl2.position.set(0.02, -0.03, 0.03); open.add(hl2);
@@ -876,7 +956,7 @@
       return g;
     });
     const brows = [-1, 1].map((s) => {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.026, 0.03), M.hair); b.position.set(s * 0.19, 0.1, 0.48); b.rotation.set(0, s * 0.33, s * 0.06); head.add(b); return b;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.155, 0.03, 0.03), M.hair); b.position.set(s * 0.19, 0.1, 0.48); b.rotation.set(0, s * 0.33, s * 0.06); head.add(b); return b;
     });
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), toon(0xe2a77f)); nose.position.set(0, -0.11, 0.505); head.add(nose);
     // mouths
@@ -891,8 +971,10 @@
     const wobPts = []; for (let i = 0; i <= 12; i++) wobPts.push(new THREE.Vector3(-0.06 + i * 0.01, Math.sin(i * 1.6) * 0.012, 0));
     const wobble = tube(wobPts, 0.009, M.mouth, 24); mouths.add(wobble);
     const fang = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.025, 4), C2.white); fang.rotation.z = Math.PI; fang.position.set(0.02, -0.01, 0.01); frown.add(fang);
-    const mouthSet = { smile, frown, flat, mouthO, grin, wobble };
-    const blushMat = basic(0xff6f86, { transparent: true, opacity: 0.4, depthWrite: false });
+    // default: a small, one-sided smirk — cool rather than cute
+    const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.009, 6, 14, Math.PI * 0.62), M.mouth); smirk.rotation.z = Math.PI + 0.5; smirk.position.set(0.012, 0.012, 0); mouths.add(smirk);
+    const mouthSet = { smile, frown, flat, mouthO, grin, wobble, smirk };
+    const blushMat = basic(0xff6f86, { transparent: true, opacity: 0, depthWrite: false });
     const blushes = [-1, 1].map((s) => {
       const p = new THREE.Vector3(s * 0.31, -0.16, 0.415);
       const b = decal(new THREE.CircleGeometry(0.075, 24), blushMat, p); b.scale.set(1.25, 0.8, 1); head.add(b); return b;
@@ -911,35 +993,41 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — full black, rounded top, curtain fringe from a near-centre part down over the forehead
+    // Hair — two-block side part like the photo: short sides, volume on top,
+    // a fringe parted on his right (viewer's left) that sweeps across the forehead in separated strands
     const hair = new THREE.Group(); head.add(hair);
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.585, 36, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.1, 1.12, 1.07); cap.position.y = 0.02; cap.rotation.x = -0.42; hair.add(cap); outline(cap, 1.03, 0x6a0c1c);
-    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.575, 32, 16, Math.PI * 0.8, Math.PI * 1.4, Math.PI * 0.3, Math.PI * 0.42), M.hair);
-    nape.scale.set(1.08, 0.98, 1.04); hair.add(nape);
-    const L = (az1, el1, az2, el2, w, r1 = 0.62, r2 = 0.62, flat = 0.5) => hair.add(lockMesh(headPt(az1, el1, r1), headPt(az2, el2, r2), w, M.hair, flat));
-    // fringe: chunky separated strands fan out from the part and fall to just above the brows
-    const part = -0.12;
-    for (let i = 0; i < 13; i++) {
-      const az = lerp(-1.05, 1.0, i / 12), side = az < part ? -1 : 1;
-      const endEl = 0.13 + (i % 3) * 0.05 + Math.min(0.1, Math.abs(az - part) * 0.04);
-      L(part + side * 0.1, 1.0, az + side * 0.1, endEl, 0.19, 0.71, 0.58, 0.45);
+    const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.565, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
+    cap.scale.set(1.08, 1.04, 1.05); cap.position.y = 0.03; cap.rotation.x = -0.3; hair.add(cap); outline(cap, 1.03, 0x6a0c1c);
+    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.56, 32, 16, Math.PI * 1.5 - 1.0, 2.0, Math.PI * 0.4, Math.PI * 0.3), M.hair);
+    nape.scale.set(1.07, 0.98, 1.04); hair.add(nape);
+    const H = (ctrl, w0, th = 0.055, w1 = 0.005) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
+    const PA = -0.42;
+    // volume: thick locks rising from the part and arching forward over the crown
+    for (let i = 0; i < 7; i++) {
+      const u = i / 6;
+      H([[PA + 0.05, 1.32, 0.56], [lerp(PA + 0.15, 0.55, u), 1.02, 0.77], [lerp(-0.05, 0.95, u), 0.66, 0.71], [lerp(0.0, 1.05, u), 0.38, 0.61]], 0.17 - u * 0.03, 0.09);
     }
-    // a top layer for volume, its tips sitting a little higher
-    [-0.75, -0.35, 0.05, 0.42, 0.8].forEach((az) => L(part, 1.1, az, 0.3, 0.2, 0.74, 0.62, 0.45));
-    // sides cover the top of the ears
+    // fringe: strands falling across the forehead toward his left brow
+    const drop = [0, 0.08, 0.02, 0.11, 0.04, 0.09, 0.03, 0.12];
+    for (let i = 0; i < 8; i++) {
+      const u = i / 7, ex = lerp(-0.2, 0.9, u), ey = 0.15 + drop[i] + u * 0.05;
+      H([[PA + 0.04, 1.2, 0.58], [lerp(PA + 0.18, 0.35, u), 0.86, 0.69], [ex - 0.24, ey + 0.2, 0.625], [ex, ey, 0.565]], 0.15, 0.055);
+    }
+    // left of the part: shorter strands brushed down to the temple
+    for (let i = 0; i < 4; i++) {
+      const u = i / 3;
+      H([[PA - 0.02, 1.2, 0.58], [PA - 0.16 - u * 0.25, 0.85, 0.665], [PA - 0.36 - u * 0.42, 0.34 + u * 0.06, 0.585]], 0.1, 0.05);
+    }
+    // crown and back: texture swept backwards
+    for (let i = 0; i < 11; i++) {
+      const az = Math.PI + (i - 5) * 0.2;
+      H([[PA + 0.3 + (i - 5) * 0.12, 1.3, 0.6], [az, 0.85, 0.7], [az + 0.04, 0.2, 0.635], [az + 0.06, -0.2, 0.58]], 0.14, 0.06);
+    }
+    // short two-block sides: close to the skull, ears stay visible
     [-1, 1].forEach((s) => {
-      L(s * 1.0, 0.55, s * 1.3, 0.0, 0.15, 0.62, 0.62);
-      L(s * 1.25, 0.5, s * 1.52, -0.1, 0.14, 0.62, 0.6);
-      L(s * 1.5, 0.45, s * 1.75, -0.12, 0.13, 0.62, 0.59);
+      for (let i = 0; i < 5; i++) { const az = s * (1.0 + i * 0.22); H([[az - s * 0.1, 0.95, 0.66], [az, 0.55, 0.62], [az + s * 0.06, 0.2, 0.585]], 0.1, 0.035); }
     });
-    // back
-    for (let i = 0; i < 8; i++) { const az = Math.PI + (i - 3.5) * 0.3; L(az, 0.6, az + rand(-0.1, 0.1), -0.28, 0.16, 0.62, 0.58); }
-    // messy textured top
-    for (let i = 0; i < 18; i++) {
-      const az = rand(-Math.PI, Math.PI), el = rand(0.75, 1.2);
-      L(az, el, az + rand(-0.4, 0.4), el + rand(0.05, 0.2), rand(0.08, 0.12), 0.62, rand(0.68, 0.72), 0.55);
-    }
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
     const headphones = new THREE.Group(); head.add(headphones);
@@ -1002,6 +1090,36 @@
       g.userData.tick = (t) => g.userData.w.forEach((p, i) => (p.rotation.y = (i ? -1 : 1) * (0.5 + Math.sin(t * (devil ? 7 : 4)) * 0.35)));
       return g;
     };
+    // floating companion: round body + head, ears / muzzle / extras from a small spec
+    const pet = (spec) => {
+      const g = new THREE.Group(), mat = toon(spec.c), hm = toon(spec.head != null ? spec.head : spec.c), eye = basic(0x0e0d11), hl = basic(0xffffff);
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), mat); body.scale.set(1.1, 0.95, 1); g.add(body);
+      if (spec.belly != null) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 10), toon(spec.belly)); b.scale.set(1, 1.05, 0.5); b.position.set(0, -0.01, 0.1); g.add(b); }
+      const head = new THREE.Group(); head.position.set(0, 0.21, 0.04); g.add(head);
+      const hd = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), hm); hd.scale.set(1.08, 0.95, 1); head.add(hd);
+      const ey = spec.eyeY != null ? spec.eyeY : 0.02;
+      [-1, 1].forEach((s) => {
+        if (spec.patch != null) { const pt = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), toon(spec.patch)); pt.scale.set(0.9, 1.2, 0.4); pt.position.set(s * 0.065, ey, 0.13); pt.rotation.z = s * 0.5; head.add(pt); }
+        const e = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), eye); e.scale.set(1, 1.15, 0.6); e.position.set(s * 0.062, ey, 0.15); head.add(e);
+        const h = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 4), hl); h.position.set(s * 0.062 - 0.008, ey + 0.01, 0.165); head.add(h);
+        if (spec.ear === "point") { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.13, 4), hm); ear.position.set(s * 0.09, 0.15, 0); ear.rotation.z = -s * 0.32; ear.scale.z = 0.5; head.add(ear);
+          if (spec.inner != null) { const ie = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 4), toon(spec.inner)); ie.position.set(s * 0.088, 0.14, 0.02); ie.rotation.z = -s * 0.32; ie.scale.z = 0.3; head.add(ie); } }
+        if (spec.ear === "round") { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), toon(spec.earC != null ? spec.earC : spec.head != null ? spec.head : spec.c)); ear.scale.z = 0.6; ear.position.set(s * 0.115, 0.13, -0.01); head.add(ear); }
+        if (spec.ear === "long") { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), hm); ear.scale.set(0.8, 2.6, 0.5); ear.position.set(s * 0.06, 0.24, -0.01); ear.rotation.z = -s * 0.18; head.add(ear);
+          const ie = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), toon(spec.inner)); ie.scale.set(0.8, 3.2, 0.3); ie.position.set(s * 0.061, 0.24, 0.012); ie.rotation.z = -s * 0.18; head.add(ie); }
+      });
+      if (spec.muzzle != null) { const mz = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 10), toon(spec.muzzle)); mz.scale.set(1.25, 0.85, 0.7); mz.position.set(0, -0.045, 0.125); head.add(mz);
+        const n = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), eye); n.position.set(0, -0.025, 0.17); head.add(n); }
+      if (spec.extra) spec.extra(g, head);
+      const side = spec.side || -1;
+      g.userData.tick = (t) => {
+        g.position.set(side * 0.85 + Math.sin(t * 0.7) * 0.08, 1.5 + Math.sin(t * 1.8) * 0.08, 0.15);
+        g.rotation.y = -side * 0.5 + Math.sin(t * 0.9) * 0.3; g.rotation.z = Math.sin(t * 1.8) * 0.08;
+        if (spec.anim) spec.anim(t, g, head);
+      };
+      return g;
+    };
+    const tail = (pts, r, m) => tube(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z)), r, m, 16);
     return [
       // HEAD (10)
       { id: "beanie", slot: "head", name: "Mũ len đỏ", icon: "🧶", build() {
@@ -1181,6 +1299,64 @@
         const collar = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.015, 6, 16), red()); collar.rotation.x = Math.PI / 2; collar.position.set(0, 0.07, 0.07); g.add(collar);
         g.userData.tick = (t) => { g.position.set(-0.8 + Math.sin(t * 0.7) * 0.08, 1.55 + Math.sin(t * 1.8) * 0.08, 0.15); g.rotation.y = 0.5 + Math.sin(t * 0.9) * 0.3; g.rotation.z = Math.sin(t * 1.8) * 0.08; };
         return g; } },
+      { id: "corgi", slot: "float", name: "Cún corgi", icon: "🐕", build() {
+        return pet({ c: 0xe39a4f, head: 0xe39a4f, belly: 0xfff3e4, muzzle: 0xfff3e4, ear: "point", inner: 0xffd0b0,
+          extra(g, h) { const tg = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), basic(0xff7a8a)); tg.scale.set(1, 1.4, 0.5); tg.position.set(0.015, -0.085, 0.16); h.add(tg);
+            const tl = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xe39a4f)); tl.position.set(0, 0.04, -0.17); g.add(tl); g.userData.tl = tl; },
+          anim(t, g) { g.userData.tl.position.x = Math.sin(t * 14) * 0.03; } }); } },
+      { id: "bunny", slot: "float", name: "Thỏ trắng", icon: "🐇", build() {
+        return pet({ c: 0xf6f3ee, belly: 0xffffff, ear: "long", inner: 0xffb3c1, muzzle: 0xffffff,
+          extra(g) { const tl = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xffffff)); tl.position.set(0, -0.02, -0.16); g.add(tl); },
+          anim(t, g, h) { h.rotation.z = Math.sin(t * 2.2) * 0.12; } }); } },
+      { id: "bear", slot: "float", name: "Gấu nâu", icon: "🧸", build() {
+        return pet({ c: 0x8a5a3a, belly: 0xd9b48c, muzzle: 0xd9b48c, ear: "round",
+          extra(g) { const b = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 16), toon(0xe0102c)); b.rotation.x = Math.PI / 2; b.position.set(0, 0.1, 0.06); g.add(b); } }); } },
+      { id: "panda", slot: "float", name: "Gấu trúc", icon: "🐼", build() {
+        return pet({ c: 0x141317, head: 0xf6f3ee, belly: 0xf6f3ee, ear: "round", earC: 0x141317, patch: 0x141317, muzzle: 0xf6f3ee,
+          extra(g) { const bm = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 6), toon(0x5fa35a)); bm.position.set(0.14, 0.02, 0.1); bm.rotation.z = 0.5; g.add(bm); } }); } },
+      { id: "penguin", slot: "float", name: "Cánh cụt", icon: "🐧", build() {
+        return pet({ c: 0x141317, head: 0x141317, belly: 0xf6f3ee,
+          extra(g, h) { const face = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), toon(0xf6f3ee)); face.scale.set(1.1, 0.8, 0.5); face.position.set(0, -0.02, 0.09); h.add(face);
+            const bk = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.07, 8), toon(0xf2a33a)); bk.rotation.x = Math.PI / 2; bk.position.set(0, -0.04, 0.19); h.add(bk);
+            g.userData.fl = [-1, 1].map((s) => { const f = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0x141317)); f.scale.set(0.4, 1.3, 0.8); f.position.set(s * 0.16, 0.0, 0); g.add(f); return f; }); },
+          anim(t, g) { g.userData.fl.forEach((f, i) => (f.rotation.z = (i ? -1 : 1) * (0.3 + Math.sin(t * 10) * 0.3))); } }); } },
+      { id: "chick", slot: "float", name: "Gà con", icon: "🐥", build() {
+        return pet({ c: 0xffd84a, head: 0xffd84a, eyeY: 0.03,
+          extra(g, h) { const bk = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.06, 8), toon(0xf28a2a)); bk.rotation.x = Math.PI / 2; bk.position.set(0, -0.03, 0.18); h.add(bk);
+            const tf = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 6), toon(0xffd84a)); tf.position.set(0, 0.17, 0); tf.rotation.z = 0.3; h.add(tf);
+            g.userData.w = [-1, 1].map((s) => { const w = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xffc93a)); w.scale.set(0.5, 1, 0.8); w.position.set(s * 0.16, 0.02, 0); g.add(w); return w; }); },
+          anim(t, g) { g.userData.w.forEach((w, i) => (w.rotation.z = (i ? -1 : 1) * Math.abs(Math.sin(t * 16)) * 0.6)); } }); } },
+      { id: "fox", slot: "float", name: "Cáo lửa", icon: "🦊", build() {
+        return pet({ c: 0xe2562a, head: 0xe2562a, belly: 0xfff3e4, muzzle: 0xfff3e4, ear: "point", inner: 0x2a1a12,
+          extra(g) { const tl = tail([[0, -0.02, -0.14], [0.1, 0.05, -0.26], [0.2, 0.18, -0.24]], 0.05, toon(0xe2562a)); g.add(tl);
+            const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xfff3e4)); tip.position.set(0.2, 0.18, -0.24); g.add(tip); } }); } },
+      { id: "frog", slot: "float", name: "Ếch xanh", icon: "🐸", build() {
+        return pet({ c: 0x5fbf5a, head: 0x5fbf5a, belly: 0xd8f0c8, eyeY: 0.11,
+          extra(g, h) { [-1, 1].forEach((s) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), toon(0x5fbf5a)); b.position.set(s * 0.062, 0.1, 0.12); h.add(b); });
+            const sm = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 16, Math.PI), basic(0x2a3a20)); sm.rotation.z = Math.PI; sm.position.set(0, -0.02, 0.15); h.add(sm); },
+          anim(t, g, h) { h.scale.y = 1 + Math.max(0, Math.sin(t * 3)) * 0.06; } }); } },
+      { id: "robot", slot: "float", name: "Robot mix nhạc", icon: "🤖", build() {
+        const g = new THREE.Group(), grey = toon(0xcfd3da), dk = basic(0x0e0d11);
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.18), grey); g.add(body);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.2), grey); head.position.y = 0.22; g.add(head);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.02), dk); visor.position.set(0, 0.22, 0.105); g.add(visor);
+        const eyes = [-1, 1].map((s) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, 0.01), basic(0xff2a40)); e.position.set(s * 0.05, 0.22, 0.118); g.add(e); return e; });
+        const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 6), grey); ant.position.y = 0.37; g.add(ant);
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), basic(0xff2a40)); bulb.position.y = 0.43; g.add(bulb);
+        const knobs = [0, 1, 2].map((i) => { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 10), toon(0xe0102c)); k.rotation.x = Math.PI / 2; k.position.set(-0.06 + i * 0.06, 0, 0.095); g.add(k); return k; });
+        g.userData.tick = (t) => {
+          g.position.set(-0.85 + Math.sin(t * 0.7) * 0.08, 1.45 + Math.sin(t * 1.8) * 0.06, 0.15); g.rotation.y = 0.5 + Math.sin(t * 0.9) * 0.25;
+          eyes.forEach((e) => (e.scale.y = Math.sin(t * 2.3) > 0.95 ? 0.2 : 1)); bulb.scale.setScalar(0.8 + Math.abs(Math.sin(t * 4)) * 0.4); knobs.forEach((k, i) => (k.rotation.z = t * (1 + i)));
+        };
+        return g; } },
+      { id: "notebuddy", slot: "float", name: "Nốt nhạc tí hon", icon: "🎵", build() {
+        const g = new THREE.Group(), blk = toon(0x141317);
+        const hd = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), blk); hd.scale.set(1.25, 0.95, 0.9); hd.rotation.z = 0.35; g.add(hd);
+        [-1, 1].forEach((s) => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), basic(0xffffff)); e.position.set(s * 0.055, 0.02, 0.11); g.add(e); const p = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 6), basic(0x0e0d11)); p.position.set(s * 0.055, 0.02, 0.13); g.add(p); });
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.42, 8), blk); stem.position.set(0.13, 0.24, 0); g.add(stem);
+        const flag = tube([new THREE.Vector3(0.13, 0.45, 0), new THREE.Vector3(0.22, 0.38, 0), new THREE.Vector3(0.26, 0.26, 0)], 0.02, toon(0xe0102c), 12); g.add(flag);
+        g.userData.tick = (t) => { g.position.set(-0.85 + Math.sin(t * 0.7) * 0.08, 1.4 + Math.abs(Math.sin(t * 3)) * 0.18, 0.15); g.rotation.z = Math.sin(t * 3) * 0.15; g.rotation.y = 0.4 + Math.sin(t * 0.9) * 0.3; };
+        return g; } },
       { id: "orbitstars", slot: "float", name: "Sao xoay quanh", icon: "✨", build() {
         const g = new THREE.Group();
         const st = []; for (let i = 0; i < 6; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.scale.set(0.22, 0.22, 1); g.add(s); st.push(s); }
@@ -1254,13 +1430,13 @@
   }
 
   const SAYINGS = {
-    0: ["Chào bạn, mình là PAT!", "Đi cùng mình nha ♪", "Bấm Đi tiếp đi nè~", "Mic check 1, 2 ♫"],
-    1: ["Ảnh mình nè, vuốt thử đi!", "Thái độ trước, trình độ sau", "Hơi ngại xíu...", "Cười cái nha ★"],
-    2: ["Mở khoá sao kế tiếp đi!", "Bài đầu tiên đó ♪", "Nghe xong nhớ quay lại nha", "Mỗi bài là một vì sao"],
-    3: ["Đánh thử phím đàn đi!", "075 có bảy câu chuyện", "Do re mi fa sol ♫", "Chill xíu nha~"],
-    4: ["Bass này đã tai chưa?", "Hook dính lắm đó ♪", "Sắp có thêm nhạc mới nha", "Phonk lên nào!"],
+    0: ["Chào bạn, mình là PAT!", "Muốn là làm thôi ♪", "Bấm Đi tiếp đi nè", "Mic check 1, 2 ♫"],
+    1: ["Ảnh mình nè, vuốt thử đi!", "Thái độ trước, trình độ sau", "Cố gắng, không hối tiếc", "Đi đến cùng nha ★"],
+    2: ["Mở khoá sao kế tiếp đi!", "Mở đủ là có quà đó", "Bài đầu tiên đó ♪", "Mỗi bài là một vì sao"],
+    3: ["Đánh thử phím đàn đi!", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe theo thứ tự nha"],
+    4: ["Bấm phát video đi!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
     5: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Cả ban nhạc sẵn sàng rồi ♪"],
-    6: ["Cảm ơn bạn thật nhiều!", "Chạm vào ngôi sao đi ★", "Hẹn gặp lại nha!", "Bạn là ngôi sao của mình"],
+    6: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
   };
   const ACTS = ["jump", "spin", "wave", "heart", "wink", "dance", "star"];
   const EMOTES = [
@@ -1316,7 +1492,7 @@
     let aLx = 0, aLz = 0.18, aRx = 0, aRz = -0.18, hx = 0, hy = 0, hz = 0, bodyY = 0, bodyX = 0, bodyRy = 0, bodyRz = 0, squash = 1, mouth = 0;
     const idle = Math.sin(t * 2.2);
     switch (P.cur) {
-      case "mic": aRx = -1.95 + Math.sin(t * 3) * 0.08; aRz = -0.62; aLx = -0.4 + Math.sin(t * 1.5) * 0.25; aLz = 0.5 + Math.sin(t * 3) * 0.2; hx = -0.1 + Math.sin(t * 3) * 0.05; mouth = 0.5 + 0.5 * Math.sin(t * 7.5); hz = Math.sin(t * 1.5) * 0.08; break;
+      case "mic": aRx = -1.95 + Math.sin(t * 3) * 0.08; aRz = -0.62; aLx = -0.4 + Math.sin(t * 1.5) * 0.25; aLz = 0.5 + Math.sin(t * 3) * 0.2; hx = -0.1 + Math.sin(t * 3) * 0.05; mouth = Math.sin(t * 0.9) > 0.3 ? Math.max(0, Math.sin(t * 7.5)) : 0; hz = Math.sin(t * 1.5) * 0.08; break;
       case "acoustic": aLx = -1.0; aLz = 0.75; aRx = -0.62 + Math.sin(t * 9) * 0.18; aRz = 0.55; hx = 0.1; hz = Math.sin(t * 1.6) * 0.12; break;
       case "electric": aLx = -0.95; aLz = 0.78; aRx = -0.6 + Math.sin(t * 13) * 0.22; aRz = 0.55; hx = 0.08 + Math.abs(Math.sin(t * 4.2)) * 0.18; bodyRz = Math.sin(t * 2.1) * 0.06; break;
       case "keytar": aLx = -1.05 + Math.max(0, Math.sin(t * 6)) * 0.14; aLz = 0.28; aRx = -1.05 + Math.max(0, Math.sin(t * 6 + 1.6)) * 0.14; aRz = -0.28; hy = Math.sin(t * 1.2) * 0.2; hz = Math.sin(t * 2.4) * 0.07; break;
@@ -1341,7 +1517,7 @@
     }
 
     // face defaults: calm, cool, a hint of a smile
-    let eyeMode = "open", mouthMode = "smile", blushTarget = 0.35, winkR = 1, eyeScale = 1, browY = 0, browRz = 0.06, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
+    let eyeMode = "open", mouthMode = "smirk", blushTarget = 0, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.07, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
     const fxOn = { anger: false, sweat: false, gloom: false, zzz: false };
     if (P.acting) {
       P.actT += dt;
@@ -1363,7 +1539,7 @@
       mouth = 0;
       switch (P.emo) {
         case "happy":
-          eyeMode = "happy"; mouthMode = "grin"; blushTarget = 0.7;
+          eyeMode = "happy"; mouthMode = "grin";
           bodyY += Math.abs(Math.sin(k * 7)) * 0.22 * env; squash = 1 + Math.sin(k * 14) * 0.05 * env;
           aLx = lerp(aLx, -2.7 + Math.sin(k * 7) * 0.2, env); aRx = lerp(aRx, -2.7 - Math.sin(k * 7) * 0.2, env); aLz = lerp(aLz, 0.5, env); aRz = lerp(aRz, -0.5, env);
           hz += Math.sin(k * 7) * 0.14 * env; break;
@@ -1374,7 +1550,7 @@
           if (Math.floor(k * 3) !== Math.floor((k - dt) * 3)) { P.head.getWorldPosition(_v); _v.y += 0.5; burst(_v, 3, { tex: TEX.puff, speed: 1, size: 0.3, life: 0.9, up: 1.5 }); }
           break;
         case "shy":
-          eyeMode = Math.sin(k * 2) > 0.6 ? "closed" : "open"; eyeScale = 0.8; mouthMode = "wobble"; blushTarget = 1; faceTo = FACE_RED; faceK = 0.25 * env; fxOn.sweat = true; lookX = 0.03;
+          eyeMode = Math.sin(k * 2) > 0.6 ? "closed" : "open"; eyeScale = 0.8; mouthMode = "wobble"; blushTarget = 0.75; faceTo = FACE_RED; faceK = 0.25 * env; fxOn.sweat = true; lookX = 0.03;
           hy += 0.5 * env; hx += 0.25 * env; hz += -0.15 * env; bodyRy += 0.3 * env;
           aLx = lerp(aLx, -1.0, env); aRx = lerp(aRx, -1.0, env); aLz = lerp(aLz, -0.55, env); aRz = lerp(aRz, 0.55, env);
           bodyRz += Math.sin(k * 3) * 0.05 * env; break;
@@ -1383,27 +1559,56 @@
           aLx = lerp(aLx, 0, env); aRx = lerp(aRx, 0, env); aLz = lerp(aLz, 0.06, env); aRz = lerp(aRz, -0.06, env);
           hz += 0.12 * env; bodyX += Math.sin(k * 55) * 0.006 * env; squash = 1 - 0.04 * env; break;
         case "cry":
-          eyeMode = "squeeze"; mouthMode = "cry"; blushTarget = 0.8; tearK = env;
+          eyeMode = "squeeze"; mouthMode = "cry"; tearK = env;
           aLx = lerp(aLx, -2.5 + Math.sin(k * 8) * 0.15, env); aRx = lerp(aRx, -2.5 - Math.sin(k * 8) * 0.15, env); aLz = lerp(aLz, -0.6, env); aRz = lerp(aRz, 0.6, env);
           hx += 0.15 * env; bodyY += Math.abs(Math.sin(k * 10)) * 0.05 * env; squash = 1 + Math.sin(k * 10) * 0.03 * env;
           if (Math.floor(k * 6) !== Math.floor((k - dt) * 6)) P.eyes.forEach((e) => { e.getWorldPosition(_v); burst(_v, 1, { tex: TEX.tear, speed: 1.1, size: 0.12, life: 0.8, up: 0.6 }); });
           break;
         case "surprised":
-          eyeMode = "open"; eyeScale = 1.25; mouthMode = "O"; browY = 0.05; blushTarget = 0.2;
+          eyeMode = "open"; eyeScale = 1.25; mouthMode = "O"; browY = 0.05;
           bodyY += Math.max(0, Math.sin(Math.min(p * 6, 1) * Math.PI)) * 0.35; aLx = lerp(aLx, -2.2, env); aRx = lerp(aRx, -2.2, env); aLz = lerp(aLz, 0.9, env); aRz = lerp(aRz, -0.9, env);
           hx -= 0.18 * env; break;
         case "love":
-          eyeMode = "heart"; mouthMode = "grin"; blushTarget = 0.95;
+          eyeMode = "heart"; mouthMode = "grin";
           aLx = lerp(aLx, -1.4, env); aRx = lerp(aRx, -1.4, env); aLz = lerp(aLz, -0.5, env); aRz = lerp(aRz, 0.5, env);
           bodyRz += Math.sin(k * 3) * 0.1 * env; hz += Math.sin(k * 3) * 0.18 * env;
           if (Math.floor(k * 2.5) !== Math.floor((k - dt) * 2.5)) { P.head.getWorldPosition(_v); _v.y += 0.5; burst(_v, 2, { tex: TEX.heart, speed: 0.8, size: 0.24, life: 1.5, up: 1.4 }); }
           break;
         case "sleepy":
-          eyeMode = "closed"; mouthMode = Math.sin(k * 1.5) > 0.4 ? "O" : "flat"; mouth = 0.6; blushTarget = 0.3; fxOn.zzz = true;
+          eyeMode = "closed"; mouthMode = Math.sin(k * 1.5) > 0.4 ? "O" : "flat"; mouth = 0.6; fxOn.zzz = true;
           hx += (0.35 + Math.sin(k * 1.5) * 0.12) * env; hz += 0.2 * env; bodyRz += Math.sin(k * 1.2) * 0.06 * env;
           aLx = lerp(aLx, 0, env); aRx = lerp(aRx, aRx * 0.4, env); squash = 1 + Math.sin(k * 1.5) * 0.03; break;
       }
       if (k >= EMO_DUR) P.emo = null;
+    }
+    // the gift: 30 seconds of hiphop, a new move every 3.75s (8 moves), on a ~100 BPM bounce
+    if (P.dance != null) {
+      const k = P.dance, bt = k / 0.6, ph = bt * Math.PI, move = Math.floor(k / 3.75) % 8, f = (k % 3.75) / 3.75, bounce = Math.abs(Math.sin(ph));
+      eyeMode = Math.floor(bt) % 4 === 3 ? "happy" : "open"; mouthMode = Math.floor(bt / 2) % 3 === 0 ? "grin" : "smirk"; mouth = 0;
+      bodyY = bounce * 0.12; squash = 1 - bounce * 0.05; bodyX = 0; bodyRy = 0; bodyRz = 0; hx = 0.12 * bounce; hy = 0; hz = 0;
+      let legA = Math.sin(ph) * 0.3;
+      switch (move) {
+        case 0: // bounce + arm pumps
+          aLx = -1.7 + Math.sin(ph * 2) * 0.7; aRx = -1.7 - Math.sin(ph * 2) * 0.7; aLz = 0.45; aRz = -0.45; break;
+        case 1: // side steps, shoulders rolling
+          bodyX = Math.sin(ph * 0.5) * 0.2; bodyRz = Math.sin(ph) * 0.12; aLx = -0.5; aRx = -0.5; aLz = 0.6 + Math.sin(ph) * 0.35; aRz = -0.6 + Math.sin(ph) * 0.35; hz = -Math.sin(ph) * 0.15; legA = Math.max(0, Math.sin(ph)) * 0.6; break;
+        case 2: // toprock: cross steps, arms swinging open
+          bodyRy = Math.sin(ph * 0.5) * 0.5; aLx = -0.8; aRx = -0.8; aLz = 0.9 + Math.sin(ph) * 0.5; aRz = -0.9 + Math.sin(ph) * 0.5; legA = Math.sin(ph * 0.5) * 0.7; break;
+        case 3: // arm wave rolling through both arms
+          aLx = 0; aRx = 0; aLz = 1.35 + Math.sin(ph * 2) * 0.35; aRz = -1.35 + Math.sin(ph * 2 + 1.4) * 0.35; bodyRz = Math.sin(ph * 2 + 0.7) * 0.1; hz = Math.sin(ph * 2 + 2) * 0.18; break;
+        case 4: // spin, then freeze
+          if (f < 0.45) { bodyRy = ease.io(f / 0.45) * Math.PI * 2; aLz = 1.2; aRz = -1.2; aLx = 0; aRx = 0; bodyY += 0.15; }
+          else { aRx = -2.9; aRz = -0.2; aLx = -0.3; aLz = 0.9; hz = 0.28; bodyRz = 0.16; bodyY = 0; squash = 1; eyeMode = "open"; mouthMode = "smirk"; legA = 0; }
+          break;
+        case 5: // point up, point at you
+          aRx = Math.floor(bt) % 2 ? -2.95 : -1.55; aRz = -0.15; aLx = -0.6; aLz = 0.25; bodyRz = Math.floor(bt) % 2 ? -0.08 : 0.08; hx = Math.floor(bt) % 2 ? -0.2 : 0.1; break;
+        case 6: // twist on the heels, hips wiggling
+          bodyRy = Math.sin(ph * 2) * 0.4; aLx = -1.2; aRx = -1.2; aLz = -0.3; aRz = 0.3; hy = -Math.sin(ph * 2) * 0.3; legA = Math.sin(ph * 2) * 0.4; break;
+        default: // jumps with windmill arms
+          bodyY += Math.max(0, Math.sin(ph)) * 0.35; aLx = -1.6 + Math.sin(k * 7) * 1.4; aRx = -1.6 - Math.sin(k * 7) * 1.4; aLz = 0.35; aRz = -0.35; legA = Math.max(0, Math.sin(ph)) * 0.5; mouthMode = "grin";
+      }
+      P.legs[0].rotation.x = legA; P.legs[1].rotation.x = -legA;
+      if (Math.floor(bt) !== Math.floor((k - dt) / 0.6)) { P.root.getWorldPosition(_v); _v.y += 0.4; burst(_v, 3, { tex: pick(TEX.notes), speed: 1.6, size: 0.35, life: 1.1, up: 1.4 }); }
     }
     const s = 1 - Math.exp(-dt * 12);
     P.armL.sh.rotation.x += (aLx - P.armL.sh.rotation.x) * s; P.armL.sh.rotation.z += (aLz - P.armL.sh.rotation.z) * s;
@@ -1440,8 +1645,8 @@
     // mouth
     const MS = P.mouths;
     let mm = mouthMode;
-    if (mm === "smile" && mouth > 0.15) mm = "O";
-    MS.smile.visible = mm === "smile"; MS.frown.visible = mm === "frown"; MS.flat.visible = mm === "flat";
+    if ((mm === "smile" || mm === "smirk") && mouth > 0.15) mm = "O";
+    MS.smile.visible = mm === "smile"; MS.smirk.visible = mm === "smirk"; MS.frown.visible = mm === "frown"; MS.flat.visible = mm === "flat";
     MS.mouthO.visible = mm === "O"; MS.grin.visible = mm === "grin"; MS.wobble.visible = mm === "wobble" || mm === "cry";
     MS.mouthO.scale.y = 0.3 + Math.max(mouth, P.emo === "surprised" ? 0.9 : 0.3) * 0.7;
     if (mm === "cry") { MS.wobble.visible = false; MS.mouthO.visible = true; MS.mouthO.scale.set(1.2, 0.5 + Math.abs(Math.sin(t * 12)) * 0.4, 0.4); }
@@ -1472,7 +1677,7 @@
     { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "vinyl" },
     { key: "ads", label: "Nhạc quảng cáo", short: "Quảng cáo", inst: "bass", tint: 0xa3101f, fx: "shutter" },
     { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "eq" },
-    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "mic", tint: 0xb3142a, fx: "dolly" },
+    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "electric", tint: 0xb3142a, fx: "dolly" },
   ];
   const INTRO = { x: 0, y: 0, z: 64 };
   let curve, stationT = [], vinyls = [];
@@ -1709,7 +1914,7 @@
     parts: {}, jam: null,
     hit(id, fromJam) {
       const b = BAND.find((x) => x.id === id); if (!b) return;
-      Audio.init(); b.play();
+      Audio.init(); b.play(); if (!fromJam) BG.ping();
       const p = this.parts[id]; if (p) { p.userData.hitT = 1; const wp = new THREE.Vector3(); p.getWorldPosition(wp); burst(wp.add(new THREE.Vector3(0, 0.6, 0)), 5, { tex: pick(TEX.notes), speed: 1.4, size: 0.35, life: 1, up: 1.2 }); }
       const pad = $('[data-pad="' + id + '"]'); if (pad) { pad.classList.remove("hit"); void pad.offsetWidth; pad.classList.add("hit"); }
       if (!fromJam && b.inst && state.station === 5) { setInstrument(b.inst); act(pick(["dance", "jump", "wave"])); }
@@ -1859,8 +2064,8 @@
   }
   let constelLine, keyAsset;
   function buildConstellation(s2) {
-    const n = Math.max(1, C.tracks.length);
-    for (let i = 0; i < C.tracks.length; i++) {
+    const n = Math.max(1, SINGLES.length);
+    for (let i = 0; i < SINGLES.length; i++) {
       const g = new THREE.Group(); g.position.copy(constelPos(s2, i, n)); scene.add(g);
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0x8a8590 })); sp.scale.set(0.9, 0.9, 1); g.add(sp);
       const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(3, 3, 1); g.add(halo);
@@ -1903,6 +2108,14 @@
   }
 
   let finale = { mode: "idle", t: 0 };
+  // a point `d` ahead of the camera, offset by fractions of the visible half-width / half-height
+  function viewPoint(d, nx, ny) {
+    // screen point in NDC (respects the panel view offset), pushed `d` units out from the camera
+    const v = new THREE.Vector3(nx, ny, 0.5).unproject(camera);
+    const o = camera.getWorldPosition(new THREE.Vector3());
+    return o.add(v.sub(o).normalize().multiplyScalar(d));
+  }
+  const starTop = () => isMobile() ? viewPoint(16, 0.55, 0.62) : viewPoint(16, 0.55, 0.5);
   function buildFinaleStar(p) {
     finaleStar = new THREE.Group(); finaleStar.position.copy(p); scene.add(finaleStar);
     const shape = new THREE.Shape();
@@ -1919,23 +2132,30 @@
     finaleStar.scale.setScalar(0.6);
     updaters.push((t, dt) => {
       const u = finaleStar.userData, c = STATIONS[6].pos;
+      // the star show runs on wall-clock time so slow frames don't stall it
+      const now = performance.now(), fdt = Math.min((now - (finale.last || now)) / 1000, 0.5); finale.last = now;
       star.rotation.y += dt * 1.4; g2.material.rotation = t * 0.4;
       if (finale.mode === "orbit") {
-        finale.t += dt;
+        finale.t += fdt;
         const k = finale.t, r = 2.6 + Math.sin(k * 1.3) * 0.6;
         finaleStar.position.set(c.x + Math.cos(k * 2.6) * r, c.y + 1.6 + Math.sin(k * 3.2) * 0.8 + k * 0.4, c.z + Math.sin(k * 2.6) * r);
         if (Math.random() < 0.7) burst(finaleStar.position.clone(), 1, { tex: TEX.star, speed: 0.3, size: 0.25, life: 1.2 });
-        if (k > 3.2) { finale.mode = "rise"; finale.t = 0; finale.from = finaleStar.position.clone(); finale.top = spot(6, 3.4, -3, 3.8); }
+        if (k > 3.2) { finale.mode = "rise"; finale.t = 0; finale.from = finaleStar.position.clone(); finale.top = starTop(); }
       } else if (finale.mode === "rise") {
-        finale.t += dt;
+        finale.t += fdt;
         const p2 = ease.io(clamp(finale.t / 1.8, 0, 1));
+        finale.top = starTop();
         finaleStar.position.lerpVectors(finale.from, finale.top, p2);
-        finaleStar.scale.setScalar(lerp(0.6, 1.25, p2));
+        finaleStar.scale.setScalar(lerp(0.6, 0.55, p2));
         if (finale.t > 1.8 && !finale.flashed) { finale.flashed = true; flash(0.6); Audio.unlock(); burst(finaleStar.position.clone(), 40, { tex: TEX.star, speed: 5, size: 0.35, life: 1.6 }); }
         if (finale.t > 1.8) finale.mode = "shine";
       } else if (finale.mode === "shine") {
         const s = 6 + Math.sin(t * 2.5) * 1.5; g1.scale.set(s, s, 1);
-        finaleStar.position.y = finale.top.y + Math.sin(t * 1.2) * 0.25;
+        finale.top = starTop();
+        finaleStar.position.copy(finale.top); finaleStar.position.y += Math.sin(t * 1.2) * 0.2;
+      } else if (state.station === 6 && state.phase === "live") {
+        // waiting at the last stop: park in the empty upper-right of the scene, clear of chibi and panel
+        finaleStar.position.copy(starTop()); finaleStar.position.y += Math.sin(t * 1.3) * 0.15;
       } else {
         finaleStar.position.set(u.home.x + Math.sin(t) * 0.3, u.home.y + Math.sin(t * 1.3) * 0.3, u.home.z);
       }
@@ -2029,13 +2249,41 @@
       '<article class="pcard rv" data-fx="' + esc(e.fx || "vinyl") + '">' +
       '<div class="fxwrap"><canvas class="fx"></canvas></div>' +
       '<div class="pc-body"><h3 class="pc-title" data-tx>' + esc(e.title || "EP " + pad2(idx + 1)) + "</h3>" +
-      '<div class="pc-sub">' + esc([e.date, items.length + " bài", e.upc ? "UPC " + e.upc : ""].filter(Boolean).join(" · ")) + "</div>" +
+      '<div class="pc-sub">' + esc([e.date, items.length + " bài"].filter(Boolean).join(" · ")) + "</div>" +
       (e.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(e.story) + "</p>" : "") +
-      '<ol class="ep-list">' + items.map(([t, i]) => '<li><button data-ep-track="' + i + '"><span class="no">' + pad2(t.epNo || 0) + '</span><span class="tt">' + esc(t.title) + '</span><span class="td">' + esc(t.dur || "") + "</span></button></li>").join("") + "</ol>" +
+      '<div class="ep-gate" data-ep-gate><span><b>' + SINGLES.length + '</b> ngôi sao ở chương 03 là chìa khoá. Mở đủ, hộp quà sẽ xuất hiện và EP 075 thuộc về bạn.</span><button class="chip-btn chip-hot" data-go="2">Về Chòm sao Track</button></div>' +
+      '<ol class="ep-list" data-ep-open>' + items.map(([t, i]) => '<li><button data-ep-track="' + i + '"><span class="no">' + pad2(t.epNo || 0) + '</span><span class="tt">' + esc(t.title) + '</span><span class="td">' + esc(t.dur || "") + "</span></button></li>").join("") + "</ol>" +
       '<div class="pc-row">' + (e.smartLink ? '<a class="src-link sl-main" href="' + esc(e.smartLink) + '" target="_blank" rel="noopener">Smart link EP ↗</a>' : "") + "</div>" +
       "</div></article>"
     );
   }
+  function syncEPGate() {
+    $$("[data-ep-gate]").forEach((g) => (g.hidden = Gift.opened));
+    $$("[data-ep-open]").forEach((l) => l.classList.toggle("sealed", !Gift.opened));
+  }
+  function adCard(o, i) {
+    const tall = o.shape === "tall";
+    return (
+      '<article class="vcard rv' + (tall ? " tall" : "") + '">' +
+      '<video src="' + esc(o.video) + '"' + (o.poster ? ' poster="' + esc(o.poster) + '"' : "") + ' controls playsinline preload="none" data-ad="' + i + '"></video>' +
+      '<div class="pc-body"><h3 class="pc-title" data-tx>' + esc(o.title || o.brand) + "</h3>" +
+      '<div class="pc-sub">' + esc([o.brand, o.kind].filter(Boolean).join(" · ")) + "</div>" +
+      (o.credits && o.credits.length ? '<div class="credit">' + o.credits.map((c) => "<span>" + esc(c) + "</span>").join("") + "</div>" : "") +
+      (o.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(o.story) + "</p>" : "") +
+      "</div></article>"
+    );
+  }
+  function contactCard() {
+    const ct = C.contact || {};
+    const rows = [];
+    if (ct.email) rows.push('<div class="ct-line"><span>Gmail</span><a class="v" href="' + esc(mailHref(ct.email)) + '">' + esc(ct.email) + '</a><span class="ct-acts"><a class="ct-go" href="' + esc(mailHref(ct.email)) + '">Gửi mail</a></span></div>');
+    if (ct.phone) {
+      const tel = ct.phone.replace(/[^\d+]/g, ""), zl = (ct.zalo || ct.phone).replace(/[^\d]/g, "");
+      rows.push('<div class="ct-line"><span>Điện thoại</span><a class="v" href="tel:' + esc(tel) + '">' + esc(ct.phone) + '</a><span class="ct-acts"><a class="ct-go" href="tel:' + esc(tel) + '">Gọi ngay</a><a class="ct-go" href="https://zalo.me/' + esc(zl) + '" target="_blank" rel="noopener">Zalo</a></span></div>');
+    }
+    return rows.length ? '<section class="ct-card rv" aria-label="Liên hệ"><h3>Liên hệ</h3>' + rows.join("") + "</section>" : "";
+  }
+  const zaloHref = () => "https://zalo.me/" + String((C.contact || {}).zalo || (C.contact || {}).phone || "").replace(/[^\d]/g, "");
 
   function buildPanels() {
     const A = C.artist;
@@ -2044,12 +2292,13 @@
     html.push(
       '<section class="panel" data-st="0" aria-label="Khởi hành">' +
       '<div class="eyebrow rv">' + esc((A.roles || []).join(" · ")) + "</div>" +
-      '<h1 class="poster hero-name rv" data-tx>' + esc(A.stageName || "Phương Anh Tú") + "</h1>" +
-      '<div class="rap rv">rap name · ' + esc(A.rapName || "PAT") + "</div>" +
-      '<p class="lead rv" data-tx>' + esc(A.tagline || "") + "</p>" +
+      '<h1 class="lockup hero-lockup rv" aria-label="' + esc(A.stageName || "Phương Anh Tú") + '"><span class="lk-1" aria-hidden="true">Phương</span><span class="lk-2" data-t="Anh Tú" aria-hidden="true">Anh Tú</span><span class="lk-pat" aria-hidden="true">' + esc(A.rapName || "PAT") + "</span></h1>" +
+      (A.mission ? '<p class="mission rv" data-tx>' + esc(A.mission) + "</p>" : "") +
+      '<p class="lead rv">' + esc(A.tagline || "") + "</p>" +
       '<p class="body-t rv">' + esc(A.intro || "") + "</p>" +
       '<ul class="roles rv"><li>Tên thật · ' + esc(A.realName || "") + "</li>" + (A.roles || []).map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" +
-      '<div class="socials rv">' + socialHTML() + contactChips() + "</div>" +
+      '<div class="socials rv">' + socialHTML() + "</div>" +
+      contactCard() +
       (C.publisher ? '<div class="pub rv">' + esc(C.publisher.label) + ' · <a href="' + esc(C.publisher.url) + '" target="_blank" rel="noopener">' + esc(C.publisher.name) + "</a></div>" : "") +
       "</section>"
     );
@@ -2057,7 +2306,7 @@
     html.push(
       '<section class="panel" data-st="1" aria-label="Chân dung">' +
       '<div class="eyebrow rv">Chương 02 · Chân dung</div>' +
-      '<h2 class="p-title rv" data-tx>Người kể chuyện bằng giai điệu</h2>' +
+      '<h2 class="p-title rv" data-tx>Muốn là <em>làm</em>, làm là đến cùng</h2>' +
       '<div class="gal rv" id="gal"></div><div class="gal-ui rv"><div class="gal-dots" id="galDots"></div><span class="gal-hint">Vuốt trái · phải</span></div>' +
       (A.about || []).map((p) => '<p class="body-t rv" data-tx>' + esc(p) + "</p>").join("") +
       (A.quote ? '<blockquote class="quote rv" data-tx>' + esc(A.quote) + "</blockquote>" : "") +
@@ -2068,8 +2317,8 @@
       '<section class="panel" data-st="2" aria-label="Chòm sao Track">' +
       '<div class="eyebrow rv">Chương 03 · Track</div>' +
       '<h2 class="p-title rv" data-tx>Chòm sao <em>Track</em></h2>' +
-      '<p class="body-t rv">' + C.tracks.length + ' ngôi sao, ' + C.tracks.length + ' bài hát, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mở khoá lần lượt: chạm vào ngôi sao đang nhấp nháy, chiếc chìa khoá vàng hoặc danh sách bên dưới. Mỗi bài có bản nghe đầy đủ, lời thẩm định và smart link.</p>' +
-      '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + C.tracks.length + " ngôi sao đã sáng</span>" + "</div>" +
+      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao mở ra một bài hát nghe trọn vẹn, câu chuyện phía sau nó và smart link đến mọi nền tảng. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
+      '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span>" + "</div>" +
       '<ol class="tlist rv" id="tlist"></ol>' +
       '<div class="spot-drawer rv"><button class="chip-btn" id="btnSpotify">Nghe toàn bộ trên Spotify</button><div id="spotBox"></div></div>' +
       "</section>"
@@ -2079,7 +2328,7 @@
       '<section class="panel" data-st="3" aria-label="EP">' +
       '<div class="eyebrow rv">Chương 04 · EP</div>' +
       '<h2 class="p-title rv" data-tx>EP đầu tay <em>075</em></h2>' +
-      '<p class="body-t rv">Chạm vào dãy phím đàn trôi bên cạnh để tự chơi vài nốt trong lúc nghe.</p>' +
+      '<p class="body-t rv">Bảy bài hát, một câu chuyện đi từ tối sang sáng. Trong lúc nghe, chạm vào dãy phím đàn trôi bên cạnh để tự chơi vài nốt.</p>' +
       C.eps.map((e, i) => epCard(e, i)).join("") +
       "</section>"
     );
@@ -2088,10 +2337,9 @@
       '<section class="panel" data-st="4" aria-label="Nhạc quảng cáo">' +
       '<div class="eyebrow rv">Chương 05 · Quảng cáo</div>' +
       '<h2 class="p-title rv" data-tx>Âm nhạc cho <em>thương hiệu</em></h2>' +
-      (C.ads.length
-        ? '<p class="body-t rv">Video phát ngay tại đây. Muốn xem ở kênh gốc, bấm “Mở nguồn gốc”.</p>' + C.ads.map((a, i) => projCard(a, "ad", i)).join("")
-        : '<p class="body-t rv">Các dự án nhạc quảng cáo đang được cập nhật. Bạn cần một topline, một đoạn hook hay một giọng hát cho thương hiệu? Hẹn PAT ở ngôi sao cuối hành trình.</p>' +
-          '<div class="socials rv">' + contactChips() + "</div>") +
+      '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đây là những thương hiệu đã tin giao vài giây đó cho PAT. Bấm phát để xem ngay tại đây.</p>' +
+      C.ads.map((a, i) => adCard(a, i)).join("") +
+      '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Liên hệ ở trang đầu hoặc ngôi sao cuối hành trình.</p>' +
       "</section>"
     );
     // 5 studio + band
@@ -2102,7 +2350,7 @@
       '<h2 class="p-title rv" data-tx>Phòng thu &amp; <em>ban nhạc</em></h2>' +
       '<div class="tools">' + tools + "</div>" +
       '<div class="band rv"><div class="band-head"><h3>Ban nhạc của PAT</h3><button class="chip-btn" id="btnJam">▶ Jam cùng PAT</button></div>' +
-      '<p class="stats-note">Chạm vào từng nhạc cụ trên sân khấu 3D hoặc các nút dưới đây. Bàn phím: A S D F G H J K L ; \'</p>' +
+      '<p class="stats-note">Chạm vào từng nhạc cụ trên sân khấu 3D hoặc các nút dưới đây để tự chơi cùng PAT. Bàn phím: A S D F G H J K L ; \'</p>' +
       '<div class="pads" id="pads">' + Band.padsHTML() + "</div></div>" +
       "</section>"
     );
@@ -2112,15 +2360,26 @@
       '<div class="eyebrow rv">Chương 07 · Ngôi sao</div>' +
       '<h2 class="p-title rv" data-tx>Cảm ơn <em>bạn</em></h2>' +
       '<p class="thanks rv" data-tx>' + esc(C.thanks || "") + "</p>" +
-      '<button class="star-cta rv" id="starCta">Chạm vào ngôi sao để nhận lời hẹn</button>' +
+      (C.artist.mission ? '<p class="mission rv">' + esc(C.artist.mission) + "</p>" : "") +
+      '<p class="body-t rv">' + esc(C.messageInvite || "") + "</p>" +
+      '<ul class="msg-kinds rv"><li>Lời chúc</li><li>Câu hỏi</li><li>Góp ý</li><li>Hợp tác</li><li>Kể PAT nghe câu chuyện của bạn</li></ul>' +
+      '<a class="zalo-cta rv" href="' + esc(zaloHref()) + '" target="_blank" rel="noopener"><i>Zalo</i>Gửi lời nhắn cho PAT</a>' +
+      '<div><button class="star-cta rv" id="starCta">Chạm vào ngôi sao để xem mọi cách liên hệ</button></div>' +
       "</section>"
     );
     $("#panels").innerHTML = html.join("");
     $("#stepAll").textContent = pad2(STATIONS.length);
     Tracks.renderList();
     Band.bind();
-    $$("[data-ep-track]").forEach((b) => b.addEventListener("click", () => Tracks.tryOpen(+b.dataset.epTrack)));
+    $$("[data-ep-track]").forEach((b) => b.addEventListener("click", () => Tracks.openEP(+b.dataset.epTrack)));
     $("#starCta").addEventListener("click", openContact);
+    $$("[data-go]").forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
+    $$("video[data-ad]").forEach((v) => {
+      const key = "ad-" + v.dataset.ad;
+      v.addEventListener("play", () => { $$("video[data-ad]").forEach((o) => o !== v && o.pause()); BG.duck(key, true); });
+      ["pause", "ended"].forEach((ev) => v.addEventListener(ev, () => BG.duck(key, false)));
+    });
+    syncEPGate();
     $("#btnSpotify").addEventListener("click", toggleSpotify);
     $$(".play-cover").forEach((b) => b.addEventListener("click", () => playInline(b)));
     $$(".panel").forEach((p) => p.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true }));
@@ -2255,19 +2514,68 @@
     },
   };
 
+  /* ---------- the gift: every single unlocked → PAT dances hiphop for 30s on the bed music → EP 075 ---------- */
+  const DANCE_SEC = 30;
+  const Gift = {
+    pending: false, opened: false, dancing: false,
+    show() {
+      this.pending = false;
+      if (this.opened || state.phase !== "live") return;
+      Audio.unlock();
+      $("#gift").classList.add("on"); $("#gift").setAttribute("aria-hidden", "false"); state.modal = true;
+      say("Có quà cho bạn nè!");
+    },
+    open() {
+      const box = $("#giftOpen"); if (box.classList.contains("open")) return;
+      Audio.init(); box.classList.add("open"); Audio.unlock(); flash(0.5);
+      this.opened = true; store.set("giftOpened", true); syncEPGate();
+      setTimeout(() => {
+        $("#gift").classList.remove("on"); $("#gift").setAttribute("aria-hidden", "true"); state.modal = false; box.classList.remove("open");
+        this.dance();
+      }, 1100);
+    },
+    dance() {
+      // everything else goes quiet so the bed music carries the dance at full volume
+      Ticket.stop(); if (Band.jam) Band.toggleJam(); $$("video[data-ad]").forEach((v) => v.pause());
+      BG.force = true; BG.retarget();
+      this.dancing = true; this.t0 = performance.now(); PAT.dance = 0; PAT.emo = null; PAT.acting = null;
+      setInstrument("none");
+      $("#danceBar").classList.add("on");
+      PAT.head.getWorldPosition(_v); burst(_v, 30, { tex: TEX.star, speed: 3, size: 0.3, life: 1.3 });
+      say("Quẩy hiphop nào!!!");
+    },
+    tick(dt) {
+      if (!this.dancing) return;
+      PAT.dance = (performance.now() - this.t0) / 1000;
+      cam.uYaw += dt * 0.12;
+      $("#danceProg").style.width = Math.min(100, (PAT.dance / DANCE_SEC) * 100) + "%";
+      if (PAT.dance >= DANCE_SEC) this.end();
+    },
+    end(stay) {
+      if (!this.dancing) return;
+      this.dancing = false; PAT.dance = null; BG.force = false; BG.retarget();
+      $("#danceBar").classList.remove("on");
+      if (stay) return;
+      setInstrument(STATIONS[state.station].inst);
+      emote("happy");
+      setTimeout(() => goTo(3, { force: true }), 1200);
+    },
+  };
+
   /* ---------- tracks: unlock in release order + ticket ---------- */
   const Tracks = {
-    unlocked: clamp(store.get("unlocked", 0), 0, C.tracks.length),
+    unlocked: 0,
     renderList() {
       const ol = $("#tlist"); if (!ol) return;
-      ol.innerHTML = C.tracks.map((t, i) => {
+      ol.innerHTML = SINGLES.map((ti, i) => {
+        const t = C.tracks[ti];
         const open = i < this.unlocked, next = i === this.unlocked;
         const cls = open ? "open" : next ? "next locked" : "locked";
-        const title = open ? trackTitle(t, i) : "★ ★ ★ ★ ★";
-        const date = open ? [t.date || PENDING, t.dur, /,/.test(t.artists || "") ? "cùng " + t.artists.split(",").map((x) => x.trim()).filter((x) => x !== C.artist.stageName).join(", ") : ""].filter(Boolean).join(" · ") : next ? "Sẵn sàng mở khoá" : "Đang khoá";
+        const title = open ? trackTitle(t, ti) : "★ ★ ★ ★ ★";
+        const date = open ? [t.date || PENDING, t.genre, t.dur, /,/.test(t.artists || "") ? "cùng " + t.artists.split(",").map((x) => x.trim()).filter((x) => x !== C.artist.stageName).join(", ") : ""].filter(Boolean).join(" · ") : next ? "Sẵn sàng mở khoá" : "Đang khoá";
         return '<li><button class="titem ' + cls + '" data-i="' + i + '"' + (open || next ? "" : ' aria-disabled="true"') + ">" +
           '<canvas class="fx" data-fx="' + esc(t.fx) + '"></canvas>' +
-          '<span class="no">' + pad2(i + 1) + '</span><span class="tt">' + esc(title) + (open && !t.title ? '<span class="tag">chờ cập nhật</span>' : "") + '<span class="td">' + esc(date) + "</span></span>" +
+          '<span class="no">' + pad2(i + 1) + '</span><span class="tt">' + esc(title) + '<span class="td">' + esc(date) + "</span></span>" +
           '<span class="lk">' + (open ? "Nghe" : next ? "Mở khoá" : "Khoá") + "</span></button>" +
           (open && t.smartLink ? '<a class="tsl" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link ↗</a>' : "") + "</li>";
       }).join("");
@@ -2276,19 +2584,27 @@
       if (constelLine) constelLine.geometry.setDrawRange(0, this.unlocked);
       fxCanvases.refresh();
     },
-    tryOpen(i) {
-      if (i == null || i >= C.tracks.length) return;
-      if (i > this.unlocked) { toast("Hãy mở khoá ngôi sao số " + pad2(this.unlocked + 1) + " trước nhé"); emote("shy"); return; }
-      if (i === this.unlocked) {
-        this.unlocked++; store.set("unlocked", this.unlocked);
-        const g = constel[i];
+    get allOpen() { return this.unlocked >= SINGLES.length; },
+    // k = position in the constellation (singles only)
+    tryOpen(k) {
+      if (k == null || k >= SINGLES.length) return;
+      if (k > this.unlocked) { toast("Hãy mở khoá ngôi sao số " + pad2(this.unlocked + 1) + " trước nhé"); emote("shy"); return; }
+      if (k === this.unlocked) {
+        this.unlocked++; store.set("unlockedSingles", this.unlocked);
+        const g = constel[k];
         if (g) { burst(g.position.clone(), 36, { tex: TEX.star, speed: 4, size: 0.3, life: 1.4 }); keyAsset && burst(keyAsset.position.clone(), 12, { tex: TEX.glow, speed: 2, size: 0.3, life: 1 }); }
         Audio.unlock(); flash(0.35); act("jump");
         this.renderList();
-        setTimeout(() => Ticket.open(i, true), 650);
+        if (this.allOpen && !Gift.opened) Gift.pending = true;
+        setTimeout(() => Ticket.open(SINGLES[k], true), 650);
         return;
       }
-      Ticket.open(i, false);
+      Ticket.open(SINGLES[k], false);
+    },
+    // EP tracks open freely once the gift has been opened
+    openEP(ti) {
+      if (!Gift.opened) { toast("Mở khoá đủ " + SINGLES.length + " ngôi sao ở chương 03 để nhận EP 075"); emote("shy"); return; }
+      Ticket.open(ti, false);
     },
   };
 
@@ -2312,12 +2628,12 @@
     player: null, idx: -1, playing: false, peaks: null,
     open(i, fresh) {
       const t = C.tracks[i]; this.idx = i;
-      $("#tkNo").textContent = pad2(i + 1);
+      $("#tkNo").textContent = t.ep ? pad2(t.epNo || 0) : pad2(SINGLES.indexOf(i) + 1);
       $("#tkDate").textContent = (t.date || "PAT") + " · ADMIT ONE";
-      $("#tkEyebrow").textContent = (fresh ? "Ngôi sao vừa mở khoá" : "Ngôi sao số " + pad2(i + 1)) + (t.ep ? " · EP " + t.ep + " · track " + t.epNo : " · Single");
+      $("#tkEyebrow").textContent = t.ep ? "EP " + t.ep + " · track " + t.epNo : (fresh ? "Ngôi sao vừa mở khoá" : "Ngôi sao số " + pad2(SINGLES.indexOf(i) + 1)) + " · Single";
       const title = $("#tkTitle"); title.textContent = trackTitle(t, i); title._tx = null; playText(title);
-      $("#tkSpec").innerHTML = [t.artists, t.genre, t.dur, t.bpm ? "~" + t.bpm + " BPM" : "", t.key, t.isrc ? "ISRC " + t.isrc : ""].filter(Boolean).map((x) => "<span>" + esc(String(x)) + "</span>").join("");
-      const rows = { story: t.story || "Câu chuyện của bài hát sẽ sớm được kể ở đây.", formed: t.formed || t.date || PENDING, process: t.process || "Phần thẩm định đang được cập nhật." };
+      $("#tkSpec").innerHTML = [t.artists, t.genre, t.date, t.dur].filter(Boolean).map((x) => "<span>" + esc(String(x)) + "</span>").join("");
+      const rows = { story: t.story || "Câu chuyện của bài hát sẽ sớm được kể ở đây.", journey: t.journey || t.formed || PENDING };
       (async () => { for (const p of $$(".tk-row p", $("#ticketModal"))) await typeInto(p, rows[p.dataset.k], 10); })();
       // smart link first, then Spotify, then the rest
       const links = [];
@@ -2343,7 +2659,7 @@
     },
     setIcon() { $("#tkIcon").innerHTML = this.playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4l13 8-13 8z"/>'; },
     stop() { if (this.player) { this.player.destroy(); this.player = null; } this.playing = false; this.setIcon(); BG.duck("ticket", false); $("#tkCur").textContent = "0:00"; },
-    close() { this.stop(); $("#ticketModal").classList.remove("on"); state.modal = false; $$(".tk-row p").forEach((p) => clearInterval(p._iv)); },
+    close() { this.stop(); $("#ticketModal").classList.remove("on"); state.modal = false; $$(".tk-row p").forEach((p) => clearInterval(p._iv)); if (Gift.pending) setTimeout(() => Gift.show(), 500); },
     draw(t) {
       const cv = $("#tkWave"); if (!$("#ticketModal").classList.contains("on")) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight;
@@ -2428,6 +2744,9 @@
       const worn = new Set(Object.values(PAT.slots));
       $$("[data-acc]").forEach((b) => { b.classList.toggle("on", worn.has(b.dataset.acc)); b.setAttribute("aria-pressed", String(worn.has(b.dataset.acc))); });
       $("#wdCount").textContent = "· " + worn.size + " / " + ACC.length + " đang mặc";
+      const g = worn.has("yellowglasses");
+      $("#btnGlasses").setAttribute("aria-pressed", String(g)); $("#btnGlasses").textContent = g ? "Tháo kính vàng" : "Đeo kính vàng";
+      $("#btnGlassesHud").setAttribute("aria-pressed", String(g));
     },
     open() { Audio.init(); $("#wardrobe").classList.add("on"); $("#wardrobe").setAttribute("aria-hidden", "false"); state.wardrobe = true; if (state.phase === "live") applyViewOffset(); say("Chọn đồ cho mình đi~"); },
     close() { $("#wardrobe").classList.remove("on"); $("#wardrobe").setAttribute("aria-hidden", "true"); state.wardrobe = false; if (state.phase === "live") applyViewOffset(); },
@@ -2539,6 +2858,7 @@
     $("#nextLabel").textContent = i === STATIONS.length - 1 ? "Xuất phát điểm" : "Đi tiếp";
     U.tint.value.set(STATIONS[i].tint);
     if (i === 6 && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
+    if (i === 2 && Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === 2 && !state.modal && Gift.show(), 1800);
     setTimeout(() => state.station === i && say(pick(SAYINGS[i])), 1200);
   }
 
@@ -2548,6 +2868,8 @@
     const i = state.station;
     state.moving = true;
     if (Band.jam && j !== 5) Band.toggleJam();
+    $$("video[data-ad]").forEach((v) => v.pause());
+    if (Gift.dancing) Gift.end(true);
     document.body.classList.add("navd");
     hidePanels();
     const fx = opts.fx || STATIONS[j].fx;
@@ -2588,7 +2910,7 @@
       if (mode === "finale") { cam.dist = 8.5 - e * 2.2 - arc * 1.2; cam.fovKick = arc * 14 - e * 4; soundWave.userData.draw(t0, t1, performance.now() / 1000, arc * 0.9); } // dolly in along the wave
       else if (fx === "dolly") { cam.fovKick = arc * 26; cam.dist = 7 - arc * 3.2; } // dolly-zoom (vertigo)
       else cam.dist = 7 + arc * (2 + Math.min(3, lift));
-      if (!swapped && p > 0.45) { swapped = true; setInstrument(STATIONS[j].inst); }
+      if (!swapped && p > 0.45) { swapped = true; setInstrument(mode === "finale" ? "mic" : STATIONS[j].inst); }
     });
     PAT.walking = false;
     PAT.root.position.copy(curve.getPoint(t1)); PAT.root.rotation.x = 0; PAT.root.rotation.z = 0;
@@ -2599,6 +2921,8 @@
       flash(0.45); Audio.unlock();
       burst(PAT.root.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 30, { tex: TEX.notes[1], speed: 3, size: 0.4, life: 1.4, up: 1 });
       setTimeout(() => { emote("love"); say("Cảm ơn bạn đã đi cùng mình!"); }, 300);
+      // then the thank-you on electric guitar
+      setTimeout(() => { if (state.station !== 6) return; setInstrument("electric"); Audio.riff(); say("Bản guitar này mình tặng bạn ♥"); }, 3900);
     } else if (mode !== "run") burst(PAT.root.position.clone(), 16, { tex: TEX.star, speed: 2.4, size: 0.26, life: 0.9 });
     // turn to face the viewer
     const faceY = cam.baseYaw - 0.25;
@@ -2646,7 +2970,7 @@
   function rideShow(mode) {
     if (!RIDE) return;
     RIDE.guitar.visible = mode === "guitar"; RIDE.wings.visible = mode === "wings"; RIDE.rocket.visible = mode === "rocket"; RIDE.staff.visible = mode === "staff";
-    RIDE.midi.visible = mode === "finale" || (!mode && state.station === 6);
+    RIDE.midi.visible = mode === "finale";
     PAT.travel = mode || null;
     syncAccVisibility();
   }
@@ -2856,6 +3180,9 @@
     $("#btnWardrobeHud").addEventListener("click", () => Wardrobe.toggle());
     $("#btnAct").addEventListener("click", () => { Audio.init(); act(); });
     $("#btnSpin").addEventListener("click", () => { Audio.init(); Audio.swoosh(0.6); introSpin.v = 0.35; });
+    ["#btnGlasses", "#btnGlassesHud"].forEach((sel) => $(sel).addEventListener("click", () => { Audio.init(); equip("yellowglasses"); }));
+    $("#giftOpen").addEventListener("click", () => Gift.open());
+    $("#danceSkip").addEventListener("click", () => Gift.end());
     $("#btnOrigin").addEventListener("click", toOrigin);
     $("#tkPlay").addEventListener("click", () => Ticket.toggle());
     $("#tkWave").addEventListener("click", (e) => { const p = Ticket.player; if (!p || !p.dur) return; const r = e.currentTarget.getBoundingClientRect(); p.seek(((e.clientX - r.left) / r.width) * p.dur); });
@@ -2934,7 +3261,8 @@
     BG.create();
     await loadImages();
     if (window.PAT_PEAKS) C.tracks.forEach((t) => { if (t.peaks && typeof t.peaks === "string") t.peaks = window.PAT_PEAKS[t.peaks] || null; });
-    Tracks.unlocked = clamp(store.get("unlocked", 0), 0, C.tracks.length);
+    Tracks.unlocked = clamp(store.get("unlockedSingles", 0), 0, SINGLES.length);
+    Gift.opened = !!store.get("giftOpened", false) && Tracks.allOpen;
     progress(0.42, "Dựng ngân hà");
     await frame();
 
@@ -3040,6 +3368,7 @@
     for (const f of updaters) f(t, dt);
     tickParts(dt);
     BG.tick(dt);
+    Gift.tick(dt);
     if (state.phase === "live" && performance.now() - lastHover > 50) { hoverTick(); lastHover = performance.now(); }
     if (state.phase === "live") MiniMap.update(state.u / stationT[stationT.length - 1]);
     // bubble follows head

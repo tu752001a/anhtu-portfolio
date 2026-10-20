@@ -6,7 +6,8 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { Avatar } from './avatar.js';
 import { Fx } from './fx.js';
-import { buildGalaxy, buildStarfield, ShootingStars, buildHeroStar, makeProjectAsset, buildKey } from './cosmos.js';
+import { buildGalaxy, buildStarfield, ShootingStars, buildHeroStar, makeProjectAsset, buildKey, ASSET_LOADS } from './cosmos.js';
+import { buildVehicle, LEG_VEHICLES, VEHICLE_KINDS } from './vehicles.js';
 
 // mỗi chương nhân vật diễn một kiểu riêng khi tới nơi
 const CHAPTER_ACTS = ['wave', 'cool', 'clap', 'dance', 'peace', 'heart', 'bow', 'spin'];
@@ -29,6 +30,11 @@ const PALETTES = [
 
 const damp = (a, b, l, dt) => THREE.MathUtils.lerp(a, b, 1 - Math.exp(-l * dt));
 const wrap = (x) => ((x % 1) + 1) % 1;
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const bez = (a, b, c, d, t) => {
+  const u = 1 - t;
+  return new THREE.Vector3().addScaledVector(a, u * u * u).addScaledVector(b, 3 * u * u * t).addScaledVector(c, 3 * u * t * t).addScaledVector(d, t * t * t);
+};
 
 export class World {
   constructor(canvas, content, chapterCount) {
@@ -48,6 +54,12 @@ export class World {
     this.onProjectClick = null;
     this.onHoverChange = null;
     this.isMobile = matchMedia('(max-width: 900px)').matches;
+    this.loads = [];
+    this.shot = null; // cảnh quay một shot (dolly in khi vào, dolly out khi quay về đầu)
+    this.zoom = { cur: 0, target: 0 };
+    this.cine = 0; // 0..1: rạp chiếu tối dần ở chương showreel
+    this.introPitch = 0;
+    this.introSpin = 0;
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.isMobile ? 1.5 : 1.75));
@@ -64,6 +76,7 @@ export class World {
       uA: { value: PALETTES[0][0].clone() },
       uB: { value: PALETTES[0][1].clone() },
       uC: { value: PALETTES[0][2].clone() },
+      uCine: { value: 0 },
     };
 
     this.buildPath();
@@ -130,7 +143,7 @@ export class World {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: /* glsl */ `
-        uniform float uTime; uniform vec3 uA; uniform vec3 uB; uniform vec3 uC;
+        uniform float uTime; uniform vec3 uA; uniform vec3 uB; uniform vec3 uC; uniform float uCine;
         varying vec3 vDir;
         float hash(vec3 p){ p = fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
         float noise(vec3 x){
@@ -150,6 +163,15 @@ export class World {
           float vein = smoothstep(0.62, 0.78, silk) * smoothstep(0.95, 0.6, silk);
           col += uC * vein * 0.35;
           col = mix(col, uA * 0.6, smoothstep(0.2, -0.6, d.y));
+          // cực quang: dải màu chảy chậm, đổi sắc theo thời gian và hoà vào tông của từng chương
+          float az = atan(d.z, d.x);
+          float curtain = fbm(vec3(az * 2.2 + t * 1.5, d.y * 5.0 - t * 3.0, t * 0.7));
+          float band = smoothstep(0.02, 0.3, d.y) * smoothstep(0.85, 0.35, d.y);
+          float rib = pow(smoothstep(0.42, 0.78, curtain), 2.0) * band;
+          vec3 hue = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + az * 0.16 + uTime * 0.018 + d.y * 0.8));
+          vec3 aur = mix(hue, uC, 0.35) * (0.6 + 0.4 * sin(az * 9.0 + uTime * 0.4 + curtain * 6.0));
+          col += aur * rib * 0.9;
+          col *= 1.0 - uCine * 0.75;
           gl_FragColor = vec4(col * 0.42, 1.0);
         }`,
     });
@@ -183,7 +205,7 @@ export class World {
           #include <fog_vertex>
         }`,
       fragmentShader: /* glsl */ `
-        uniform vec3 uSpots[${this.count}]; uniform vec3 uC; uniform vec3 uA; uniform float uTime; varying vec3 vW;
+        uniform vec3 uSpots[${this.count}]; uniform vec3 uC; uniform vec3 uA; uniform float uTime; uniform float uCine; varying vec3 vW;
         float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         void main(){
           vec2 p = vW.xz;
@@ -203,7 +225,7 @@ export class World {
             float d = length(p - uSpots[i].xz);
             light += exp(-d * d / (uSpots[i].y * uSpots[i].y)) * 2.4;
           }
-          vec3 col = wood * light * mix(vec3(1.0), uC * 1.4, 0.35) * 1.5;
+          vec3 col = wood * light * mix(vec3(1.0), uC * 1.4, 0.35) * 1.5 * (1.0 - uCine * 0.72);
           // phản chiếu ánh vàng nhẹ như sàn vecni
           col += uC * 0.04 * pow(grain, 8.0) * light;
           gl_FragColor = vec4(col, 1.0);
@@ -226,10 +248,10 @@ export class World {
       uniforms: this.uniforms,
       vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
       fragmentShader: /* glsl */ `
-        uniform float uTime; uniform vec3 uC; varying vec2 vUv;
+        uniform float uTime; uniform vec3 uC; uniform float uCine; varying vec2 vUv;
         void main(){
           float rays = 0.75 + 0.25 * sin(vUv.x * 50.0 + uTime * 0.3) * sin(vUv.x * 17.0 - uTime * 0.2);
-          float a = pow(vUv.y, 1.6) * 0.075 * rays;
+          float a = pow(vUv.y, 1.6) * 0.075 * rays * (1.0 - uCine * 0.92);
           gl_FragColor = vec4(mix(vec3(1.0, 0.88, 0.7), uC, 0.3) * a, 1.0);
         }`,
     });
@@ -313,23 +335,25 @@ export class World {
       blending: THREE.AdditiveBlending,
       uniforms: { ...this.uniforms, uPR: { value: this.renderer.getPixelRatio() } },
       vertexShader: /* glsl */ `
-        uniform float uTime; uniform float uPR; attribute float aRnd; varying float vA;
+        uniform float uTime; uniform float uPR; uniform float uCine; attribute float aRnd; varying float vA; varying vec3 vHue;
         void main() {
           vec3 p = position;
+          vHue = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + aRnd + uTime * 0.03));
           p.y += sin(uTime * 0.3 + aRnd * 40.0) * 0.8;
           p.x += cos(uTime * 0.2 + aRnd * 30.0) * 0.6;
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
           float s = mix(1.0, 4.0, pow(aRnd, 3.0));
           gl_PointSize = s * uPR * (60.0 / -mv.z);
-          vA = (0.35 + 0.65 * sin(uTime * (0.6 + aRnd) + aRnd * 60.0) * 0.5 + 0.5) * smoothstep(160.0, 20.0, -mv.z);
+          vA = (0.35 + 0.65 * sin(uTime * (0.6 + aRnd) + aRnd * 60.0) * 0.5 + 0.5) * smoothstep(160.0, 20.0, -mv.z) * (1.0 - uCine * 0.6);
         }`,
       fragmentShader: /* glsl */ `
-        uniform vec3 uC; varying float vA;
+        uniform vec3 uC; varying float vA; varying vec3 vHue;
         void main() {
           float d = length(gl_PointCoord - 0.5);
           float a = smoothstep(0.5, 0.0, d);
-          gl_FragColor = vec4(mix(vec3(1.0, 0.92, 0.8), uC, 0.5) * a * vA, 1.0);
+          vec3 base = mix(vec3(1.0, 0.92, 0.8), uC, 0.5);
+          gl_FragColor = vec4(mix(base, vHue * 1.2, 0.35) * a * vA, 1.0);
         }`,
     });
     this.dust = new THREE.Points(g, mat);
@@ -511,10 +535,10 @@ export class World {
     c.width = W; c.height = H;
     const x = c.getContext('2d');
     let size = 260;
-    x.font = `italic 300 ${size}px "Cormorant Garamond"`;
+    x.font = `italic 400 ${size}px "Cormorant Garamond"`;
     const tw = Math.max(...lines.map((l) => x.measureText(l).width));
     if (tw > W * 0.92) size *= (W * 0.92) / tw;
-    x.font = `italic 300 ${size}px "Cormorant Garamond"`;
+    x.font = `italic 400 ${size}px "Cormorant Garamond"`;
     x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
     lines.forEach((l, i) => x.fillText(l, W / 2, (H / lines.length) * (i + 0.5)));
     const img = x.getImageData(0, 0, W, H).data;
@@ -538,16 +562,45 @@ export class World {
     geo.setAttribute('aRnd', new THREE.BufferAttribute(rnd, 1));
     const mat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      uniforms: { uTime: this.uniforms.uTime, uForm: { value: 0 }, uBurst: { value: 0 }, uMouse: { value: new THREE.Vector3(99, 99, 0) }, uPR: { value: this.renderer.getPixelRatio() } },
+      uniforms: { uTime: this.uniforms.uTime, uForm: { value: 0 }, uBurst: { value: 0 }, uMouse: { value: new THREE.Vector3(99, 99, 0) }, uPR: { value: this.renderer.getPixelRatio() }, uMode: { value: 0 }, uFx: { value: 1 } },
       vertexShader: /* glsl */ `
-        uniform float uTime; uniform float uForm; uniform float uBurst; uniform vec3 uMouse; uniform float uPR;
-        attribute vec3 aScatter; attribute float aRnd; varying float vA;
+        uniform float uTime; uniform float uForm; uniform float uBurst; uniform vec3 uMouse; uniform float uPR; uniform float uMode; uniform float uFx;
+        attribute vec3 aScatter; attribute float aRnd; varying float vA; varying float vGlow;
+        float h1(float n){ return fract(sin(n) * 43758.5453); }
+        // 6 hiệu ứng chữ chạy ngẫu nhiên: 0 tụ sao, 1 mưa sao, 2 sóng, 3 nhiễu glitch, 4 lốc xoáy, 5 quét sáng
+        vec3 fxStart(vec3 t, float m, float nx){
+          if (m < 0.5) return aScatter * 0.35;
+          if (m < 1.5) return t + vec3((aRnd - 0.5) * 1.5, 7.0 + aRnd * 6.0, (aRnd - 0.5) * 2.0);
+          if (m < 2.5) return t + vec3(0.0, sin(nx * 14.0) * 1.6, 2.5 + cos(nx * 9.0) * 1.2);
+          if (m < 3.5) { float row = floor(t.y * 5.0); return t + vec3((h1(row * 7.1) - 0.5) * 6.0, 0.0, (h1(row * 3.3) - 0.5) * 1.5); }
+          if (m < 4.5) { float a = (1.0 + aRnd) * 6.2831; float r = length(t.xz) + 2.0 + aRnd * 3.0; return vec3(cos(a) * r, t.y + (aRnd - 0.5) * 4.0, sin(a) * r); }
+          return t + vec3(-3.0 - aRnd * 2.0, 0.0, 3.5);
+        }
+        float fxDelay(float m, float nx){
+          if (m < 0.5) return aRnd * 0.5;
+          if (m < 1.5) return aRnd * 0.35 + nx * 0.25;
+          if (m < 2.5) return nx * 0.6;
+          if (m < 3.5) return step(0.5, aRnd) * 0.25 + aRnd * 0.1;
+          if (m < 4.5) return aRnd * 0.45;
+          return nx * 0.65;
+        }
         void main(){
           float f = smoothstep(aRnd * 0.45, 0.55 + aRnd * 0.45, uForm);
           vec3 swirl = aScatter;
           float ang = uTime * 0.05 * (0.5 + aRnd);
           swirl.xz = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * swirl.xz;
-          vec3 p = mix(swirl, position, f);
+          float nx = clamp(position.x / 11.0 + 0.5, 0.0, 1.0);
+          float dl = fxDelay(uMode, nx);
+          float k = smoothstep(0.0, 1.0, clamp((uFx - dl) / 0.35, 0.0, 1.0));
+          vec3 tgt = mix(fxStart(position, uMode, nx), position, k);
+          if (uMode > 3.5 && uMode < 4.5) {
+            float a2 = (1.0 - k) * (3.0 + aRnd * 3.0);
+            tgt.xz = mat2(cos(a2), -sin(a2), sin(a2), cos(a2)) * tgt.xz;
+          }
+          if (uMode > 2.5 && uMode < 3.5) tgt.x += sin(uTime * 60.0 + aRnd * 30.0) * 0.08 * (1.0 - k) * step(0.02, 1.0 - k);
+          vGlow = k * (1.0 - k) * 4.0;
+          if (uMode > 4.5) vGlow += smoothstep(0.12, 0.0, abs(uFx * 1.4 - 0.2 - nx)) * 1.5;
+          vec3 p = mix(swirl, tgt, f);
           // chạm vào tên: nổ tung thành bụi sao rồi tụ lại
           p += normalize(aScatter) * uBurst * (2.0 + aRnd * 5.0);
           p += vec3(sin(uTime * 1.3 + aRnd * 50.0), cos(uTime * 1.1 + aRnd * 40.0), sin(uTime * 0.9 + aRnd * 30.0)) * (0.03 + 0.4 * (1.0 - f));
@@ -557,12 +610,16 @@ export class World {
           p.z += push * 1.2;
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = (1.2 + 2.2 * aRnd + push * 3.0) * uPR * (34.0 / -mv.z);
-          vA = mix(0.35, 1.0, f) * (0.6 + 0.4 * sin(uTime * 2.0 + aRnd * 30.0)) + push;
+          gl_PointSize = (1.2 + 2.2 * aRnd + push * 3.0 + vGlow * 1.5) * uPR * (34.0 / -mv.z);
+          vA = mix(0.35, 1.0, f) * (0.6 + 0.4 * sin(uTime * 2.0 + aRnd * 30.0)) + push + vGlow * 0.8;
         }`,
       fragmentShader: /* glsl */ `
-        varying float vA;
-        void main(){ float d = length(gl_PointCoord - 0.5); gl_FragColor = vec4(vec3(1.0, 0.86, 0.66) * smoothstep(0.5, 0.0, d) * vA, 1.0); }`,
+        varying float vA; varying float vGlow;
+        void main(){
+          float d = length(gl_PointCoord - 0.5);
+          vec3 c = mix(vec3(1.0, 0.86, 0.66), vec3(0.75, 0.9, 1.0), clamp(vGlow, 0.0, 1.0) * 0.6);
+          gl_FragColor = vec4(c * smoothstep(0.5, 0.0, d) * vA, 1.0);
+        }`,
     });
     const pts = new THREE.Points(geo, mat);
     pts.rotation.y = Math.PI; // nhóm cổng quay lưng về máy quay
@@ -570,6 +627,7 @@ export class World {
     parent.add(pts);
     this.namePts = pts;
     this.nameBurst = 0;
+    this.nameFx = { t: 3.4, wait: 3, out: 0, in: 0 };
     const hit = new THREE.Mesh(new THREE.PlaneGeometry(11, (H / W) * 11), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
     hit.userData.kind = 'name';
     pts.add(hit);
@@ -619,14 +677,15 @@ export class World {
       const mat = this.photoMaterial();
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 5.6, 1, 16), mat);
       if (url) {
-        loader.load(url, (tex) => {
+        this.loads.push(new Promise((res) => loader.load(url, (tex) => {
           tex.colorSpace = THREE.SRGBColorSpace;
           const ia = tex.image.width / tex.image.height;
           const pa = 4.2 / 5.6;
           mat.uniforms.uScale.value.set(ia > pa ? pa / ia : 1, ia > pa ? 1 : ia / pa);
           mat.uniforms.map.value = tex;
           mat.uniforms.uHas.value = 1;
-        });
+          res();
+        }, undefined, res)));
       }
       mesh.userData.kind = 'photo';
       g.add(mesh);
@@ -675,83 +734,73 @@ export class World {
     this.clickables.push(screenMesh);
     // showreel phát thẳng trên màn chiếu (tắt tiếng), chạm để xem có tiếng
     const src = this.content.showreel?.video;
-    if (src && /\.(mp4|webm|mov)(\?|$)/i.test(src)) {
+    if (src && /\.(mp4|webm|mov)(\?|#|$)/i.test(src)) {
       const v = document.createElement('video');
       v.crossOrigin = 'anonymous';
-      v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
+      v.muted = true; v.loop = false; v.playsInline = true; v.preload = 'auto';
       v.src = src;
       const tex = new THREE.VideoTexture(v);
       tex.colorSpace = THREE.SRGBColorSpace;
       const vmat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+      this.reelMat = vmat;
       v.addEventListener('playing', () => { screenMesh.material = vmat; });
+      v.addEventListener('ended', () => { this.reelDone = true; });
       v.addEventListener('error', () => { screenMesh.material = mat; this.reelVideo = null; });
       this.reelVideo = v;
+      // đợi có khung hình đầu để khi tới nơi phim chiếu ngay, không giật
+      this.loads.push(new Promise((res) => {
+        if (v.readyState >= 2) return res();
+        v.addEventListener('loadeddata', res, { once: true });
+        v.addEventListener('error', res, { once: true });
+        setTimeout(res, 7000);
+      }));
     }
-    const beamGeo = new THREE.CylinderGeometry(0.2, 9, 30, 48, 1, true);
-    beamGeo.rotateX(-Math.PI / 2);
-    beamGeo.translate(0, 0, 15);
-    const beam = new THREE.Mesh(beamGeo, new THREE.ShaderMaterial({
+    // máy chiếu phía sau khán giả: chùm sáng hình chóp phủ đúng khung màn, bật khi vào "rạp"
+    const proj = new THREE.Group();
+    proj.position.set(0, 5.5, 34);
+    const projBody = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 2.2), new THREE.MeshStandardMaterial({ color: '#1b1714', roughness: 0.5, metalness: 0.6 }));
+    proj.add(projBody);
+    for (const z of [-0.6, 0.6]) {
+      const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.12, 28), new THREE.MeshStandardMaterial({ color: '#2a2420', metalness: 0.7, roughness: 0.3 }));
+      reel.rotation.z = Math.PI / 2; reel.position.set(0, 1.3, z);
+      proj.add(reel);
+    }
+    this.projReels = proj.children.slice(1);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color('#fff4dc').multiplyScalar(4), toneMapped: false, transparent: true }));
+    lens.position.set(0, 0, -1.11); lens.rotation.y = Math.PI;
+    proj.add(lens);
+    g.add(proj);
+    const L0 = new THREE.Vector3(0, 5.5, 32.8);
+    const corners = [[-8, -4.5], [8, -4.5], [8, 4.5], [-8, 4.5]].map(([x, y]) => new THREE.Vector3(x, y, 0.05));
+    const P = [], UV = [], I = [];
+    corners.forEach((c, i) => {
+      const n = corners[(i + 1) % 4];
+      const k = P.length / 3;
+      P.push(L0.x, L0.y, L0.z, c.x, c.y, c.z, n.x, n.y, n.z);
+      UV.push(0.5, 0, 0, 1, 1, 1);
+      I.push(k, k + 1, k + 2);
+    });
+    const coneGeo = new THREE.BufferGeometry();
+    coneGeo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    coneGeo.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
+    coneGeo.setIndex(I);
+    const coneMat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-      uniforms: this.uniforms,
+      uniforms: { uTime: this.uniforms.uTime, uOn: { value: 0 } },
       vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
       fragmentShader: /* glsl */ `
-        uniform float uTime; varying vec2 vUv;
+        uniform float uTime; uniform float uOn; varying vec2 vUv;
         void main(){
-          float rays = 0.6 + 0.4 * sin(vUv.x * 60.0 + uTime * 0.6) * sin(vUv.x * 23.0 - uTime * 0.4);
-          float a = pow(1.0 - vUv.y, 1.5) * 0.09 * rays + vUv.y * 0.0;
-          gl_FragColor = vec4(vec3(1.0, 0.85, 0.6) * a, 1.0);
+          float flick = 0.9 + 0.1 * sin(uTime * 37.0) * sin(uTime * 23.0);
+          float dust = 0.75 + 0.25 * sin(vUv.x * 80.0 + uTime * 0.7) * sin(vUv.y * 40.0 - uTime * 0.5);
+          float a = (0.05 + 0.1 * (1.0 - vUv.y)) * dust * flick * uOn;
+          gl_FragColor = vec4(vec3(0.85, 0.9, 1.0) * a, 1.0);
         }`,
-    }));
-    g.add(beam);
-    // dải phim bao quanh
-    const strip = this.filmStrip();
-    strip.position.set(0, 0, -1.5);
-    g.add(strip);
-    this.screen = { g, strip };
+    });
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    g.add(cone);
+    this.screen = { g, cone, lens, screenMesh };
     this.addStation(2, g, { fwd: 30, side: 4, up: 3, upPortrait: 6, portraitScale: 0.55 });
-  }
-
-  filmStrip() {
-    const c = document.createElement('canvas');
-    c.width = 2048; c.height = 128;
-    const x = c.getContext('2d');
-    x.fillStyle = '#120c09'; x.fillRect(0, 0, 2048, 128);
-    x.fillStyle = '#e8d6b6';
-    for (let i = 0; i < 64; i++) {
-      x.fillRect(i * 32 + 8, 10, 16, 14);
-      x.fillRect(i * 32 + 8, 104, 16, 14);
-    }
-    x.fillStyle = 'rgba(227,169,92,0.25)';
-    for (let i = 0; i < 16; i++) x.fillRect(i * 128 + 8, 34, 112, 60);
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.wrapS = THREE.RepeatWrapping;
-    t.repeat.set(3, 1);
-    const pts = [];
-    for (let i = 0; i <= 120; i++) {
-      const a = (i / 120) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * 11, Math.sin(a * 2) * 2.5, Math.sin(a) * 4));
-    }
-    const curve = new THREE.CatmullRomCurve3(pts, true);
-    const geo = new THREE.BufferGeometry();
-    const P = [], U = [], I = [];
-    const N = 400;
-    for (let i = 0; i <= N; i++) {
-      const u = i / N;
-      const p = curve.getPointAt(u % 1);
-      const tg = curve.getTangentAt(u % 1);
-      const n = new THREE.Vector3(0, 1, 0).applyAxisAngle(tg, Math.sin(u * Math.PI * 4) * 0.6);
-      const a = p.clone().addScaledVector(n, 0.45), b = p.clone().addScaledVector(n, -0.45);
-      P.push(a.x, a.y, a.z, b.x, b.y, b.z);
-      U.push(u, 1, u, 0);
-      if (i < N) { const k = i * 2; I.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
-    }
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
-    geo.setIndex(I);
-    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
-    m.userData.tex = t;
-    return m;
   }
 
   /* ---------------- 3. Phòng trưng bày dự án ---------------- */
@@ -925,7 +974,68 @@ export class World {
     this.lastIdx = 0;
     this.charSide = CHAR_SIDE[0];
     this.introAngle = 0;
+    // phương tiện cho từng chặng: gắn dưới chân nhân vật, bật lên khi lên đường
+    this.vehicles = {};
+    for (const k of VEHICLE_KINDS) {
+      const v = buildVehicle(k);
+      v.pop = 0;
+      this.hero.root.add(v.g);
+      this.vehicles[k] = v;
+    }
+    this.legKind = null;
   }
+
+  /* ---------------- Tải trước & làm nóng ---------------- */
+  // Đợi mọi ảnh, video, texture; biên dịch shader và vẽ thử từng trạm để lúc vào không giật hình
+  async prepare(onProgress = () => {}) {
+    const loads = [...this.loads, ...ASSET_LOADS];
+    let done = 0;
+    const tick = () => onProgress(0.6 * (++done / Math.max(loads.length, 1)));
+    await Promise.all(loads.map((p) => p.then(tick, tick)));
+    onProgress(0.62);
+    // bật mọi thứ đang ẩn để shader và texture đều được biên dịch, nạp lên GPU
+    const hidden = [];
+    this.scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    this.hero.mat.face.map = this.hero.faces.normal;
+    for (const t of Object.values(this.hero.faces)) this.renderer.initTexture(t);
+    this.scene.traverse((o) => {
+      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      for (const m of ms) for (const k of ['map', 'emissiveMap']) if (m[k] && m[k].image && !m[k].isVideoTexture) this.renderer.initTexture(m[k]);
+    });
+    try {
+      if (this.renderer.compileAsync) await this.renderer.compileAsync(this.scene, this.camera);
+      else this.renderer.compile(this.scene, this.camera);
+    } catch (e) { console.warn(e); }
+    onProgress(0.8);
+    // vẽ thử ở từng trạm (cả hậu kỳ) rồi trả lại như cũ
+    const pos = this.camera.position.clone(), q = this.camera.quaternion.clone();
+    for (let i = 0; i < this.count; i++) {
+      const u = this.stationU(i);
+      this.camera.position.copy(this.frameAt(u).p).add(new THREE.Vector3(0, 1.5, 0));
+      this.camera.lookAt(this.curve.getPointAt(wrap(u + 0.018)).add(new THREE.Vector3(0, 0.4, 0)));
+      this.composer.render();
+      onProgress(0.8 + 0.18 * ((i + 1) / this.count));
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    for (const o of hidden) o.visible = false;
+    this.camera.position.copy(pos); this.camera.quaternion.copy(q);
+    this.clock.getDelta();
+    this.warm = true;
+    onProgress(1);
+  }
+
+  /* ---------------- Cảnh quay một shot ---------------- */
+  // 'in': sau màn chờ, máy quay vút lên rồi lao thẳng vào trang chính
+  // 'home': từ chương cuối bay vọt lên không trung, lượn qua vòng hành trình rồi đáp về trang đầu
+  startShot(kind) {
+    this.shot = { kind, t: 0, dur: kind === 'in' ? 3.6 : 4.6, from: this.camera.position.clone(), fromQ: this.camera.quaternion.clone(), fromTarget: this.camera.position.clone().add(new THREE.Vector3(0, 0, -10).applyQuaternion(this.camera.quaternion)) };
+    if (kind === 'home') {
+      this.fx.burst(this.hero.root.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 40);
+      this.shot.poof = false;
+    }
+  }
+
+  shotBusy() { return !!this.shot && this.shot.t / this.shot.dur < 0.86; }
 
   /* ---------------- Hậu kỳ ---------------- */
   buildComposer() {
@@ -1021,10 +1131,14 @@ export class World {
   /* ---------------- Vòng lặp ---------------- */
   update(progress, speed) {
     const rawDt = this.clock.getDelta();
-    const dt = Math.min(rawDt, 0.05);
+    const dt = this.debugDt || Math.min(rawDt, 0.05);
+    if (this.debugDt) this.clock.elapsedTime += this.debugDt - rawDt;
     const time = this.clock.elapsedTime;
     this.uniforms.uTime.value = time;
-    this.intro = damp(this.intro, this.introTarget, 1.1, dt);
+    if (this.shot) this.shot.t += dt;
+    const shotK = this.shot ? Math.min(this.shot.t / this.shot.dur, 1) : 1;
+    // intro: 0 ở màn chờ, chạy theo cú dolly in, = 1 khi đã vào
+    this.intro = this.introTarget < 1 ? 0 : this.shot?.kind === 'in' ? ease(shotK) : 1;
 
     // màu theo chương (nội suy tròn)
     const f = wrap(progress) * this.count;
@@ -1052,6 +1166,11 @@ export class World {
     this.camera.rotateY(-this.look.x - this.pointerSmooth.x * 0.06);
     this.camera.rotateX(this.look.y + this.pointerSmooth.y * 0.04);
     this.camera.rotateZ(-speed * 0.8 + Math.sin(time * 0.3) * 0.01);
+    // phóng to / thu nhỏ: đẩy máy quay tới hoặc lùi lại theo hướng nhìn
+    this.zoom.cur = damp(this.zoom.cur, this.zoom.target, 5, dt);
+    this.camera.translateZ(-this.zoom.cur);
+    const tourPos = this.camera.position.clone(), tourQ = this.camera.quaternion.clone();
+    const tourTarget = tourPos.clone().add(new THREE.Vector3(0, 0, -12).applyQuaternion(tourQ));
 
     // nhân vật đi trước máy quay một đoạn
     const portrait = this.camera.aspect < 0.9;
@@ -1066,10 +1185,28 @@ export class World {
     hr.lookAt(hr.position.clone().add(flatT));
     const walk = THREE.MathUtils.clamp((speed * this.length) / Math.max(dt, 1e-3), -24, 24);
     const idleAtHero = curIdx === 0 && this.intro > 0.9;
+    // chặng đang đi: mỗi chặng một phương tiện riêng
+    const tr = this.travel;
+    const kind = tr && tr.active && this.intro > 0.9 && !this.shot ? LEG_VEHICLES[((tr.leg % this.count) + this.count) % this.count] : null;
+    if (kind !== this.legKind) {
+      if (kind || this.legKind) this.fx.burst(hr.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 16);
+      this.legKind = kind;
+    }
+    const veh = kind ? this.vehicles[kind] : null;
+    for (const v of Object.values(this.vehicles)) {
+      v.pop = damp(v.pop, v === veh ? 1 : 0, v === veh ? 6 : 10, dt);
+      v.g.visible = v.pop > 0.02;
+      if (!v.g.visible) continue;
+      const k = v.pop;
+      v.g.scale.setScalar(k * (1 + Math.sin(k * Math.PI) * 0.18));
+      v.g.rotation.y = this.hero.yaw;
+      v.update(dt, Math.abs(walk) / 1.25);
+    }
     this.hero.update(dt, time, this.intro > 0.5 ? walk : 0, {
       faceCamera: Math.PI * 0.82,
       wave: idleAtHero && this.hero.idleTime > 1.5 && Math.sin(time * 0.6) > 0.3 ? 1 : 0,
       look: this.pointerSmooth,
+      ride: veh && veh.pop > 0.3 ? { pose: veh.pose, seat: veh.seat } : null,
     });
     if (curIdx !== this.lastIdx) {
       this.lastIdx = curIdx;
@@ -1091,6 +1228,7 @@ export class World {
     hs.flare.material.rotation = time * 0.3;
     hs.core.rotation.set(time, time * 1.3, 0);
     hs.label.material.opacity = damp(hs.label.material.opacity, hov || sp.poke > 0 || this.hero.idleTime > 4 ? 1 : 0, 4, dt);
+    hs.group.visible = hr.visible;
     this.galaxy.group.rotation.y = time * 0.01;
     this.shooting.update(dt, this.camera);
     this.fx.update(dt, time, this.hero);
@@ -1099,24 +1237,59 @@ export class World {
 
     this.threads.visible = this.intro > 0.55;
 
-    // màn hình chờ: máy quay cẩu bay vòng quanh nhân vật, rồi hạ xuống sau lưng khi bước vào
-    if (this.intro < 0.999) {
-      this.introAngle += dt * 0.16;
-      const e = this.intro * this.intro * (3 - 2 * this.intro);
-      const focus = hr.position.clone().add(new THREE.Vector3(0, 2.2, 0));
+    // màn hình chờ: máy quay bay vòng quanh nhân vật, người xem kéo để xoay, cuộn để lại gần
+    const focus = hr.position.clone().add(new THREE.Vector3(0, 2.2, 0));
+    let fovKick = 0;
+    if (this.introTarget < 1) {
+      this.introSpin = damp(this.introSpin, 0, 2.5, dt);
+      this.introAngle += dt * 0.16 + this.introSpin * dt;
       const back = this.introAngle + Math.PI * 0.35;
-      const r = 5.4 + Math.sin(time * 0.3) * 0.8;
-      const orbit = focus.clone().add(new THREE.Vector3(Math.sin(back) * r, 0.5 + Math.sin(time * 0.25) * 0.8, Math.cos(back) * r));
-      const tourPos = this.camera.position.clone();
-      const tourQ = this.camera.quaternion.clone();
-      this.camera.position.copy(orbit);
+      const r = (5.4 + Math.sin(time * 0.3) * 0.8) * (portrait ? 1.65 : 1) * (1 - this.zoom.cur * 0.06);
+      const pitch = 0.09 + this.introPitch + Math.sin(time * 0.25) * 0.06;
+      this.camera.position.copy(focus).add(new THREE.Vector3(Math.sin(back) * r * Math.cos(pitch), Math.sin(pitch) * r, Math.cos(back) * r * Math.cos(pitch)));
       this.camera.lookAt(focus);
-      this.camera.position.lerp(tourPos, e);
-      this.camera.quaternion.slerp(tourQ, e);
+    } else if (this.shot) {
+      const S = this.shot, t = shotK;
+      if (S.kind === 'in') {
+        // dolly in một mạch: vút lên cao sau lưng nhân vật rồi lao thẳng vào trang chính
+        const e = ease(t);
+        const away = S.from.clone().sub(focus).setY(0).normalize();
+        const fwd = tourTarget.clone().sub(tourPos).setY(0).normalize();
+        const c1 = S.from.clone().addScaledVector(away, 9).add(new THREE.Vector3(0, 14, 0));
+        const c2 = tourPos.clone().addScaledVector(fwd, -30).add(new THREE.Vector3(0, 12, 0));
+        this.camera.position.copy(bez(S.from, c1, c2, tourPos, e));
+        this.camera.lookAt(focus.clone().lerp(tourTarget, THREE.MathUtils.smoothstep(t, 0.2, 0.85)));
+        this.camera.quaternion.slerp(tourQ, THREE.MathUtils.smoothstep(t, 0.78, 1));
+        fovKick = Math.sin(Math.PI * Math.min(t * 1.15, 1)) * 24;
+      } else {
+        // dolly out: bay vòng lên không trung theo vòng hành trình, nhìn xuống toàn cảnh rồi đáp về trang đầu
+        const e = THREE.MathUtils.smootherstep(t, 0, 1);
+        const a0 = Math.atan2(S.from.z, S.from.x), a1 = Math.atan2(tourPos.z, tourPos.x);
+        let da = a1 - a0;
+        while (da < 0) da += Math.PI * 2;
+        const ang = a0 + da * e;
+        const r0 = Math.hypot(S.from.x, S.from.z), r1 = Math.hypot(tourPos.x, tourPos.z);
+        const lift = Math.pow(Math.sin(Math.PI * e), 0.8);
+        const rad = THREE.MathUtils.lerp(r0, r1, e) * (1 + 0.35 * lift);
+        const y = THREE.MathUtils.lerp(S.from.y, tourPos.y, e) + 52 * lift;
+        this.camera.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+        // nhìn về cổng khởi đầu đang sáng ở phía trước, thấy vòng đèn, sàn gỗ và thiên hà phía trên
+        const look = S.fromTarget.clone().lerp(tourTarget, THREE.MathUtils.smoothstep(t, 0.05, 0.6)).add(new THREE.Vector3(0, 6 * lift, 0));
+        // bớt sương khi ở trên cao để thấy trọn vòng hành trình và thiên hà
+        this.scene.fog.density = 0.012 * (1 - lift * 0.8);
+        this.camera.lookAt(look);
+        this.camera.quaternion.slerp(tourQ, THREE.MathUtils.smoothstep(t, 0.82, 1));
+        fovKick = lift * 16;
+        // nhân vật biến mất thành bụi sao lúc cất cánh, xuất hiện lại khi đáp xuống
+        const show = t < 0.04 || t > 0.8;
+        if (show && !hr.visible) this.fx.burst(hr.position.clone().add(new THREE.Vector3(0, 1.4, 0)), 44);
+        hr.visible = show;
+      }
+      if (t >= 1) { this.shot = null; hr.visible = true; this.scene.fog.density = 0.012; }
     }
     // cú "warp": mở rộng góc nhìn khi bay nhanh
     const baseFov = this.camera.aspect < 0.9 ? 68 : 55;
-    const fov = baseFov + Math.min(Math.abs(speed) * 900, 18);
+    const fov = baseFov + Math.min(Math.abs(speed) * 900, 18) + fovKick;
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = damp(this.camera.fov, fov, 6, dt);
       this.camera.updateProjectionMatrix();
@@ -1128,6 +1301,19 @@ export class World {
     const nu = this.namePts.material.uniforms;
     nu.uForm.value = damp(nu.uForm.value, form, 2.5, dt);
     this.nameBurst = Math.max(0, this.nameBurst - dt * 0.8);
+    // đổi hiệu ứng chữ ngẫu nhiên khi tên đã hiện rõ ở trang chính
+    const NF = this.nameFx;
+    if (nu.uForm.value > 0.9 && !this.shot) {
+      NF.t += dt;
+      if (NF.t > 3.4 + NF.wait) {
+        NF.t = 0; NF.wait = 5 + Math.random() * 4;
+        NF.out = NF.in;
+        let m; do { m = Math.floor(Math.random() * 6); } while (m === NF.in);
+        NF.in = m;
+      }
+      if (NF.t < 0.7) { nu.uMode.value = NF.out; nu.uFx.value = 1 - NF.t / 0.7; }
+      else { nu.uMode.value = NF.in; nu.uFx.value = Math.min((NF.t - 0.7) / 2.6, 1); }
+    } else { nu.uFx.value = 1; NF.t = 3.4; NF.wait = 2.5; }
     nu.uBurst.value = Math.sin(this.nameBurst * Math.PI) * (this.nameBurst > 0 ? 1 : 0);
     if (nu.uForm.value > 0.01) {
       this.namePts.updateMatrixWorld();
@@ -1157,8 +1343,17 @@ export class World {
       m.renderOrder = n - Math.round(s);
     });
 
-    this.screen.strip.rotation.y = time * 0.08;
-    this.screen.strip.material.map.offset.x = -time * 0.05;
+    // rạp chiếu: tới showreel thì xung quanh tối dần, máy chiếu bật; hết phim hoặc rời đi thì sáng lại
+    const d2 = Math.min(Math.abs(u - 2 / this.count), 1 - Math.abs(u - 2 / this.count)) * this.count;
+    if (d2 > 1.2 && this.reelDone) { this.reelDone = false; if (this.reelVideo) this.reelVideo.currentTime = 0; }
+    const cineOn = d2 < 0.35 && this.intro > 0.9 && (!this.reelDone || this.reelHtmlPlaying) && !!(this.reelVideo || this.reelHtmlPlaying);
+    this.cine = damp(this.cine, cineOn ? 1 : 0, cineOn ? 1.3 : 2, dt);
+    this.uniforms.uCine.value = this.cine;
+    this.renderer.toneMappingExposure = 1.05 - this.cine * 0.32;
+    this.screen.cone.material.uniforms.uOn.value = 0.1 + this.cine * 0.9;
+    this.screen.lens.material.opacity = 0.2 + this.cine * 0.8;
+    for (const r of this.projReels) r.rotation.x += dt * this.cine * 2;
+    this.hero.key.intensity = 200 * (1 - this.cine * 0.55);
 
     this.projectFrames.forEach((m) => {
       const ud = m.userData;
@@ -1222,8 +1417,7 @@ export class World {
 
     // showreel phát trên màn chiếu khi ở gần chương 3
     if (this.reelVideo) {
-      const d2 = Math.min(Math.abs(u - 2 / this.count), 1 - Math.abs(u - 2 / this.count)) * this.count;
-      const want = d2 < 1.3 && this.intro > 0.9 && !this.reelPaused;
+      const want = d2 < 1.3 && this.intro > 0.9 && !this.reelPaused && !this.reelDone;
       if (want && this.reelVideo.paused) this.reelVideo.play().catch(() => {});
       if (!want && !this.reelVideo.paused) this.reelVideo.pause();
     }
@@ -1248,7 +1442,10 @@ export class World {
     if (this.frames < 45 && this.acc < 1.2) return;
     const avg = this.acc / this.frames;
     this.frames = 0; this.acc = 0;
-    if (avg > 0.034 && this.quality > 0 && performance.now() > 1500) {
+    // chỉ hạ chất lượng khi đã vào trang và chậm liên tục; không bao giờ tắt hậu kỳ (tránh nháy hình)
+    this.slow = avg > 0.04 ? (this.slow || 0) + 1 : 0;
+    if (this.slow >= 2 && this.quality > 1 && this.intro >= 1 && !this.shot) {
+      this.slow = 0;
       this.quality--;
       const pr = this.quality === 1 ? 1 : 0.75;
       this.renderer.setPixelRatio(Math.min(devicePixelRatio, pr));

@@ -13,7 +13,7 @@
   <meta name="description" content="Portfolio của Trần Thanh Anh Tú, Video Editor / Producer." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Be+Vietnam+Pro:wght@300;400;500;600&family=Playfair+Display:ital,wght@1,400;1,500&display=swap" rel="stylesheet" />
 </head>
 <body>
   <!-- Màn hình chờ -->
@@ -24,6 +24,7 @@
       <h1 class="loader-name" id="loaderName"></h1>
       <div class="loader-line"><i id="loaderBar"></i></div>
       <div class="loader-count"><span id="loaderCount">0</span>%</div>
+      <p class="loader-orbit">✦ Kéo để xoay nhân vật · Cuộn để lại gần</p>
       <button class="loader-enter" id="enterBtn" disabled>
         <span data-bind="intro.enterLabel">Bước vào</span>
         <svg viewBox="0 0 40 12" aria-hidden="true"><path d="M0 6h38M32 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1"/></svg>
@@ -45,6 +46,8 @@
   </header>
 
   <div class="minimap" aria-hidden="true"><svg id="minimap" viewBox="0 0 100 100"></svg><span>Bản đồ xưởng</span></div>
+  <div class="zoom-ctl" id="zoomCtl"><button data-action="zoom-in" data-hover aria-label="Phóng to">+</button><i></i><button data-action="zoom-out" data-hover aria-label="Thu nhỏ">−</button></div>
+  <button class="sound-btn" id="soundBtn" data-action="sound" data-hover aria-label="Tắt nhạc nền"><span></span><span></span><span></span><span></span><b>Nhạc</b></button>
   <div class="counter"><span id="chapNum">01</span><i></i><span id="chapTotal">08</span></div>
   <p class="hint" id="hint" data-bind="intro.hint"></p>
 

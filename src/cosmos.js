@@ -265,6 +265,10 @@ const steamMap = () => canvasTex(64, 64, (g) => {
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
 });
 
+// tài nguyên tải bất đồng bộ của các vật thể, để màn chờ đợi tải xong mới cho vào
+export const ASSET_LOADS = [];
+const JAR_LABEL = '/textures/ggg-jar.jpg';
+
 const MAKERS = {
   // MV: đĩa than quay, kim đọc, nốt nhạc bay
   vinyl() {
@@ -365,37 +369,53 @@ const MAKERS = {
       g.rotation.y = Math.sin(t * 0.6) * 0.3;
     } };
   },
-  // Mỹ phẩm: thỏi son xoay, nắp bật, bong bóng óng ánh bay lên
+  // G.G.G wonderglow Cooling Dewy Mask: hũ xanh nhám, nắp trắng bóng, nắp mở ra rồi đóng, bong bóng óng ánh bay lên
   beauty() {
     const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.9, 32), std('#d9a650', { metalness: 1, roughness: 0.22 }));
-    g.add(base);
-    const bullet = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.7, 32), std('#c2185b', { roughness: 0.3, emissive: '#2a0010' }));
-    bullet.position.y = 0.75;
-    g.add(bullet);
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 0.22, 0.32, 32), bullet.material);
-    tip.position.y = 1.25; tip.rotation.z = 0.35;
-    g.add(tip);
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.0, 32), std('#1a1418', { metalness: 0.5, roughness: 0.25 }));
-    g.add(cap);
+    const tex = new THREE.Texture();
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    ASSET_LOADS.push(new Promise((res) => new THREE.TextureLoader().load(JAR_LABEL, (t) => { tex.image = t.image; tex.needsUpdate = true; res(); }, undefined, res)));
+    const jar = new THREE.Group();
+    jar.rotation.y = Math.PI; // nhãn G.G.G hướng ra trước
+    g.add(jar);
+    const bodyMat = new THREE.MeshPhysicalMaterial({ map: tex, color: '#ffffff', roughness: 0.55, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.6, sheen: 0.4, sheenColor: new THREE.Color('#bfeaff') });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.7, 0.8, 64, 1, true), bodyMat);
+    jar.add(body);
+    const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.7, 48), new THREE.MeshStandardMaterial({ color: '#7fd0f2', roughness: 0.6 }));
+    bottom.rotation.x = Math.PI / 2; bottom.position.y = -0.4; jar.add(bottom);
+    // kem dưỡng bên trong, lộ ra khi mở nắp
+    const cream = new THREE.Mesh(new THREE.CircleGeometry(0.68, 48), new THREE.MeshStandardMaterial({ color: '#e9f8ff', roughness: 0.25, emissive: '#3b6d86', emissiveIntensity: 0.25 }));
+    cream.rotation.x = -Math.PI / 2; cream.position.y = 0.36; jar.add(cream);
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.71, 0.025, 8, 64), new THREE.MeshStandardMaterial({ color: '#9fe0fb', roughness: 0.4 }));
+    lip.rotation.x = Math.PI / 2; lip.position.y = 0.4; jar.add(lip);
+    const lidMat = new THREE.MeshPhysicalMaterial({ color: '#f6f8fc', roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 });
+    const lid = new THREE.Group();
+    const lidSide = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.48, 64), lidMat);
+    lid.add(lidSide);
+    const lidTop = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.05, 10, 64), lidMat);
+    lidTop.rotation.x = Math.PI / 2; lidTop.position.y = 0.24; lid.add(lidTop);
+    lid.position.y = 0.64;
+    jar.add(lid);
     const bubbleMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0, metalness: 0, transmission: 0.6, iridescence: 1, iridescenceIOR: 1.6, transparent: true, opacity: 0.55 });
     const bubbles = Array.from({ length: 7 }, (_, i) => {
       const b = new THREE.Mesh(new THREE.SphereGeometry(0.08 + (i % 3) * 0.05, 16, 12), bubbleMat);
-      b.userData.ph = i / 7; b.userData.x = (Math.random() - 0.5) * 1.6;
+      b.userData.ph = i / 7; b.userData.x = (Math.random() - 0.5) * 1.2;
       g.add(b);
       return b;
     });
-    const sparkle = risers(g, [glyphTexture('✦', '#ffe08a'), glyphTexture('✧', '#ffffff')], 4, 1.4, 0.4);
+    const sparkle = risers(g, [glyphTexture('✦', '#bfeaff'), glyphTexture('✧', '#ffffff')], 4, 1.6, 0.4);
     return { g, update: (t, sp) => {
-      g.rotation.y = t * 0.8 * sp;
-      const k = (t * 0.3 * sp) % 1;
+      jar.rotation.y = Math.PI + Math.sin(t * 0.7) * 0.6;
+      g.rotation.x = 0.18;
+      const k = (t * 0.25 * sp) % 1;
       const open = THREE.MathUtils.smoothstep(k, 0.1, 0.3) * (1 - THREE.MathUtils.smoothstep(k, 0.75, 0.95));
-      cap.position.set(open * 0.9, 1.0 + open * 0.9, 0);
-      cap.rotation.z = -open * 0.8;
+      lid.position.set(-open * 0.5, 0.64 + open * 0.9, 0);
+      lid.rotation.z = open * 0.55;
       for (const b of bubbles) {
         const q = (t * 0.25 * sp + b.userData.ph) % 1;
-        b.position.set(b.userData.x + Math.sin(q * 8) * 0.2, q * 2.6, 0.3);
-        b.scale.setScalar(Math.sin(q * Math.PI) + 0.01);
+        b.position.set(b.userData.x + Math.sin(q * 8) * 0.2, 0.3 + q * 2.4 * (0.3 + open), 0.1);
+        b.scale.setScalar((Math.sin(q * Math.PI) + 0.01) * (0.4 + open * 0.6));
       }
       sparkle(t, sp, 0.6, 2);
     } };

@@ -1,5 +1,6 @@
 import './style.css';
 import { toEmbed } from './embed.js';
+import { SoundScape } from './audio.js';
 
 const CHAPTERS = [
   { key: 'hero', label: 'Mở đầu' },
@@ -13,7 +14,20 @@ const CHAPTERS = [
 ];
 const COUNT = CHAPTERS.length;
 const $ = (s, r = document) => r.querySelector(s);
-const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const esc = (s = '') => String(s ?? '').normalize('NFC').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+// **chữ nhấn mạnh** trong nội dung → highlight vàng
+const rich = (s = '') => esc(s).replace(/\*\*(.+?)\*\*/g, '<mark class="hl">$1</mark>');
+const plain = (s = '') => String(s ?? '').replace(/\*\*/g, '');
+// tách từng chữ để hiện ra dần dần (giữ nguyên dấu tiếng Việt vì tách theo khoảng trắng)
+function words(text, cls = 'body', d = 0, tag = 'p') {
+  let i = 0;
+  const html = String(text ?? '').normalize('NFC').split(/(\*\*.+?\*\*)/g).map((part) => {
+    const hl = /^\*\*.+\*\*$/.test(part);
+    const seg = (hl ? part.slice(2, -2) : part).split(/(\s+)/).map((w) => (!w || /^\s+$/.test(w) ? w : `<span class="w" style="--w:${i++}">${esc(w)}</span>`)).join('');
+    return hl ? `<mark class="hl">${seg}</mark>` : seg;
+  }).join('');
+  return `<${tag} class="${cls} words" style="--d:${d}">${html}</${tag}>`;
+}
 const get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
 const damp = (a, b, l, dt) => a + (b - a) * (1 - Math.exp(-l * dt));
 const pad = (n) => String(n).padStart(2, '0');
@@ -21,6 +35,8 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let content;
 let world = null;
+const sound = new SoundScape('/audio/lalalove.mp3');
+const mod = (n) => ((n % COUNT) + COUNT) % COUNT;
 
 /* ---------------- Màn chờ ---------------- */
 const loader = {
@@ -54,9 +70,9 @@ const kicker = (i, text) => `<p class="kicker fade" style="--d:0">${pad(i + 1)} 
 
 function titleHTML(text, d = 1) {
   // từ cuối in nghiêng cho có nhịp
-  const words = String(text).split(' ');
+  const words = plain(text).normalize('NFC').split(' ');
   if (words.length > 1) words[words.length - 1] = `<em>${esc(words.pop())}</em>`;
-  return `<h2 class="title">${r(words.map((w) => (w.startsWith('<em>') ? w : esc(w))).join(' '), d)}</h2>`;
+  return `<h2 class="title">${r(words.map((w) => (w.startsWith('<em>') ? w : esc(plain(w)))).join(' '), d)}</h2>`;
 }
 
 const ICONS = {
@@ -64,11 +80,20 @@ const ICONS = {
   bowl: '<svg viewBox="0 0 40 40"><path class="steam s1" d="M14 14c-2-3 2-4 0-8"/><path class="steam s2" d="M20 14c-2-3 2-4 0-8"/><path class="steam s3" d="M26 14c-2-3 2-4 0-8"/><path d="M5 18h30a15 13 0 0 1-30 0z" fill="#c8342b"/><path d="M5 18h30" stroke="#f2e6c8" stroke-width="2"/></svg>',
   phone: '<svg viewBox="0 0 40 40"><rect x="12" y="4" width="16" height="32" rx="3" fill="#1a1820" stroke="#555"/><rect class="scr" x="14" y="7" width="12" height="26" rx="1"/><path d="M18 16l5 4-5 4z" fill="#fff"/><path class="pop" d="M31 10c-2-2-5 1-2 4l2 2 2-2c3-3 0-6-2-4z" fill="#ff4f7b"/></svg>',
   cup: '<svg viewBox="0 0 40 40"><path d="M10 14h20l-3 22H13z" fill="#f7f1e6"/><path d="M11 20h18l-1 8H12z" fill="#d3302a"/><ellipse class="lid" cx="20" cy="13" rx="11" ry="2.5" fill="#e3a95c"/></svg>',
-  beauty: '<svg viewBox="0 0 40 40"><g class="sway"><rect x="15" y="20" width="10" height="16" rx="1" fill="#d9a650"/><path d="M16 20v-8l8-4v12z" fill="#c2185b"/></g><circle class="bub b1" cx="9" cy="28" r="2.5"/><circle class="bub b2" cx="31" cy="24" r="2"/><circle class="bub b3" cx="30" cy="32" r="1.5"/></svg>',
+  beauty: '<svg viewBox="0 0 40 40"><g class="sway"><rect x="8" y="20" width="24" height="14" rx="3" fill="#5cc8f2"/><text x="20" y="29.5" font-size="5" font-weight="700" text-anchor="middle" fill="#fff" font-family="sans-serif">G.G.G</text><g class="lid"><rect x="7" y="13" width="26" height="7" rx="2.5" fill="#f4f6fa"/></g></g><circle class="bub b1" cx="6" cy="12" r="2"/><circle class="bub b2" cx="34" cy="10" r="1.6"/><circle class="bub b3" cx="31" cy="5" r="1.2"/></svg>',
 };
 const ANIM_LIST = Object.keys(ICONS);
 const nameOf = (x) => (typeof x === 'string' ? { name: x, url: '' } : x || {});
 const teaser = (i) => (i < COUNT - 1 ? `<button class="next-teaser fade" style="--d:9" data-goto="${i + 1}" data-hover><span>Tiếp theo</span> ${esc(CHAPTERS[i + 1].label)} <i>→</i></button>` : '');
+
+// lời cam kết: nhãn "Cam kết" nổi bật, từng chữ hiện ra rồi một vệt sáng vàng quét qua
+function promiseHTML(text, d) {
+  const t = String(text).normalize('NFC');
+  const m = t.match(/^([^:]{2,24}):\s*(.+)$/);
+  const label = m ? m[1] : 'Cam kết';
+  const body = m ? m[2] : t;
+  return `<div class="promise fade" style="--d:${d}"><span class="promise-k">${esc(label)}</span>${words(body.includes('**') ? body : `**${body}**`, 'promise-t', d + 1, 'p')}</div>`;
+}
 
 function buildChapters(c) {
   const html = [];
@@ -78,7 +103,7 @@ function buildChapters(c) {
     <p class="kicker fade">${esc(h.eyebrow)}</p>
     <h1 class="sr-only">${esc(h.name)}</h1>
     <p class="rotator fade" style="--d:2" aria-live="polite">${(h.taglines || []).map((t, i) => `<span class="${i ? '' : 'on'}">${esc(t)}</span>`).join('')}</p>
-    <p class="body fade" style="--d:4">${esc(h.intro)}</p>
+    ${words(h.intro, 'body', 4)}
     <p class="tip fade" style="--d:6">✦ Di chuột qua tên để khuấy bụi sao, chạm vào tên hoặc nhân vật để xem điều bất ngờ</p>
     ${teaser(0)}
   </div></section>`);
@@ -89,7 +114,7 @@ function buildChapters(c) {
   <section class="chapter about" data-i="1"><div class="panel">
     ${kicker(1, a.heading)}
     ${titleHTML(a.lead || a.heading)}
-    <div class="stagger">${(a.paragraphs || []).map((p, i) => `<p class="body fade" style="--d:${i * 2 + 3}">${esc(p)}</p>`).join('')}</div>
+    <div class="stagger">${(a.paragraphs || []).map((p, i) => words(p, 'body', i * 4 + 3)).join('')}</div>
     <dl class="facts fade" style="--d:9">${(a.facts || []).map((f) => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join('')}</dl>
     ${nPh > 1 ? `<div class="photo-nav fade" style="--d:10"><button data-action="photo-prev" data-hover aria-label="Ảnh trước">‹</button><span><b id="photoIdx">01</b> / ${pad(nPh)}</span><button data-action="photo-next" data-hover aria-label="Ảnh sau">›</button><em>Vuốt ảnh sang trái, phải để đổi</em></div>` : ''}
     ${teaser(1)}
@@ -102,8 +127,8 @@ function buildChapters(c) {
     ${titleHTML(s.heading)}
     ${s.video
       ? `<div class="reel fade" style="--d:3"><video class="reel-video" src="${esc(s.video)}" ${s.poster ? `poster="${esc(s.poster)}"` : ''} controls playsinline preload="metadata"></video></div>
-         <p class="reel-meta fade" style="--d:4"><b>${esc(s.title || '')}</b> ${esc(s.note || '')}</p>`
-      : `<p class="body fade" style="--d:3">${esc(s.note)}</p>`}
+         <p class="reel-meta fade" style="--d:4"><b>${rich(s.title || '')}</b> ${rich(s.note || '')}</p>`
+      : words(s.note, 'body', 3)}
     ${teaser(2)}
   </div></section>`);
 
@@ -114,7 +139,7 @@ function buildChapters(c) {
     ${titleHTML(pr.heading)}
     <div class="player" id="player" hidden></div>
     <ul class="project-list">
-      ${(pr.items || []).map((it, i) => { const k = ICONS[it.anim] ? it.anim : ANIM_LIST[i % ANIM_LIST.length]; return `<li class="fade" style="--d:${i + 3}"><button data-project="${i}" data-hover><span class="ico ico-${k}">${ICONS[k]}</span><span class="t">${esc(it.title)}</span><span class="meta">${esc(it.client)}</span></button></li>`; }).join('')}
+      ${(pr.items || []).map((it, i) => { const k = ICONS[it.anim] ? it.anim : ANIM_LIST[i % ANIM_LIST.length]; return `<li class="fade" style="--d:${i + 3}"><button data-project="${i}" data-hover><span class="ico ico-${k}">${ICONS[k]}</span><span class="t">${esc(plain(it.title))}</span><span class="meta">${esc(it.client)}<em class="views" data-views="${i}" hidden></em></span></button></li>`; }).join('')}
     </ul>
     ${teaser(3)}
   </div></section>`);
@@ -135,7 +160,7 @@ function buildChapters(c) {
     ${kicker(5, cl.heading)}
     ${titleHTML(cl.heading)}
     <div class="client-groups">${(cl.groups || []).map((g, i) => `<div class="fade" style="--d:${i * 2 + 3}"><h3>${esc(g.name)}</h3><p class="client-names">${(g.items || []).map(nameOf).map((x) => (x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener" data-hover>${esc(x.name)}<i>↗</i></a>` : `<span>${esc(x.name)}</span>`)).join('<span class="sep">✦</span>')}</p></div>`).join('')}</div>
-    ${cl.note ? `<p class="tip fade" style="--d:9">${esc(cl.note)}</p>` : ''}
+    ${cl.note ? `<p class="tip fade" style="--d:9">${rich(cl.note)}</p>` : ''}
     ${teaser(5)}
   </div></section>`);
 
@@ -144,9 +169,9 @@ function buildChapters(c) {
   <section class="chapter center wide process" data-i="6"><div class="panel">
     ${kicker(6, ps.heading)}
     ${titleHTML(ps.heading)}
-    ${ps.lead ? `<p class="body fade lead" style="--d:2">${esc(ps.lead)}</p>` : ''}
-    <div class="steps">${(ps.steps || []).map((st, i) => `<div class="step fade" style="--d:${i * 2 + 3}"><span class="n">${pad(i + 1)}</span><h3>${esc(st.title)}</h3><p>${esc(st.text)}</p></div>`).join('')}</div>
-    ${ps.promise ? `<p class="promise fade" style="--d:14">${esc(ps.promise)}</p>` : ''}
+    ${ps.lead ? words(ps.lead, 'body lead', 2) : ''}
+    <div class="steps">${(ps.steps || []).map((st, i) => `<div class="step fade" style="--d:${i * 3 + 4}"><span class="n">${pad(i + 1)}</span><h3>${rich(st.title)}</h3><p>${rich(st.text)}</p></div>`).join('')}</div>
+    ${ps.promise ? promiseHTML(ps.promise, 20) : ''}
     ${teaser(6)}
   </div></section>`);
 
@@ -157,7 +182,7 @@ function buildChapters(c) {
   <section class="chapter center contact" data-i="7"><div class="panel">
     ${kicker(7, ct.heading)}
     ${titleHTML(ct.heading)}
-    <p class="body fade thanks" style="--d:2">${esc(ct.text)}</p>
+    ${words(ct.text, 'body thanks', 2)}
     <button class="key-btn fade" style="--d:4" data-action="key" data-hover>${keySvg}<span>${esc(ct.keyHint || 'Chạm vào chiếc chìa khóa')}</span></button>
     <div class="contact-reveal" id="contactReveal" hidden>
       <div class="contact-lines">
@@ -211,10 +236,30 @@ function setPhotoIdx(i) {
 const nav = {
   target: 0, // đơn vị: chương (liên tục, không giới hạn → vòng lặp)
   current: 0,
+  vel: 0,
   station: 0,
   lastInput: 0,
   active: -1,
 };
+
+// từ chương cuối về trang đầu: không chạy lại cả đoạn đường mà bay một shot dolly out lên không trung
+function flyHome() {
+  const next = nav.station + (COUNT - mod(nav.station));
+  nav.station = nav.target = nav.current = next;
+  nav.vel = 0;
+  nav.lastInput = 0;
+  resetLook();
+  if (world) { world.zoom.target = 0; world.startShot('home'); }
+  sound.swoosh(1.8);
+  setActive(-1);
+}
+
+// đặt trạm đích; nếu đi tiếp qua chương cuối thì bay về đầu
+function setStation(next) {
+  if (next > nav.station && Math.floor(next / COUNT) > Math.floor(nav.station / COUNT) && mod(nav.station) === COUNT - 1) return flyHome();
+  nav.station = next;
+  nav.target = next;
+}
 
 // nhìn quanh tự do; khi bắt đầu di chuyển thì quay về hướng đi (theo đường ngắn nhất)
 function resetLook() {
@@ -238,8 +283,7 @@ function snap() {
   let next = nav.station;
   if (diff > 0.12) next = Math.max(nav.station + 1, Math.round(s));
   else if (diff < -0.12) next = Math.min(nav.station - 1, Math.round(s));
-  nav.station = next;
-  nav.target = next;
+  setStation(next);
 }
 
 function goTo(i, forward = false) {
@@ -251,9 +295,8 @@ function goTo(i, forward = false) {
     if (t - nav.station > COUNT / 2) t -= COUNT;
     if (nav.station - t > COUNT / 2) t += COUNT;
   }
-  nav.station = t;
-  nav.target = t;
   nav.lastInput = 0;
+  setStation(t);
   resetLook();
   $('#hint').classList.add('hide');
   document.body.classList.remove('menu-open');
@@ -261,6 +304,7 @@ function goTo(i, forward = false) {
 
 function setActive(i) {
   if (i === nav.active) return;
+  if (nav.active >= 0 && i < 0) sound.swoosh(1); // rời một chương: tiếng lướt rất khẽ
   const prev = document.querySelector('.chapter.active');
   if (prev) {
     prev.classList.add('leaving');
@@ -277,6 +321,7 @@ function setActive(i) {
     document.querySelector(`.hexbar [data-goto="${i}"]`)?.classList.add('visited');
     document.querySelector(`#minimap [data-st="${i}"]`)?.classList.add('visited');
     document.querySelectorAll('[data-goto]').forEach((b) => b.classList.toggle('active', +b.dataset.goto === i));
+    if (i === 3) refreshViews();
   }
   document.querySelectorAll('.chapter:not(.active) video').forEach((v) => v.pause());
   if (i !== 3) closePlayer();
@@ -294,13 +339,34 @@ function bindControls() {
     if (scrollablePanel(e.target)) return;
     e.preventDefault();
     const d = e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
+    // giữ Ctrl (hoặc chụm hai ngón trên touchpad) để phóng to / thu nhỏ
+    if (e.ctrlKey || e.metaKey) return zoomBy(-Math.max(-60, Math.min(60, d)) * 0.05);
+    if (world?.shot) return;
     input(Math.max(-60, Math.min(60, d)) * 0.0022);
   }, { passive: false });
 
   // chạm / kéo
   let drag = null;
+  const touches = new Map();
+  let pinch = null;
+  addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touches.set(e.pointerId, e); }, true);
+  addEventListener('pointermove', (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, e);
+    if (touches.size === 2) {
+      const [a, b] = [...touches.values()];
+      const dd = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      if (pinch) zoomBy((dd - pinch) * 0.03);
+      pinch = dd;
+      drag = null;
+    }
+  }, true);
+  const tEnd = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
+  addEventListener('pointerup', tEnd, true);
+  addEventListener('pointercancel', tEnd, true);
   addEventListener('pointerdown', (e) => {
     if (!document.body.classList.contains('entered') || modalOpen()) return;
+    if (touches.size > 1) return;
     if (e.target.closest('button, a, video, iframe, .player, .reel, .minimap')) return;
     if (e.pointerType === 'touch' && scrollablePanel(e.target)) return; // để cuộn nội dung dài
     const hit = world?.pick(e.clientX, e.clientY);
@@ -348,6 +414,8 @@ function bindControls() {
     if (!document.body.classList.contains('entered') || modalOpen()) return;
     if (['ArrowDown', 'PageDown', ' ', 'ArrowRight'].includes(e.key)) { e.preventDefault(); goTo((((nav.station + 1) % COUNT) + COUNT) % COUNT, true); }
     if (['ArrowUp', 'PageUp', 'ArrowLeft'].includes(e.key)) { e.preventDefault(); nav.station -= 1; nav.target = nav.station; }
+    if (e.key === '+' || e.key === '=') zoomBy(2);
+    if (e.key === '-' || e.key === '_') zoomBy(-2);
   });
 
   document.addEventListener('click', (e) => {
@@ -361,6 +429,10 @@ function bindControls() {
     if (act === 'photo-prev' && world) setPhotoIdx(world.cyclePhoto(-1));
     if (act === 'key') openKey();
     if (act === 'player-close') closePlayer();
+    if (act === 'zoom-in') zoomBy(2.5);
+    if (act === 'zoom-out') zoomBy(-2.5);
+    if (act === 'zoom-reset') { if (world) world.zoom.target = 0; }
+    if (act === 'sound') sound.toggle();
     if (act === 'loop') {
       goTo(0, true);
       setTimeout(() => { const r = $('#contactReveal'); if (r) { r.hidden = true; r.classList.remove('show'); } $('.key-btn')?.classList.remove('used'); if (world) world.keyOpen = 0; }, 1500);
@@ -387,14 +459,73 @@ function bindControls() {
   }
 }
 
+function zoomBy(d) {
+  if (!world) return;
+  world.zoom.target = Math.max(-6, Math.min(10, world.zoom.target + d));
+  $('#zoomCtl')?.style.setProperty('--z', ((world.zoom.target + 6) / 16).toFixed(3));
+}
+
 /* ---------------- Bản đồ nhỏ ---------------- */
-let mapMarker = null;
+let mapMarker = null, mapTrail = null, mapNear = -1;
 function buildMinimap() {
   const P = (u) => world.mapPoint(u).map((v) => v * 88 + 6);
   const d = Array.from({ length: 121 }, (_, i) => P(i / 120)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
-  const dots = CHAPTERS.map((ch, i) => { const [x, y] = P(i / COUNT); return `<g data-st="${i}" data-goto="${i}"><circle cx="${x}" cy="${y}" r="3.6"/><text x="${x}" y="${y + 1.4}">${i + 1}</text></g>`; }).join('');
-  $('#minimap').innerHTML = `<path class="route" d="${d}"/>${dots}<g id="mapMarker"><path d="M0 0 L16 -9 A18 18 0 0 1 16 9 Z" class="cone"/><circle r="2.6" class="me"/></g>`;
+  const dots = CHAPTERS.map((ch, i) => { const [x, y] = P(i / COUNT); return `<g data-st="${i}" data-goto="${i}"><circle class="halo" cx="${x}" cy="${y}" r="7"/><circle class="dot" cx="${x}" cy="${y}" r="3.6"/><text x="${x}" y="${y + 1.4}">${i + 1}</text></g>`; }).join('');
+  $('#minimap').innerHTML = `<path class="route" d="${d}"/><path class="trail" id="mapTrail" d="${d}" pathLength="1"/>${dots}<g id="mapMarker"><path d="M0 0 L16 -9 A18 18 0 0 1 16 9 Z" class="cone"/><circle r="5" class="pulse"/><circle r="2.6" class="me"/></g>`;
   mapMarker = $('#mapMarker');
+  mapTrail = $('#mapTrail');
+}
+
+// đồng bộ bản đồ với vị trí nhân vật: vệt sáng đã đi qua, trạm gần nhất sáng lên
+function syncMinimap() {
+  if (!world || !mapMarker) return;
+  const u = nav.current / COUNT;
+  const [x, y] = world.mapPoint(u);
+  const [x2, y2] = world.mapPoint(u + 0.01);
+  mapMarker.setAttribute('transform', `translate(${(x * 88 + 6).toFixed(2)} ${(y * 88 + 6).toFixed(2)}) rotate(${(Math.atan2(y2 - y, x2 - x) * 180 / Math.PI).toFixed(1)})`);
+  const frac = (((u % 1) + 1) % 1);
+  mapTrail.style.strokeDasharray = `${frac.toFixed(4)} 1`;
+  const near = mod(Math.round(nav.current));
+  if (near !== mapNear) {
+    mapNear = near;
+    document.querySelectorAll('#minimap [data-st]').forEach((g) => g.classList.toggle('near', +g.dataset.st === near));
+  }
+  $('.minimap')?.classList.toggle('moving', Math.abs(nav.target - nav.current) > 0.02);
+}
+
+/* ---------------- Lượt xem thời gian thực ---------------- */
+const fmtViews = (n) => new Intl.NumberFormat('vi-VN').format(n);
+let viewsT = 0, viewsData = {};
+async function refreshViews(force = false) {
+  if (window.__PREVIEW__ || !content?.projects?.items) return;
+  if (!force && performance.now() - viewsT < 55000) return;
+  viewsT = performance.now();
+  const urls = content.projects.items.map((it) => it.video).filter(Boolean);
+  if (!urls.length) return;
+  try {
+    const r = await fetch(`/api/views?u=${encodeURIComponent(urls.join('|'))}`);
+    if (!r.ok) return;
+    const { views } = await r.json();
+    viewsData = views || {};
+    content.projects.items.forEach((it, i) => {
+      const n = viewsData[it.video];
+      document.querySelectorAll(`[data-views="${i}"]`).forEach((el) => showViews(el, n));
+    });
+  } catch {}
+}
+function showViews(el, n) {
+  if (typeof n !== 'number') { el.hidden = true; return; }
+  el.hidden = false;
+  const from = +(el.dataset.n || 0);
+  el.dataset.n = n;
+  const t0 = performance.now();
+  const step = () => {
+    const k = Math.min((performance.now() - t0) / 1400, 1);
+    const v = Math.round(from + (n - from) * (1 - Math.pow(1 - k, 3)));
+    el.innerHTML = `<i class="live"></i>${fmtViews(v)} lượt xem`;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  step();
 }
 
 /* ---------------- Trình phát video ---------------- */
@@ -426,6 +557,9 @@ function openProject(i) {
         </div>
       </div>`;
     player.hidden = false;
+    duckFor(player, 'player');
+    const pv = player.querySelector('.player-info .meta');
+    if (pv && typeof viewsData[it.video] === 'number') { const em = document.createElement('em'); em.className = 'views'; pv.append(em); showViews(em, viewsData[it.video]); }
     document.querySelectorAll('[data-project]').forEach((b) => b.classList.toggle('on', +b.dataset.project === i));
     player.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     return;
@@ -438,6 +572,7 @@ function closePlayer() {
   if (!player) return;
   player.hidden = true;
   player.innerHTML = '';
+  sound.duck('player', false);
   document.querySelectorAll('[data-project].on').forEach((b) => b.classList.remove('on'));
 }
 
@@ -452,20 +587,59 @@ function openMedia(it) {
     <p>${esc(it.description)}</p>
     ${it.video ? `<a href="${esc(it.video)}" target="_blank" rel="noopener" data-hover>Mở nguồn gốc ↗</a>` : ''}`;
   $('#modal').hidden = false;
+  duckFor(media, 'modal');
+}
+
+// nguồn âm thanh khác đang phát: iframe (YouTube/TikTok) thì hạ nhạc suốt lúc mở; video thì theo play / pause
+function duckFor(root, id) {
+  const v = root.querySelector('video');
+  if (v) {
+    const on = () => sound.duck(id, true), off = () => sound.duck(id, false);
+    v.addEventListener('play', on); v.addEventListener('pause', off); v.addEventListener('ended', off);
+    if (!v.paused || v.autoplay) on();
+  } else if (root.querySelector('iframe')) sound.duck(id, true);
 }
 
 function closeModal() {
   if ($('#modal').hidden) return;
   $('#modal').hidden = true;
   $('#modalMedia').innerHTML = '';
+  sound.duck('modal', false);
 }
 
 /* ---------------- Khởi động ---------------- */
+// Màn chờ: kéo để xoay quanh nhân vật, cuộn để lại gần / ra xa
+function bindLoaderOrbit() {
+  const el = $('#loader');
+  let d = null;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button') || !world || el.classList.contains('open')) return;
+    d = { x: e.clientX, y: e.clientY, t: performance.now(), v: 0 };
+    el.classList.add('grab');
+  });
+  addEventListener('pointermove', (e) => {
+    if (!d || !world) return;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    const now = performance.now();
+    world.introAngle -= dx * 0.009;
+    world.introPitch = Math.max(-0.25, Math.min(0.9, world.introPitch + dy * 0.004));
+    d.v = (-dx * 0.009) / Math.max((now - d.t) / 1000, 0.008);
+    d.x = e.clientX; d.y = e.clientY; d.t = now;
+  });
+  const up = () => { if (!d) return; if (world) world.introSpin = Math.max(-6, Math.min(6, d.v * 0.6)); d = null; el.classList.remove('grab'); };
+  addEventListener('pointerup', up);
+  addEventListener('pointercancel', up);
+  el.addEventListener('wheel', (e) => { if (!world) return; e.preventDefault(); world.zoom.target = Math.max(-4, Math.min(8, world.zoom.target - e.deltaY * 0.01)); }, { passive: false });
+}
+
 async function boot() {
   const scenePromise = import('./scene.js'); // tải song song với nội dung và font
   const name = $('#loaderName');
   splitName(name, 'Anh Tú');
-  loader.set(8);
+  const parts = { content: 0, fonts: 0, scene: 0, prep: 0, audio: 0 };
+  const W = { content: 6, fonts: 10, scene: 10, prep: 56, audio: 18 };
+  const progress = () => loader.set(Object.keys(W).reduce((a, k) => a + W[k] * parts[k], 0) - 0.5);
+  progress();
   const t0 = performance.now();
   const raf = () => {
     if (loader.finished) return;
@@ -476,27 +650,37 @@ async function boot() {
     requestAnimationFrame(raf);
   };
   raf();
+  scenePromise.then(() => { parts.scene = 1; progress(); });
 
   content = window.__CONTENT__ || (await fetch('/content.json', { cache: 'no-store' }).then((r) => r.json()));
-  loader.set(30);
+  parts.content = 1; progress();
   document.title = content.site?.title || document.title;
-  document.querySelectorAll('[data-bind]').forEach((el) => { const v = get(content, el.dataset.bind); if (v) el.textContent = v; });
-  if (matchMedia('(pointer: coarse)').matches) $('#hint').textContent = 'Vuốt dọc để du hành · Kéo ngang để nhìn quanh 720°';
+  document.querySelectorAll('[data-bind]').forEach((el) => { const v = get(content, el.dataset.bind); if (v) el.textContent = plain(v).normalize('NFC'); });
+  if (matchMedia('(pointer: coarse)').matches) $('#hint').textContent = 'Vuốt dọc để du hành · Kéo ngang để nhìn quanh 720° · Chụm hai ngón để phóng to';
   const shortName = (content.hero?.name || 'Anh Tú').split(' ').slice(-2).join(' ');
   splitName(name, shortName);
   buildChapters(content);
   bindControls();
+  bindLoaderOrbit();
   startRotator();
+  if ('music' in content) sound.src = content.music || null;
+  const audioP = sound.preload((k) => { parts.audio = k; progress(); }).then(() => { parts.audio = 1; progress(); });
 
+  // nạp đủ bộ chữ tiếng Việt (Google Fonts chia theo dải ký tự) trước khi vẽ chữ lên 3D
+  const VI = 'Trần Thanh Anh Tú ăâđêôơư ẮẰẲẴẶẤẦẨẪẬÉÈẺẼẸẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌỐỒỔỖỘỚỜỞỠỢÚÙỦŨỤỨỪỬỮỰÝỲỶỸỴ ạảãáàặẳẵắằậẩẫấầẹẻẽéèệểễếềịỉĩíìọỏõóòộổỗốồợởỡớờụủũúùựửữứừỵỷỹýỳ';
   await Promise.race([
     Promise.all([
-      document.fonts.load('300 80px "Cormorant Garamond"'),
-      document.fonts.load('italic 300 80px "Cormorant Garamond"'),
-      document.fonts.load('300 30px "Be Vietnam Pro"'),
+      document.fonts.load('300 80px "Cormorant Garamond"', VI),
+      document.fonts.load('400 80px "Cormorant Garamond"', VI),
+      document.fonts.load('italic 300 80px "Cormorant Garamond"', VI),
+      document.fonts.load('italic 400 80px "Cormorant Garamond"', VI),
+      document.fonts.load('300 30px "Be Vietnam Pro"', VI),
+      document.fonts.load('400 30px "Be Vietnam Pro"', VI),
+      document.fonts.load('italic 400 40px "Playfair Display"', VI),
     ]),
-    new Promise((res) => setTimeout(res, 2500)),
+    new Promise((res) => setTimeout(res, 6000)),
   ]);
-  loader.set(60);
+  parts.fonts = 1; progress();
 
   try {
     const { World } = await scenePromise;
@@ -510,21 +694,37 @@ async function boot() {
       if (kind === 'client' && ud.url) window.open(ud.url, '_blank', 'noopener');
       if (kind === 'screen') { goTo(2); setTimeout(() => $('.reel-video')?.play().catch(() => {}), 900); }
     };
-    // xem showreel có tiếng thì tạm dừng bản chiếu trên màn 3D
+    // xem showreel có tiếng thì tạm dừng bản chiếu trên màn 3D, rạp vẫn tối, nhạc nền nhỏ dần
     const rv = $('.reel-video');
     if (rv) {
-      rv.addEventListener('play', () => { world.reelPaused = true; });
-      rv.addEventListener('pause', () => { world.reelPaused = false; });
+      rv.addEventListener('play', () => { world.reelPaused = true; world.reelHtmlPlaying = true; sound.duck('reel', true); });
+      const stop = () => { world.reelPaused = false; world.reelHtmlPlaying = false; sound.duck('reel', false); };
+      rv.addEventListener('pause', stop);
+      rv.addEventListener('ended', stop);
     }
     buildMinimap();
-    setTimeout(() => $('#loader')?.classList.add('cine'), 300);
     world.onHoverChange = (h) => $('#cursor').classList.toggle('hover', h);
     world.resize();
+    await world.prepare((k) => { parts.prep = k; progress(); });
   } catch (err) {
     console.warn('WebGL không khả dụng, dùng nền tĩnh.', err);
     document.body.classList.add('no-webgl');
+    world = null;
   }
+  parts.prep = 1; parts.scene = 1; progress();
+  await Promise.race([audioP, new Promise((res) => setTimeout(res, 15000))]);
+  parts.audio = 1;
   loader.set(100);
+  // mọi thứ đã sẵn sàng: mở màn chờ ra cảnh 3D (không còn khung hình đen hay giật)
+  $('#loader')?.classList.add('cine');
+
+  sound.onChange((sd) => {
+    const b = $('#soundBtn');
+    if (!b) return;
+    b.classList.toggle('off', !sd.enabled);
+    b.setAttribute('aria-label', sd.enabled ? 'Tắt nhạc nền' : 'Bật nhạc nền');
+  });
+  document.addEventListener('visibilitychange', () => sound.duck('hidden', document.hidden));
 
   let last = performance.now();
   const loop = (now) => {
@@ -532,29 +732,42 @@ async function boot() {
     last = now;
     if (nav.lastInput && now - nav.lastInput > 520) { nav.lastInput = 0; snap(); }
     const prev = nav.current;
-    nav.current = damp(nav.current, nav.target, reduced ? 6 : 2.4, dt);
+    // nhân vật đi chậm rãi từng chặng: tăng tốc mềm, tốc độ giới hạn, chậm lại khi tới nơi
+    const diff = nav.target - nav.current;
+    const maxV = (reduced ? 1.6 : 0.5) + 0.35 * Math.max(0, Math.abs(diff) - 1);
+    const want = Math.max(-maxV, Math.min(maxV, diff * 1.7));
+    nav.vel = damp(nav.vel, want, 3.2, dt);
+    nav.current += nav.vel * dt;
+    // không bao giờ chạy lố qua đích rồi quay lại (tránh nhân vật nhảy sang phương tiện chặng sau)
+    if (Math.sign(nav.target - nav.current) !== Math.sign(diff) || (Math.abs(nav.target - nav.current) < 0.0006 && Math.abs(nav.vel) < 0.01)) { nav.current = nav.target; nav.vel = 0; }
     const speed = (nav.current - prev) / COUNT;
     const near = Math.round(nav.current);
-    const idx = Math.abs(nav.current - near) < 0.22 ? ((near % COUNT) + COUNT) % COUNT : -1;
-    if (document.body.classList.contains('entered')) setActive(idx);
-    const frac = ((nav.current % COUNT) + COUNT) % COUNT / COUNT;
+    const idx = Math.abs(nav.current - near) < 0.22 ? mod(near) : -1;
+    // chỉ hiện nội dung ở chương đích, các chương đi ngang qua thì lướt qua (không nhấp nháy chữ)
+    const dest = mod(Math.round(nav.target));
+    if (document.body.classList.contains('entered')) setActive(world?.shotBusy() || idx !== dest ? -1 : idx);
+    if (world) {
+      const moving = Math.abs(nav.target - nav.current) > 0.02 || Math.abs(nav.vel) > 0.03;
+      const back = nav.target < nav.current;
+      world.travel = { active: moving, leg: back ? Math.ceil(nav.current - 1e-4) - 1 : Math.floor(nav.current + 1e-4) };
+    }
+    const frac = mod(nav.current) / COUNT;
     document.querySelector('.counter i').style.setProperty('--p', frac.toFixed(4));
     if (!document.hidden) world?.update(nav.current / COUNT, speed);
-    if (world && mapMarker) {
-      const [x, y] = world.mapPoint(nav.current / COUNT);
-      const [x2, y2] = world.mapPoint(nav.current / COUNT + 0.01);
-      mapMarker.setAttribute('transform', `translate(${(x * 88 + 6).toFixed(2)} ${(y * 88 + 6).toFixed(2)}) rotate(${(Math.atan2(y2 - y, x2 - x) * 180 / Math.PI).toFixed(1)})`);
-    }
+    syncMinimap();
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
+  setInterval(() => { if (nav.active === 3 && !document.hidden) refreshViews(); }, 60000);
 
   $('#enterBtn').addEventListener('click', () => {
     loader.finished = true;
+    sound.start();
     $('#loader').classList.add('open');
-    if (world) world.introTarget = 1;
-    setTimeout(() => document.body.classList.add('entered'), 900);
-    setTimeout(() => $('#loader').remove(), 2400);
+    if (world) { world.introTarget = 1; world.zoom.target = 0; world.startShot('in'); }
+    sound.swoosh(1.4);
+    setTimeout(() => document.body.classList.add('entered'), 1400);
+    setTimeout(() => $('#loader')?.remove(), 2600);
   }, { once: true });
 }
 

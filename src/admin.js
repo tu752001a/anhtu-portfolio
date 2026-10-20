@@ -9,13 +9,17 @@ const LABELS = {
   photos: 'Ảnh chân dung', note: 'Ghi chú khi chưa có video', video: 'Link video', items: 'Danh sách', type: 'Thể loại',
   client: 'Khách hàng', date: 'Ngày', groups: 'Nhóm', services: 'Dịch vụ', steps: 'Các bước', text: 'Nội dung',
   email: 'Email', phone: 'Số điện thoại', socials: 'Mạng xã hội', url: 'Đường dẫn', loopLabel: 'Chữ nút quay về đầu',
-  motto: 'Phương châm', copyright: 'Bản quyền',
+  motto: 'Phương châm', copyright: 'Bản quyền', music: 'Nhạc nền', promise: 'Lời cam kết', particleName: 'Tên bằng hạt sáng', poster: 'Ảnh bìa video',
 };
-const LONG = new Set(['description', 'intro', 'text', 'lead', 'paragraphs']);
+const LONG = new Set(['description', 'intro', 'text', 'lead', 'paragraphs', 'promise']);
 const IMAGE = new Set(['photos', 'image', 'photo', 'thumbnail']);
 const HELP = {
   video: 'Dán link YouTube, TikTok, Vimeo, Google Drive hoặc file .mp4. Trang sẽ tự chuyển thành video nhúng.',
   photos: 'Ảnh đầu tiên nằm trước. Bấm "Tải ảnh" để thay ảnh từ máy.',
+  paragraphs: 'Bọc cụm chữ quan trọng trong **hai dấu sao** để tô sáng màu vàng trên trang.',
+  text: 'Bọc cụm chữ quan trọng trong **hai dấu sao** để tô sáng.',
+  intro: 'Bọc cụm chữ quan trọng trong **hai dấu sao** để tô sáng.',
+  music: 'Đường dẫn file nhạc nền (mp3). Để trống để tắt nhạc.',
 };
 const label = (k) => LABELS[k] ?? k;
 

@@ -99,8 +99,9 @@ function faceTexture(mode = 'normal') {
 
 // Lọn tóc: hình lá cong, dẹt, nhọn đầu
 function lockGeometry() {
-  const geo = new THREE.ConeGeometry(1, 1, 10, 6, false);
-  geo.translate(0, -0.5, 0); // gốc ở trên, ngọn chỉ xuống -y
+  const geo = new THREE.ConeGeometry(1, 1, 10, 6, true);
+  geo.rotateZ(Math.PI);
+  geo.translate(0, -0.5, 0); // gốc rộng ở y = 0, ngọn nhọn ở y = -1
   const p = geo.attributes.position;
   const v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
@@ -153,7 +154,7 @@ export class Avatar {
     const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
     this.mat = {
       skin: toon('#f6d2b4'),
-      hair: toon('#23212b'),
+      hair: toon('#2a2731'),
       fur: toon('#25232b'),
       cloth: toon('#141318'),
       pants: toon('#1b1a20'),
@@ -365,13 +366,15 @@ export class Avatar {
     bridge.position.set(0, 0.075, 0.02);
     glasses.add(bridge);
 
-    // tóc 7/3 kiểu Hàn: rẽ ngôi lệch, một bên vuốt dựng lên, mái còn lại rủ chéo ngang trán
+    // tóc theo ảnh thật: đen dày, phồng trên đỉnh, xoăn nhẹ thành từng lọn,
+    // mái rủ chéo sang trái che chân mày, bên phải ngắn hơn để lộ một phần trán, hai bên ôm gọn
     this.hair = new THREE.Group();
     this.head.add(this.hair);
     const capGeo = new THREE.SphereGeometry(0.44, 36, 22, 0, Math.PI * 2, 0, Math.PI * 0.56);
-    const hairCap = part(fluffy(capGeo, 0.025, 21), M.hair, 0.035);
-    hairCap.rotation.x = -0.3;
-    hairCap.position.set(0, 0.05, -0.04);
+    const hairCap = part(fluffy(capGeo, 0.03, 21), M.hair, 0.035);
+    hairCap.rotation.x = -0.22;
+    hairCap.scale.set(1.03, 1.17, 1.03);
+    hairCap.position.set(0, 0.06, -0.03);
     this.hair.add(hairCap);
     const nape = sph(0.36, M.hair, 0.03);
     nape.scale.set(0.98, 0.8, 0.8);
@@ -379,62 +382,70 @@ export class Avatar {
     this.hair.add(nape);
 
     // vệt bóng tóc kiểu anime (angel ring)
-    const sheen = new THREE.Mesh(new THREE.TorusGeometry(0.41, 0.016, 6, 40, Math.PI * 0.8), new THREE.MeshBasicMaterial({ color: '#8a879e', transparent: true, opacity: 0.6 }));
-    sheen.rotation.set(-Math.PI / 2 - 0.3, 0, Math.PI * 0.1);
-    sheen.position.set(0, 0.25, 0.0);
+    const sheen = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.014, 6, 40, Math.PI * 0.7), new THREE.MeshBasicMaterial({ color: '#77748c', transparent: true, opacity: 0.55 }));
+    sheen.rotation.set(-Math.PI / 2 - 0.25, 0, Math.PI * 0.15);
+    sheen.position.set(0, 0.3, 0.0);
     this.hair.add(sheen);
     const lockGeo = lockGeometry();
     const H = rng(37);
     const locks = [];
-    const add = (pos, dir, len, w, twist = 0) => locks.push({ pos, dir: dir.normalize(), len, w, twist });
-    const PART = 0.14; // đường ngôi lệch phải (phần "3")
-    // phần "7": mái dày rủ chéo từ ngôi sang bên trái, che chân mày, hở kính
-    for (let i = 0; i < 10; i++) {
-      const t = i / 9; // 0 ở ngôi → 1 ở thái dương trái
-      const x = PART - t * 0.44;
-      add(new THREE.Vector3(x, 0.34 - t * 0.08, 0.24 - t * 0.08),
-        new THREE.Vector3(-0.55 - t * 0.15, -1, 0.28), 0.2 + t * 0.07 + H() * 0.02, 0.11 + H() * 0.02, -0.3 + (H() - 0.5) * 0.2);
+    const D = THREE.MathUtils.degToRad;
+    // điểm trên da đầu theo góc phương vị (0 = chính diện, dương = bên phải người xem) và độ cao
+    const onHead = (az, el, r = 0.44) => new THREE.Vector3(Math.sin(D(az)) * Math.cos(D(el)) * r * 0.95, Math.sin(D(el)) * r + 0.04, Math.cos(D(az)) * Math.cos(D(el)) * r * 0.98 - 0.02);
+    // curl: hướng ngọn tóc cong về (mặc định: hướng ra ngoài đầu)
+    const add = (pos, dir, len, w, curl = null) => locks.push({ pos, dir: dir.normalize(), len, w, curl: (curl || pos.clone().setY(pos.y - 0.04)).normalize() });
+    // 1. đỉnh đầu phồng: lọn dựng nhẹ rồi đổ về trước, lệch trái theo mái
+    for (let i = 0; i < 24; i++) {
+      const az = -70 + H() * 150, el = 48 + H() * 34;
+      const root = onHead(az, el, 0.44);
+      const n = root.clone().normalize();
+      const dir = new THREE.Vector3(-0.4, 0.05, 1).normalize().addScaledVector(n, 0.28);
+      add(root, dir, 0.3 + H() * 0.08, 0.19 + H() * 0.04, new THREE.Vector3(-0.1, -1, 0.1));
     }
-    // lớp mái phủ trên cùng, mượt và chéo theo cùng hướng
-    for (let i = 0; i < 7; i++) {
-      const t = i / 6;
-      const x = PART - 0.05 - t * 0.36;
-      add(new THREE.Vector3(x, 0.41, 0.1), new THREE.Vector3(-0.7, -0.6, 0.35), 0.24 + H() * 0.04, 0.12, -0.3);
+    // 2. mái chính: rủ chéo sang trái người xem, dài dần về phía thái dương trái
+    for (let i = 0; i < 13; i++) {
+      const t = i / 12; // 0: bên phải → 1: bên trái
+      const az = 42 - t * 98, el = 30 + Math.sin(t * Math.PI) * 6 + (H() - 0.5) * 4;
+      const root = onHead(az, el, 0.45);
+      const dir = new THREE.Vector3(-0.5 + t * 0.2 + (H() - 0.5) * 0.15, -1, 0.42 - t * 0.12);
+      add(root, dir, 0.18 + t * 0.17 + H() * 0.04, 0.12 + H() * 0.03);
     }
-    // phần "3": vuốt dựng lên và hất ra sau, để lộ trán
-    for (let i = 0; i < 6; i++) {
-      const t = i / 5;
-      const x = PART + 0.03 + t * 0.22;
-      add(new THREE.Vector3(x, 0.3 + t * 0.02, 0.27 - t * 0.08),
-        new THREE.Vector3(0.3 + t * 0.3, 0.55, -0.85), 0.15 + (1 - Math.abs(t - 0.4)) * 0.05, 0.11, 0.2);
+    // lớp mái phủ ngoài để thành từng mảng tóc có độ dày
+    for (let i = 0; i < 8; i++) {
+      const t = i / 7;
+      const root = onHead(28 - t * 80, 40 + H() * 6, 0.46);
+      add(root, new THREE.Vector3(-0.65, -0.75, 0.55), 0.22 + t * 0.1, 0.15);
     }
-    // đỉnh đầu: lọn chải tách đôi theo đường ngôi
-    for (let i = 0; i < 26; i++) {
-      const th = Math.acos(1 - H() * 0.75), ph = H() * Math.PI * 2;
-      const n = new THREE.Vector3(Math.sin(th) * Math.sin(ph), Math.cos(th), Math.sin(th) * Math.cos(ph));
-      if (n.z > 0.4 && n.y < 0.8) continue; // phía trước đã có mái
-      const root = n.clone().multiplyScalar(0.42).add(new THREE.Vector3(0, 0.05, -0.03));
-      const away = root.x < PART ? -1 : 1;
-      const dir = new THREE.Vector3(away * 0.25, -0.9, -0.5).addScaledVector(n, 0.12);
-      add(root, dir, 0.22 + H() * 0.05, 0.12 + H() * 0.02, away * 0.3);
+    // 3. bên phải: lọn ngắn hất nhẹ ra ngoài, lộ một phần trán
+    for (let i = 0; i < 4; i++) {
+      const root = onHead(48 + i * 9, 28 + H() * 8, 0.45);
+      add(root, new THREE.Vector3(0.35, -1, 0.35), 0.14 + H() * 0.04, 0.11);
     }
-    // hai bên cắt gọn (two-block)
-    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) {
-      add(new THREE.Vector3(0.37 * sx, 0.18, 0.08 - i * 0.12), new THREE.Vector3(0.15 * sx, -1, -0.1), 0.14, 0.09, 0);
+    // 4. hai bên: phủ hờ vành tai trên, cắt gọn
+    for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) {
+      const root = onHead(sx * (72 + i * 12), 14 + H() * 10, 0.44);
+      add(root, new THREE.Vector3(sx * 0.25, -1, -0.1 - i * 0.05), 0.17 + H() * 0.04, 0.12);
     }
-    // gáy
+    // 5. sau gáy: các lớp rủ xuống, ôm đầu
+    for (let i = 0; i < 18; i++) {
+      const az = 125 + H() * 110, el = 5 + H() * 50;
+      const root = onHead(az, el, 0.44);
+      const n = root.clone().normalize();
+      add(root, new THREE.Vector3(0, -1, 0).addScaledVector(n, 0.45), 0.22 + H() * 0.06, 0.13 + H() * 0.02);
+    }
     for (let i = 0; i < 7; i++) {
       const x = (i / 6 - 0.5) * 0.56;
-      add(new THREE.Vector3(x, 0.02, -0.32), new THREE.Vector3(x * 0.5, -1, -0.3), 0.2 + H() * 0.04, 0.1, 0);
+      add(new THREE.Vector3(x, 0.0, -0.32), new THREE.Vector3(x * 0.5, -1, -0.3), 0.18 + H() * 0.04, 0.1);
     }
     const lockIn = new THREE.InstancedMesh(lockGeo, M.hair, locks.length);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), q2 = new THREE.Quaternion();
-    const down = new THREE.Vector3(0, -1, 0);
+    const m4 = new THREE.Matrix4(), bx = new THREE.Vector3(), by = new THREE.Vector3(), bz = new THREE.Vector3();
     locks.forEach((l, i) => {
-      q.setFromUnitVectors(down, l.dir);
-      q2.setFromAxisAngle(l.dir, l.twist);
-      q.premultiply(q2);
-      m4.compose(l.pos, q, new THREE.Vector3(l.w, l.len, l.w));
+      // trục y của lọn hướng ngược chiều mọc (gốc ở trên), trục z là chiều cong của ngọn
+      by.copy(l.dir).negate();
+      bz.copy(l.curl).addScaledVector(by, -l.curl.dot(by)).normalize();
+      bx.crossVectors(by, bz);
+      m4.makeBasis(bx.multiplyScalar(l.w), by.multiplyScalar(l.len), bz.multiplyScalar(l.w));
+      m4.setPosition(l.pos);
       lockIn.setMatrixAt(i, m4);
     });
     this.hair.add(lockIn);
@@ -492,7 +503,7 @@ export class Avatar {
     this.onEmote?.(ACTS[name].emote);
   }
 
-  update(dt, time, speed, { faceCamera = 0, wave = 0, look = null } = {}) {
+  update(dt, time, speed, { faceCamera = 0, wave = 0, look = null, ride = null } = {}) {
     const s = Math.abs(speed);
     this.moveAmt = damp(this.moveAmt, Math.min(s / 14, 1), 6, dt);
     this.phase += THREE.MathUtils.clamp(speed, -16, 16) * dt * 1.1;
@@ -559,9 +570,47 @@ export class Avatar {
     // tóc nảy theo bước chân
     this.hair.rotation.x = -cw * 0.05 * m - run * 0.05;
     this.hair.position.y = bounce * 0.02 * m;
+    // ngồi trên phương tiện: hoà dần sang tư thế lái
+    this.rideAmt = damp(this.rideAmt || 0, ride ? 1 : 0, 7, dt);
+    if (ride) this.rideInfo = ride;
+    const r = this.rideAmt;
+    if (r > 0.001 && this.rideInfo) {
+      const L = THREE.MathUtils.lerp, R = this.rideInfo;
+      this.ridePh = (this.ridePh || 0) + dt * Math.min(s, 20) * 0.5;
+      const legs = [[this.legL, 1], [this.legR, -1]];
+      if (R.pose === 'skate') {
+        for (const [lg, k] of legs) { lg.hp.rotation.x = L(lg.hp.rotation.x, -0.2 * k, r); lg.kn.rotation.x = L(lg.kn.rotation.x, 0.35, r); lg.an.rotation.x = L(lg.an.rotation.x, -0.1, r); }
+        this.armL.sh.rotation.z = L(this.armL.sh.rotation.z, 1.05 + Math.sin(time * 3) * 0.1, r);
+        this.armR.sh.rotation.z = L(this.armR.sh.rotation.z, -1.05 + Math.sin(time * 3 + 1) * 0.1, r);
+        this.armL.sh.rotation.x = L(this.armL.sh.rotation.x, 0, r); this.armR.sh.rotation.x = L(this.armR.sh.rotation.x, 0, r);
+        this.armL.el.rotation.x = L(this.armL.el.rotation.x, -0.3, r); this.armR.el.rotation.x = L(this.armR.el.rotation.x, -0.3, r);
+        this.spine.rotation.x = L(this.spine.rotation.x, 0.12, r);
+      } else {
+        for (const [lg, k] of legs) {
+          const pedal = R.pose === 'pedal' ? Math.sin(this.ridePh + (k > 0 ? 0 : Math.PI)) : 0;
+          lg.hp.rotation.x = L(lg.hp.rotation.x, -1.45 + pedal * 0.35, r);
+          lg.kn.rotation.x = L(lg.kn.rotation.x, (R.pose === 'drive' ? 0.7 : 1.45) + pedal * 0.3, r);
+          lg.an.rotation.x = L(lg.an.rotation.x, 0, r);
+          lg.hp.rotation.z = L(0, 0.12 * k, r);
+        }
+        const reach = R.pose === 'drive' ? [-1.0, -0.75] : R.pose === 'pedal' ? [-1.15, -0.35] : [-1.25, -0.3];
+        this.armL.sh.rotation.x = L(this.armL.sh.rotation.x, reach[0], r); this.armR.sh.rotation.x = L(this.armR.sh.rotation.x, reach[0], r);
+        this.armL.sh.rotation.z = L(this.armL.sh.rotation.z, R.pose === 'drive' ? -0.05 : 0.22, r);
+        this.armR.sh.rotation.z = L(this.armR.sh.rotation.z, R.pose === 'drive' ? 0.05 : -0.22, r);
+        this.armL.el.rotation.x = L(this.armL.el.rotation.x, reach[1], r); this.armR.el.rotation.x = L(this.armR.el.rotation.x, reach[1], r);
+        this.armL.el.rotation.z = L(this.armL.el.rotation.z, 0, r); this.armR.el.rotation.z = L(this.armR.el.rotation.z, 0, r);
+        this.spine.rotation.x = L(this.spine.rotation.x, R.pose === 'ride' ? 0.22 : 0.1, r);
+      }
+      this.body.position.y = L(this.body.position.y, (R.seat ?? 0.76) - 0.76 + Math.sin(time * 9) * 0.008, r);
+      this.body.rotation.z = L(this.body.rotation.z, 0, r);
+      this.body.scale.lerp(new THREE.Vector3(1, 1, 1), r);
+      this.spine.rotation.y = L(this.spine.rotation.y, 0, r);
+      this.pelvis.rotation.y = L(this.pelvis.rotation.y, 0, r);
+    }
+
     // báo mỗi bước chân để cảnh rắc bụi sao
     const step = Math.sign(sw);
-    if (m > 0.15 && step !== this.lastStep) { this.lastStep = step; this.onStep?.(step); }
+    if (m > 0.15 && r < 0.3 && step !== this.lastStep) { this.lastStep = step; this.onStep?.(step); }
 
     // màn diễn: hoà dần vào tư thế hiện tại rồi trả lại
     let face = null, spin = 0, actNz = 0, actNx = 0;

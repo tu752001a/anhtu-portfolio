@@ -807,28 +807,23 @@
       g.fillStyle = "#e0102c"; g.fillRect(0, 0, 128, 64);
       g.fillStyle = "#f5f0ea"; g.font = "900 40px Arial"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("PAT", 64, 34);
     });
-    // big glossy anime eyes (Korean chibi style); `m` mirrors so the lash flick sits on the outer corner
+    // narrow monolid eyes like his photos: almond, outer corner slightly lifted, dark iris, no lashes.
+    // `m` mirrors the texture so the lifted corner sits on the outside of each eye
     const eyeTex = (m) => canvasTex(256, 256, (g) => {
       if (m) { g.translate(256, 0); g.scale(-1, 1); }
-      g.save(); g.beginPath(); g.ellipse(130, 150, 96, 100, 0, 0, Math.PI * 2); g.clip();
-      g.fillStyle = "#fbf7f4"; g.fillRect(0, 0, 256, 256);
-      const ir = g.createLinearGradient(0, 60, 0, 240); ir.addColorStop(0, "#141217"); ir.addColorStop(0.45, "#35323b"); ir.addColorStop(1, "#8d8893");
-      g.fillStyle = ir; g.beginPath(); g.ellipse(134, 152, 74, 90, 0, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = "#0c0b0f"; g.lineWidth = 7; g.stroke();
-      g.fillStyle = "#0b0a0e"; g.beginPath(); g.ellipse(134, 150, 34, 46, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "rgba(190,186,198,.5)"; g.beginPath(); g.ellipse(134, 212, 46, 16, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "#fff"; g.beginPath(); g.ellipse(102, 108, 28, 25, -0.4, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(170, 196, 12, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(158, 96, 7, 0, Math.PI * 2); g.fill();
+      const almond = () => { g.beginPath(); g.moveTo(22, 132); g.bezierCurveTo(70, 104, 170, 108, 236, 150); g.bezierCurveTo(176, 186, 76, 186, 22, 132); g.closePath(); };
+      g.save(); almond(); g.clip();
+      g.fillStyle = "#f4efe9"; g.fillRect(0, 0, 256, 256);
+      const ir = g.createRadialGradient(132, 150, 6, 132, 150, 50); ir.addColorStop(0, "#0a090c"); ir.addColorStop(0.6, "#221d22"); ir.addColorStop(1, "#4a3f42");
+      g.fillStyle = ir; g.beginPath(); g.arc(132, 146, 46, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(0, 100, 256, 26);
+      g.fillStyle = "#fff"; g.beginPath(); g.arc(116, 134, 8, 0, Math.PI * 2); g.fill();
       g.restore();
-      // a heavier, flatter upper lid for a cool, half-lidded look
-      g.save(); g.globalCompositeOperation = "destination-out"; g.beginPath();
-      g.moveTo(0, 0); g.lineTo(256, 0); g.lineTo(256, 96); g.quadraticCurveTo(206, 70, 128, 72); g.quadraticCurveTo(50, 76, 0, 108); g.closePath(); g.fill(); g.restore();
-      g.fillStyle = "#0d0b10"; g.beginPath();
-      g.moveTo(8, 108); g.quadraticCurveTo(50, 64, 128, 62); g.quadraticCurveTo(206, 60, 246, 92);
-      g.quadraticCurveTo(206, 84, 130, 86); g.quadraticCurveTo(60, 90, 30, 118); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(14, 106); g.lineTo(0, 88); g.lineTo(30, 98); g.closePath(); g.fill();
-      // soft lower lash
-      g.strokeStyle = "rgba(90,52,52,.75)"; g.lineWidth = 5; g.lineCap = "round"; g.beginPath(); g.moveTo(70, 244); g.quadraticCurveTo(132, 256, 196, 238); g.stroke();
+      // heavy straight upper lid line, thin lower line
+      g.strokeStyle = "#0d0b10"; g.lineCap = "round"; g.lineWidth = 11;
+      g.beginPath(); g.moveTo(20, 133); g.bezierCurveTo(70, 104, 170, 108, 238, 148); g.stroke();
+      g.strokeStyle = "rgba(60,36,34,.7)"; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(60, 160); g.bezierCurveTo(100, 180, 170, 182, 222, 158); g.stroke();
     });
     TEX.eyeL = eyeTex(false); TEX.eyeR = eyeTex(true);
     TEX.shield = canvasTex(96, 128, (g) => {
@@ -873,7 +868,7 @@
     chibiTextures();
     const C2 = {
       blazer: toon(0x17151a), satin: toon(0x2a2630, { side: THREE.DoubleSide }), velvet: toon(0x0c0b0e), trouser: toon(0x111015),
-      belt: toon(0x0a090c), skinFace: toon(0xf2c4a0), lid: basic(0x0d0b10), white: basic(0xffffff),
+      belt: toon(0x0a090c), skinFace: toon(0xebb994), lid: basic(0x0d0b10), white: basic(0xffffff),
       tearMat: basic(0x8fd6ff, { transparent: true, opacity: 0, depthWrite: false }),
     };
     const root = new THREE.Group();
@@ -894,7 +889,7 @@
 
     // Torso — black double-breasted wool peacoat over a black turtleneck, gold buttons, fur cuffs
     const TC = new THREE.Vector3(0, 0.58, 0);
-    const BR = 0.345, BS = new THREE.Vector3(1.03, 1.16, 0.9), BY = 0.565;
+    const BR = 0.345, BS = new THREE.Vector3(1.14, 1.14, 0.92), BY = 0.565;
     const blazer = new THREE.Mesh(new THREE.SphereGeometry(BR, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.93), C2.blazer);
     blazer.scale.copy(BS); blazer.position.set(0, BY, 0); body.add(blazer); outline(blazer, 1.05, 0x2a0a10);
     // a point on the coat's front surface, lifted by `off`
@@ -944,8 +939,8 @@
 
     // Arms — fur sleeves, extra-fluffy cuffs
     const mkArm = (s) => {
-      const sh = new THREE.Group(); sh.position.set(s * 0.31, 0.8, 0); body.add(sh);
-      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), C2.blazer); pad.scale.set(1, 0.85, 1); sh.add(pad);
+      const sh = new THREE.Group(); sh.position.set(s * 0.36, 0.8, 0); body.add(sh);
+      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), C2.blazer); pad.scale.set(1.1, 0.8, 1); sh.add(pad);
       const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve);
       const tufts = new THREE.InstancedMesh(tuft, furMat, 60);
       for (let i = 0; i < 60; i++) { const a = Math.random() * Math.PI * 2, y = -Math.random() * 0.36, r = 0.12 + (-y) * 0.04; const d = new THREE.Vector3(Math.cos(a), -0.6, Math.sin(a)).normalize(); _q.setFromUnitVectors(UPV, d); _m.compose(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), _q, new THREE.Vector3(0.8, 0.9, 0.8)); tufts.setMatrixAt(i, _m); }
@@ -963,8 +958,17 @@
     const armR = mkArm(-1), armL = mkArm(1);
 
     // Head — oversized for a Korean-chibi proportion
-    const head = new THREE.Group(); head.position.y = 1.25; head.scale.setScalar(1.07); body.add(head);
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 30), C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a1a16);
+    const head = new THREE.Group(); head.position.y = 1.24; head.scale.setScalar(1.02); body.add(head);
+    // squarer lower face: taper the cheeks a little and flatten the chin so it reads as a jaw, not a round baby face
+    const skullGeo = new THREE.SphereGeometry(0.52, 40, 30), sp = skullGeo.attributes.position;
+    for (let i = 0; i < sp.count; i++) {
+      const y = sp.getY(i); if (y >= -0.05) continue;
+      const t = (-y - 0.05) / 0.47;
+      sp.setX(i, sp.getX(i) * (1 - 0.13 * t * t)); sp.setZ(i, sp.getZ(i) * (1 - 0.04 * t));
+      if (y < -0.38) sp.setY(i, -0.38 + (y + 0.38) * 0.45);
+    }
+    skullGeo.computeVertexNormals();
+    const skull = new THREE.Mesh(skullGeo, C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a1a16);
     [-1, 1].forEach((s) => {
       const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), M.skin); ear.scale.set(0.55, 1, 0.8); ear.position.set(s * 0.555, -0.07, -0.02); head.add(ear);
       const inner = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xe8a58c)); inner.scale.set(0.4, 1, 0.6); inner.position.set(s * 0.6, -0.07, 0.0); head.add(inner);
@@ -995,14 +999,14 @@
       g.userData = { open, happy, closed, squeeze, dot, heart, star, lid };
       return g;
     });
-    // thick, softly arched brows
+    // straight, thick, flat brows sitting low over the eyes, inner ends a touch lower (a calm, serious look)
     const brows = [-1, 1].map((s) => {
-      const b = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.022, 6, 16, 0.5), M.hair); b.scale.set(1, 1, 0.8);
-      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.08, 0.49); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
-      b.rotation.z = Math.PI / 2 - 0.25; b.position.set(0, -0.335, 0); piv.add(b);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.036, 0.03), M.hair);
+      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.08, 0.485); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
+      b.rotation.z = s * 0.2; b.position.set(0, -0.03, 0); piv.add(b);
       return piv;
     });
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), toon(0xe6a184)); nose.position.set(0, -0.13, 0.5); head.add(nose);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), toon(0xd89a78)); nose.scale.set(0.8, 1.7, 0.7); nose.position.set(0, -0.12, 0.49); head.add(nose);
     // mouths
     const mouths = new THREE.Group(); mouths.position.set(0, -0.23, 0.468); mouths.rotation.x = -0.25; head.add(mouths);
     const smile = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.01, 6, 16, Math.PI), M.mouth); smile.rotation.z = Math.PI; mouths.add(smile);
@@ -1043,18 +1047,18 @@
     // Hair — like his photos: a shaggy, voluminous top, a heavy messy fringe down to the brows,
     // short faded sides and nape so the ears and earrings stay in view
     const hair = new THREE.Group(); head.add(hair);
-    const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
+    const lockMat = toon(0x26222b, { side: THREE.DoubleSide }); // a shade lighter than the cap so strands read
     const rnd = (i, k = 1) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.08, 1.02, 1.06); cap.position.set(0, 0.06, -0.01); cap.rotation.x = -0.3; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
+    cap.scale.set(1.08, 1.02, 1.06); cap.position.set(0, 0.06, -0.01); cap.rotation.x = -0.24; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
     // the fade: a close, slightly lighter shell over the sides and back
     const fade = new THREE.Mesh(new THREE.SphereGeometry(0.532, 36, 14, Math.PI * 1.5 - 2.25, 4.5, Math.PI * 0.26, Math.PI * 0.5), toon(0x2b2830));
     fade.scale.set(1.06, 0.95, 1); hair.add(fade);
     const H = (ctrl, w0, th = 0.06, w1 = 0.012) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
     // heavy fringe: locks pour forward off the crown and stop at the brows, jagged and slightly parted
-    for (let i = 0; i < 13; i++) {
-      const u = i / 12, az = lerp(-0.85, 0.85, u) + (u < 0.4 ? -0.04 : 0.04), tipEl = 0.2 + rnd(i) * 0.1 + Math.abs(az) * 0.12;
-      H([[az * 0.3, 1.32, 0.6], [az * 0.62, 1.0, 0.8], [az * 0.92, 0.55 + rnd(i, 2) * 0.06, 0.7], [az + (rnd(i, 3) - 0.5) * 0.14, tipEl, 0.575]], 0.19, 0.07);
+    for (let i = 0; i < 12; i++) {
+      const u = i / 11, az = lerp(-0.85, 0.8, u), tipEl = 0.19 + rnd(i) * 0.13 + Math.abs(az) * 0.1, sweep = -0.2 - rnd(i, 3) * 0.12;
+      H([[az * 0.3 + 0.12, 1.32, 0.6], [az * 0.62 + 0.04, 1.0, 0.8], [az * 0.92 + sweep * 0.4, 0.58 + rnd(i, 2) * 0.06, 0.68], [az + sweep, tipEl, 0.572]], 0.17, 0.075, 0.008);
     }
     // shaggy top: locks fanning out over the crown with tips lifting away
     for (let i = 0; i < 26; i++) {
@@ -3470,7 +3474,7 @@
     gradTex.minFilter = gradTex.magFilter = THREE.NearestFilter; gradTex.generateMipmaps = false; gradTex.needsUpdate = true;
     M = {
       skin: toon(0xf2c4a0), hair: toon(0x16151b), black: toon(0x0e0d11), white: toon(0xf6f3ee),
-      silver: toon(0xd5d9e0), gold: toon(0xd9a441), eye: basic(0x120f14), mouth: basic(0x7a1224),
+      silver: toon(0xd5d9e0), gold: toon(0xd9a441), eye: basic(0x120f14), mouth: basic(0x4e2224),
       lens: new THREE.MeshBasicMaterial({ color: 0xffb21f, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }),
     };
     scene.add(new THREE.HemisphereLight(0xfff1ec, 0x2a0610, 0.75));

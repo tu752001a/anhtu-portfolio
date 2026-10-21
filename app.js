@@ -820,11 +820,13 @@
       g.fillStyle = "#fff"; g.beginPath(); g.ellipse(102, 108, 28, 25, -0.4, 0, Math.PI * 2); g.fill();
       g.beginPath(); g.arc(170, 196, 12, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(158, 96, 7, 0, Math.PI * 2); g.fill();
       g.restore();
-      // upper lash line, thick, with a flick at the outer corner
+      // a heavier, flatter upper lid for a cool, half-lidded look
+      g.save(); g.globalCompositeOperation = "destination-out"; g.beginPath();
+      g.moveTo(0, 0); g.lineTo(256, 0); g.lineTo(256, 96); g.quadraticCurveTo(206, 70, 128, 72); g.quadraticCurveTo(50, 76, 0, 108); g.closePath(); g.fill(); g.restore();
       g.fillStyle = "#0d0b10"; g.beginPath();
-      g.moveTo(14, 112); g.quadraticCurveTo(40, 52, 128, 44); g.quadraticCurveTo(206, 42, 240, 104);
-      g.quadraticCurveTo(206, 66, 130, 66); g.quadraticCurveTo(60, 70, 34, 120); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(18, 112); g.lineTo(2, 86); g.lineTo(34, 100); g.closePath(); g.fill();
+      g.moveTo(8, 108); g.quadraticCurveTo(50, 64, 128, 62); g.quadraticCurveTo(206, 60, 246, 92);
+      g.quadraticCurveTo(206, 84, 130, 86); g.quadraticCurveTo(60, 90, 30, 118); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(14, 106); g.lineTo(0, 88); g.lineTo(30, 98); g.closePath(); g.fill();
       // soft lower lash
       g.strokeStyle = "rgba(90,52,52,.75)"; g.lineWidth = 5; g.lineCap = "round"; g.beginPath(); g.moveTo(70, 244); g.quadraticCurveTo(132, 256, 196, 238); g.stroke();
     });
@@ -908,42 +910,48 @@
       const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
       return new THREE.Mesh(g, mat);
     };
-    // short V at the chest: turtleneck showing between wide notched lapels
-    const VT = 0.94, VB = 0.6, VW = 0.13, N = 12;
+    // open front: a black scoop-neck tee and a silver chain between the fur panels
+    const VT = 0.96, VB = 0.3, VW = 0.17, N = 14;
     const vRows = [];
-    for (let i = 0; i <= N; i++) { const y = lerp(VT, VB, i / N), w = lerp(VW, 0.005, i / N); vRows.push([surf(-w, y, 0.006), surf(w, y, 0.006)]); }
+    for (let i = 0; i <= N; i++) { const y = lerp(VT, VB, i / N), w = lerp(VW, 0.07, i / N); vRows.push([surf(-w, y, 0.012), surf(w, y, 0.012)]); }
     body.add(meshFrom(vRows, toon(0x0c0b0e, { side: THREE.DoubleSide })));
-    [-1, 1].forEach((s) => {
-      const rows = [];
-      for (let i = 0; i <= N; i++) {
-        const y = lerp(VT + 0.02, VB - 0.03, i / N), w = lerp(VW, 0.005, i / N), lw = lerp(0.12, 0.05, i / N) * (Math.abs(i - 3) < 1 ? 0.55 : 1);
-        const inner = surf(s * w, y, 0.012), outer = surf(s * (w + lw), y - 0.012, 0.012);
-        rows.push(s < 0 ? [outer, inner] : [inner, outer]);
-      }
-      body.add(meshFrom(rows, C2.satin));
-      const pts = []; for (let i = 0; i <= N; i++) { const y = lerp(VT + 0.02, VB - 0.03, i / N); pts.push(surf(s * (lerp(VW, 0.005, i / N) + 0.004), y, 0.016)); }
-      body.add(tube(pts, 0.004, basic(0x3a3640), 24));
-      // pocket flaps
-      body.add(tube([surf(s * 0.15, 0.37, 0.008), surf(s * 0.22, 0.375, 0.008), surf(s * 0.29, 0.37, 0.008)], 0.006, basic(0x2c2930), 8));
-      // gold buttons, two rows
-      [0.52, 0.4].forEach((y) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 10), M.gold); b.scale.z = 0.55; b.position.copy(surf(s * 0.11, y, 0.012)); body.add(b); });
+    // fluffy black fur: tufts scattered over the coat, leaving the open front
+    const furMat = toon(0x1a181d), tuft = new THREE.ConeGeometry(0.05, 0.13, 5); tuft.translate(0, 0.05, 0);
+    const furPts = [];
+    for (let i = 0; i < 420; i++) {
+      const u = Math.random() * Math.PI * 2, v = Math.acos(lerp(0.95, -0.82, Math.random()));
+      const n = new THREE.Vector3(Math.sin(v) * Math.sin(u), Math.cos(v), Math.sin(v) * Math.cos(u));
+      const p = new THREE.Vector3(n.x * BR * BS.x, BY + n.y * BR * BS.y, n.z * BR * BS.z);
+      const half = lerp(VW, 0.07, clamp((VT - p.y) / (VT - VB), 0, 1)) + 0.03;
+      if (p.z > 0 && Math.abs(p.x) < half && p.y > VB - 0.05) continue;
+      furPts.push([p, n]);
+    }
+    const fur = new THREE.InstancedMesh(tuft, furMat, furPts.length), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), UPV = new THREE.Vector3(0, 1, 0);
+    furPts.forEach(([p, n], i) => {
+      const d = n.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.5, 0)).normalize();
+      _q.setFromUnitVectors(UPV, d); const sc = 0.8 + Math.random() * 0.6;
+      _m.compose(p, _q, new THREE.Vector3(sc, sc * (0.9 + Math.random() * 0.5), sc)); fur.setMatrixAt(i, _m);
     });
-    // front closing line of the coat
-    body.add(tube([surf(0.02, 0.6, 0.008), surf(0.025, 0.45, 0.008), surf(0.02, 0.24, 0.008)], 0.004, basic(0x2c2930), 8));
-
-    // turtleneck collar (no skin at the neck)
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.2, 18), C2.velvet); neck.position.y = 0.93; body.add(neck);
-    const roll = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.035, 8, 24), C2.velvet); roll.rotation.x = Math.PI / 2; roll.position.y = 0.99; body.add(roll);
+    body.add(fur);
+    // fur collar rolls along both front edges
+    [-1, 1].forEach((s) => {
+      for (let i = 0; i <= 10; i++) { const y = lerp(VT + 0.02, VB, i / 10), w = lerp(VW, 0.07, i / 10) + 0.035; const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), furMat); b.position.copy(surf(s * w, y, 0.02)); body.add(b); }
+    });
+    // bare neck with a silver chain
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.22, 18), M.skin); neck.position.y = 0.95; body.add(neck);
+    body.add(tube([new THREE.Vector3(-0.115, 0.95, 0.02), new THREE.Vector3(-0.1, 0.9, 0.11), surf(-0.06, 0.8, 0.02), surf(0, 0.76, 0.024), surf(0.06, 0.8, 0.02), new THREE.Vector3(0.1, 0.9, 0.11), new THREE.Vector3(0.115, 0.95, 0.02)], 0.007, M.silver, 40));
     const chestHolder = new THREE.Group(); chestHolder.position.set(0, 0.56, 0.36); body.add(chestHolder);
 
-    // Arms — coat sleeves ending in fluffy fur cuffs
-    const furMat = toon(0x1c1a20);
+    // Arms — fur sleeves, extra-fluffy cuffs
     const mkArm = (s) => {
       const sh = new THREE.Group(); sh.position.set(s * 0.31, 0.8, 0); body.add(sh);
-      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), C2.blazer); pad.scale.set(1, 0.8, 1); sh.add(pad);
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve); outline(sleeve, 1.08, 0x2a0a10);
-      const fur = new THREE.Group(); fur.position.y = -0.35; sh.add(fur);
-      for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2, b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (i % 3) * 0.008, 8, 6), furMat); b.position.set(Math.cos(a) * 0.1, ((i % 2) - 0.5) * 0.04, Math.sin(a) * 0.1); fur.add(b); }
+      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), C2.blazer); pad.scale.set(1, 0.85, 1); sh.add(pad);
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve);
+      const tufts = new THREE.InstancedMesh(tuft, furMat, 60);
+      for (let i = 0; i < 60; i++) { const a = Math.random() * Math.PI * 2, y = -Math.random() * 0.36, r = 0.12 + (-y) * 0.04; const d = new THREE.Vector3(Math.cos(a), -0.6, Math.sin(a)).normalize(); _q.setFromUnitVectors(UPV, d); _m.compose(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), _q, new THREE.Vector3(0.8, 0.9, 0.8)); tufts.setMatrixAt(i, _m); }
+      sh.add(tufts);
+      const cuff = new THREE.Group(); cuff.position.y = -0.36; sh.add(cuff);
+      for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, b = new THREE.Mesh(new THREE.SphereGeometry(0.055 + (i % 3) * 0.01, 8, 6), furMat); b.position.set(Math.cos(a) * 0.12, ((i % 2) - 0.5) * 0.05, Math.sin(a) * 0.12); cuff.add(b); }
       const hand = new THREE.Group(); hand.position.y = -0.44; sh.add(hand);
       const palm = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), M.skin); palm.scale.set(1, 1.1, 0.85); hand.add(palm);
       // fingers for hand signs: V (scissors / peace) and a pointed index; hidden unless a move needs them
@@ -960,15 +968,10 @@
     [-1, 1].forEach((s) => {
       const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), M.skin); ear.scale.set(0.55, 1, 0.8); ear.position.set(s * 0.555, -0.07, -0.02); head.add(ear);
       const inner = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xe8a58c)); inner.scale.set(0.4, 1, 0.6); inner.position.set(s * 0.6, -0.07, 0.0); head.add(inner);
-      // his right ear (viewer's left): hoop with a spike; his left ear: two small hoops and a dangling cross
+      // silver hoop with a dangling spike on both ears, as in the photos
       const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.008, 8, 20), M.silver); hoop.position.set(s * 0.585, -0.17, 0.0); hoop.rotation.y = Math.PI / 2; head.add(hoop);
       const spike = new THREE.Group(); spike.position.set(s * 0.585, -0.205, 0.0); head.add(spike);
-      if (s < 0) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), M.silver); c.rotation.x = Math.PI; c.position.y = -0.045; spike.add(c); }
-      else {
-        const h2 = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 8, 18), M.silver); h2.position.set(s * 0.58, -0.12, 0.06); h2.rotation.y = Math.PI / 2; head.add(h2);
-        const v = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.1, 0.014), M.silver); v.position.y = -0.06; spike.add(v);
-        const hb = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.014), M.silver); hb.position.y = -0.04; spike.add(hb);
-      }
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.017, 0.1, 8), M.silver); c.rotation.x = Math.PI; c.position.y = -0.05; spike.add(c);
       head.userData["ear" + s] = { hoop, spike };
     });
 
@@ -994,9 +997,9 @@
     });
     // thick, softly arched brows
     const brows = [-1, 1].map((s) => {
-      const b = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 16, 0.75), M.hair); b.scale.set(1, 1, 0.8);
-      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.1, 0.49); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
-      b.rotation.z = Math.PI / 2 - 0.375; b.position.set(0, -0.19, 0); piv.add(b);
+      const b = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.022, 6, 16, 0.5), M.hair); b.scale.set(1, 1, 0.8);
+      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.08, 0.49); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
+      b.rotation.z = Math.PI / 2 - 0.25; b.position.set(0, -0.335, 0); piv.add(b);
       return piv;
     });
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), toon(0xe6a184)); nose.position.set(0, -0.13, 0.5); head.add(nose);
@@ -1017,13 +1020,12 @@
     const fang = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.025, 4), C2.white); fang.rotation.z = Math.PI; fang.position.set(0.02, -0.01, 0.01); frown.add(fang);
     const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.009, 6, 14, Math.PI * 0.62), M.mouth); smirk.rotation.z = Math.PI + 0.5; smirk.position.set(0.012, 0.012, 0); mouths.add(smirk);
     const mouthSet = { smile, frown, flat, mouthO, grin, wobble, smirk };
-    // soft rosy cheeks and a tiny heart sticker, as in the reference
-    const blushMat = basic(0xff8a9c, { transparent: true, opacity: 0.5, depthWrite: false });
+    // cheeks stay clear (cool look); a faint blush only shows when shy
+    const blushMat = basic(0xff8a9c, { transparent: true, opacity: 0, depthWrite: false });
     const blushes = [-1, 1].map((s) => {
       const p = new THREE.Vector3(s * 0.31, -0.17, 0.42);
       const b = decal(new THREE.CircleGeometry(0.075, 24), blushMat, p); b.scale.set(1.3, 0.8, 1); head.add(b); return b;
     });
-    const cheekHeart = decal(new THREE.PlaneGeometry(0.06, 0.06), basic(0xffffff, { map: TEX.heart, transparent: true, depthWrite: false }), new THREE.Vector3(0.36, -0.12, 0.392)); head.add(cheekHeart);
     // emotion effects
     const tears = [-1, 1].map((s) => {
       const p = new THREE.Vector3(s * 0.22, -0.27, 0.43);
@@ -1038,48 +1040,38 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — soft, messy Korean cut: volume on top, curtain fringe parted just off centre,
-    // wavy locks that flick outward over the temples and at the nape; ears stay visible
+    // Hair — like his photos: a shaggy, voluminous top, a heavy messy fringe down to the brows,
+    // short faded sides and nape so the ears and earrings stay in view
     const hair = new THREE.Group(); head.add(hair);
     const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.57, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.08, 1.06, 1.05); cap.position.set(0, 0.07, -0.02); cap.rotation.x = -0.52; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
-    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.44), M.hair);
-    nape.scale.set(1.07, 0.98, 1.04); hair.add(nape);
-    const H = (ctrl, w0, th = 0.05, w1 = 0.006) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    const PA = -0.14, jit = (i, a) => Math.sin(i * 12.9898) * a;
-    // crown volume: broad, soft locks swept forward and to the sides; they stop above the forehead
-    for (let i = 0; i < 8; i++) {
-      const u = i / 7, az = lerp(-1.25, 1.25, u);
-      H([[PA + az * 0.25, 1.48, 0.56], [az * 0.62, 1.2 + jit(i, 0.06), 0.88], [az * 0.95, 0.86, 0.8], [az * 1.1, 0.6, 0.67]], 0.24, 0.09, 0.03);
+    const rnd = (i, k = 1) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
+    cap.scale.set(1.08, 1.02, 1.06); cap.position.set(0, 0.06, -0.01); cap.rotation.x = -0.3; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
+    // the fade: a close, slightly lighter shell over the sides and back
+    const fade = new THREE.Mesh(new THREE.SphereGeometry(0.532, 36, 14, Math.PI * 1.5 - 2.25, 4.5, Math.PI * 0.26, Math.PI * 0.5), toon(0x2b2830));
+    fade.scale.set(1.06, 0.95, 1); hair.add(fade);
+    const H = (ctrl, w0, th = 0.06, w1 = 0.012) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
+    // heavy fringe: locks pour forward off the crown and stop at the brows, jagged and slightly parted
+    for (let i = 0; i < 13; i++) {
+      const u = i / 12, az = lerp(-0.85, 0.85, u) + (u < 0.4 ? -0.04 : 0.04), tipEl = 0.2 + rnd(i) * 0.1 + Math.abs(az) * 0.12;
+      H([[az * 0.3, 1.32, 0.6], [az * 0.62, 1.0, 0.8], [az * 0.92, 0.55 + rnd(i, 2) * 0.06, 0.7], [az + (rnd(i, 3) - 0.5) * 0.14, tipEl, 0.575]], 0.19, 0.07);
     }
-    // curtain fringe — his right side (viewer's left): sweeps from the part down to the temple
-    for (let i = 0; i < 4; i++) {
-      const ea = -0.42 - i * 0.2, ee = 0.42 - i * 0.05 + jit(i + 3, 0.03);
-      H([[PA, 1.22, 0.6], [PA - 0.1 - i * 0.06, 0.92, 0.72], [ea + 0.12, ee + 0.17, 0.67], [ea, ee, 0.605], [ea - 0.08, ee + 0.01, 0.64]], 0.2, 0.06, 0.03);
+    // shaggy top: locks fanning out over the crown with tips lifting away
+    for (let i = 0; i < 26; i++) {
+      const az = (i / 26) * Math.PI * 2 + rnd(i, 4) * 0.25, el = 0.62 + rnd(i, 5) * 0.45;
+      H([[az * 0.15, 1.5, 0.56], [az, (1.5 + el) / 2 + 0.08, 0.76 + rnd(i, 6) * 0.05], [az + (rnd(i, 7) - 0.5) * 0.3, el, 0.74 + rnd(i, 8) * 0.07]], 0.2, 0.08, 0.02);
     }
-    // curtain fringe — his left side (viewer's right), longer sweep
-    for (let i = 0; i < 5; i++) {
-      const ea = 0.3 + i * 0.18, ee = 0.46 - i * 0.05 + jit(i + 7, 0.03);
-      H([[PA + 0.03, 1.22, 0.6], [PA + 0.12 + i * 0.07, 0.94, 0.73], [ea - 0.12, ee + 0.17, 0.675], [ea, ee, 0.605], [ea + 0.09, ee + 0.02, 0.645]], 0.2, 0.06, 0.03);
-    }
-    // two loose strands falling over the forehead, just off the part
-    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.68], [-0.2, 0.48, 0.62], [-0.16, 0.3, 0.575]], 0.08, 0.045);
-    H([[PA + 0.04, 1.2, 0.6], [PA + 0.1, 0.86, 0.68], [0.12, 0.52, 0.62], [0.2, 0.38, 0.58]], 0.07, 0.04);
-    // flyaway strands on the crown
-    H([[0.15, 1.42, 0.58], [0.22, 1.6, 0.74], [0.5, 1.56, 0.84]], 0.05, 0.03, 0.004);
-    H([[-0.35, 1.42, 0.58], [-0.42, 1.58, 0.72], [-0.7, 1.52, 0.8]], 0.045, 0.028, 0.004);
-    // sides: wavy locks over the temples that flick outward above the ears
+    // two flyaways on top
+    H([[0.1, 1.45, 0.58], [0.2, 1.62, 0.72], [0.45, 1.56, 0.8]], 0.05, 0.03, 0.004);
+    H([[-0.3, 1.45, 0.58], [-0.42, 1.6, 0.7], [-0.62, 1.52, 0.77]], 0.045, 0.03, 0.004);
+    // sides above the ears: short, tight locks that end well above the ear
     [-1, 1].forEach((s) => {
-      for (let i = 0; i < 5; i++) {
-        const az = s * (1.0 + i * 0.2), endEl = lerp(0.14, 0.24, i / 4);
-        H([[az - s * 0.15, 1.05, 0.66], [az, 0.62, 0.68], [az + s * 0.04, endEl + 0.12, 0.62], [az + s * 0.1, endEl, 0.68]], 0.17, 0.055, 0.03);
-      }
+      for (let i = 0; i < 6; i++) { const az = s * (0.95 + i * 0.2); H([[az - s * 0.1, 0.95, 0.7], [az, 0.62, 0.64], [az + s * 0.04, 0.42 + rnd(i, 9) * 0.06, 0.6]], 0.13, 0.05); }
     });
-    // back: layered locks down to the nape, tips flicking out
-    for (let i = 0; i < 12; i++) {
-      const az = Math.PI + (i - 5.5) * 0.22;
-      H([[az * 0.5 + PA * 0.2, 1.4, 0.6], [az, 0.9, 0.7], [az + jit(i, 0.05), 0.2, 0.66], [az, -0.25, 0.6], [az + (i - 5.5) * 0.03, -0.36, 0.67]], 0.2, 0.06, 0.03);
+    // back: layered, tapering to a short nape
+    for (let i = 0; i < 10; i++) {
+      const az = Math.PI + (i - 4.5) * 0.25;
+      H([[az * 0.4, 1.4, 0.6], [az, 0.85, 0.68], [az + (rnd(i, 10) - 0.5) * 0.1, 0.3, 0.62], [az, 0.05, 0.575]], 0.22, 0.06);
     }
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
@@ -1236,20 +1228,24 @@
         g.rotation.set(-0.08, 0, -0.12); return g; } },
       // FACE (6)
       { id: "yellowglasses", slot: "face", name: "Kính vàng", icon: "🕶️", build() {
-        const g = new THREE.Group(), fm = basic(0xf6f3ee, { side: THREE.DoubleSide });
+        // like his real pair: big squared aviator lenses in yellow, a thick white brow bar, thin rims and temples to the ears
+        const g = new THREE.Group(), fm = basic(0xf6f3ee, { side: THREE.DoubleSide }), metal = basic(0xc9ccd4);
+        const lensShape = () => { const sh = new THREE.Shape(); sh.moveTo(-0.15, 0.1); sh.lineTo(0.15, 0.1); sh.quadraticCurveTo(0.17, 0.1, 0.165, 0.06); sh.lineTo(0.13, -0.1); sh.quadraticCurveTo(0.12, -0.13, 0.08, -0.13); sh.lineTo(-0.1, -0.13); sh.quadraticCurveTo(-0.15, -0.13, -0.155, -0.08); sh.lineTo(-0.17, 0.06); sh.quadraticCurveTo(-0.17, 0.1, -0.15, 0.1); return sh; };
         [-1, 1].forEach((s) => {
-          const lg = new THREE.Group(); lg.position.set(s * 0.2, -0.04, 0.555); lg.rotation.y = s * 0.3; g.add(lg);
-          const outer = roundRectShape(0.32, 0.25, 0.08); outer.holes.push(roundRectShape(0.275, 0.205, 0.06));
-          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(outer), fm));
-          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(roundRectShape(0.28, 0.21, 0.06)), M.lens));
-          // hinge, then a temple arm that runs back along the side of the head and hooks behind the ear
-          const hinge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.035, 0.05), fm); hinge.position.set(s * 0.165, 0.07, -0.02); lg.add(hinge);
+          const lg = new THREE.Group(); lg.position.set(s * 0.19, -0.05, 0.56); lg.rotation.y = s * 0.3; lg.scale.x = -s; g.add(lg);
+          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(lensShape()), M.lens));
+          const pts = lensShape().getPoints(24).map((p) => new THREE.Vector3(p.x, p.y, 0.004)); pts.push(pts[0].clone());
+          lg.add(tube(pts, 0.006, metal, 60));
+          // thick white top bar over each lens, wrapping to the hinge
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.035), fm); bar.position.set(0.0, 0.1, 0.01); lg.add(bar);
+          const hinge = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.06), fm); hinge.position.set(-0.17, 0.085, -0.02); lg.add(hinge);
           g.add(tube([
-            new THREE.Vector3(s * 0.355, 0.03, 0.5), new THREE.Vector3(s * 0.47, 0.035, 0.4), new THREE.Vector3(s * 0.62, 0.03, 0.2),
-            new THREE.Vector3(s * 0.68, 0.01, 0.0), new THREE.Vector3(s * 0.65, -0.06, -0.1), new THREE.Vector3(s * 0.6, -0.16, -0.13),
-          ], 0.013, fm, 28));
+            new THREE.Vector3(s * 0.36, 0.04, 0.5), new THREE.Vector3(s * 0.47, 0.045, 0.4), new THREE.Vector3(s * 0.6, 0.04, 0.2),
+            new THREE.Vector3(s * 0.64, 0.02, 0.0), new THREE.Vector3(s * 0.62, -0.05, -0.1), new THREE.Vector3(s * 0.58, -0.15, -0.13),
+          ], 0.01, metal, 28));
         });
-        const bar = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.014, 6, 14, Math.PI), fm); bar.position.set(0, 0.0, 0.585); g.add(bar);
+        const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.045, 0.03), fm); bridge.position.set(0, 0.05, 0.6); g.add(bridge);
+        const bridge2 = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 6, 12, Math.PI), metal); bridge2.position.set(0, -0.02, 0.6); g.add(bridge2);
         return g; } },
       { id: "shades", slot: "face", name: "Kính đen ngầu", icon: "😎", build() {
         const g = new THREE.Group();
@@ -1490,15 +1486,17 @@
   const SAYINGS = {
     0: ["Chào bạn, mình là PAT!", "Muốn là làm thôi ♪", "Bấm Đi tiếp đi nè", "Mic check 1, 2 ♫"],
     1: ["Ảnh mình nè, vuốt thử đi!", "Thái độ trước, trình độ sau", "Cố gắng, không hối tiếc", "Đi đến cùng nha ★"],
-    2: ["Mở khoá sao kế tiếp đi!", "Mở đủ là có quà đó", "Bài đầu tiên đó ♪", "Mỗi bài là một vì sao"],
-    3: ["Đánh thử phím đàn đi!", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe theo thứ tự nha"],
-    4: ["Bấm phát video đi!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
-    5: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Cả ban nhạc sẵn sàng rồi ♪"],
-    6: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
+    2: ["Mở khoá sao kế tiếp đi!", "Mở đủ là có quà đó", "Nghe highlight trước nha ♪", "Mỗi bài là một vì sao"],
+    3: ["souL phối cả EP này đó", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe full trên smart link nha"],
+    4: ["Xem MV Đừng Như Thế đi!", "MV mình tâm đắc nhất đó", "Đăng ký kênh giúp mình nha", "Like video nữa nhé ♥"],
+    5: ["Bấm phát video đi!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
+    6: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Theo dõi mình nha ♪"],
+    7: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
   };
+
   const ACTS = ["jump", "spin", "wave", "heart", "wink", "dance", "star", "cute"];
   const EMOTES = [
-    { id: "happy", name: "Vui vẻ", icon: "😄", say: ["Hihi vui quá trời!", "Yeahhh ♪", "Hôm nay đẹp trời ghê~"] },
+    { id: "happy", name: "Vui vẻ", icon: "😎", say: ["Ổn áp.", "Yeah ♪", "Nghe được đó."] },
     { id: "angry", name: "Tức giận", icon: "💢", say: ["Hứ! Giận rồi đó!", "Đừng chọc nữa mà!", "Grrr..."] },
     { id: "shy", name: "Ngại ngùng", icon: "😳", say: ["Ơ... ngại quá à...", "Đừng nhìn mình vậy mà~", "Hihi... thôi mà"] },
     { id: "awkward", name: "Sượng trân", icon: "😶", say: ["...", "Ờm... ờ...", "Sượng trân luôn á"] },
@@ -1540,7 +1538,8 @@
     say._t = setTimeout(() => b.classList.remove("on"), 2200);
   }
 
-  const _v = new THREE.Vector3();
+  const _v = new THREE.Vector3(), _pq = new THREE.Quaternion(), _ps = new THREE.Quaternion(), _pc = new THREE.Vector3(), _Z = new THREE.Vector3(0, 0, 1), _Y = new THREE.Vector3(0, 1, 0);
+  const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
   const FACE_BASE = new THREE.Color(0xf2c4a0).convertSRGBToLinear(), FACE_RED = new THREE.Color(0xff8a80).convertSRGBToLinear(), FACE_PALE = new THREE.Color(0xd9cfe6).convertSRGBToLinear();
   function animateChibi(t, dt) {
     const P = PAT;
@@ -1575,7 +1574,7 @@
     }
 
     // face defaults: calm, cool, a hint of a smile
-    let eyeMode = "open", mouthMode = "grin", blushTarget = 0.5, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.07, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
+    let eyeMode = "open", mouthMode = "smirk", blushTarget = 0, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.12, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
     const fxOn = { anger: false, sweat: false, gloom: false, zzz: false };
     if (P.acting) {
       P.actT += dt;
@@ -1598,10 +1597,11 @@
       mouth = 0;
       switch (P.emo) {
         case "happy":
-          eyeMode = "happy"; mouthMode = "grin";
-          bodyY += Math.abs(Math.sin(k * 7)) * 0.22 * env; squash = 1 + Math.sin(k * 14) * 0.05 * env;
-          aLx = lerp(aLx, -2.7 + Math.sin(k * 7) * 0.2, env); aRx = lerp(aRx, -2.7 - Math.sin(k * 7) * 0.2, env); aLz = lerp(aLz, 0.5, env); aRz = lerp(aRz, -0.5, env);
-          hz += Math.sin(k * 7) * 0.14 * env; break;
+          // cool version of happy: a slow nod, smirk, one fist up
+          eyeMode = Math.floor(k * 2) % 5 === 4 ? "closed" : "open"; mouthMode = "smirk";
+          bodyY += Math.abs(Math.sin(k * 4)) * 0.08 * env;
+          aRx = lerp(aRx, -2.6, env); aRz = lerp(aRz, -0.2, env); aLx = lerp(aLx, -0.5, env); aLz = lerp(aLz, 0.35, env);
+          hx += Math.sin(k * 8) * 0.1 * env; hz += 0.1 * env; break;
         case "angry":
           eyeMode = "open"; mouthMode = "frown"; browY = -0.03; browRz = -0.45; blushTarget = 0; faceTo = FACE_RED; faceK = 0.55 * env; fxOn.anger = true;
           aLx = lerp(aLx, -0.25, env); aRx = lerp(aRx, -0.25, env); aLz = lerp(aLz, 0.12, env); aRz = lerp(aRz, -0.12, env);
@@ -1641,33 +1641,40 @@
       if (k >= EMO_DUR) P.emo = null;
     }
     // the gift: 30 seconds of hiphop, a new move every 3.75s (8 moves), on a ~100 BPM bounce
-    let sign = { L: null, R: null }, legZ = 0, holdRz = 0, holdY = 0;
+    let sign = { L: null, R: null }, legZ = 0, holdRz = 0, holdY = 0, power = null;
     if (P.dance != null) {
       const k = P.dance, bt = k / 0.6, ph = bt * Math.PI, move = Math.floor(k / 3.75) % 8, f = (k % 3.75) / 3.75, bounce = Math.abs(Math.sin(ph)), beat = Math.floor(bt) % 2;
       eyeMode = Math.floor(bt) % 4 === 3 ? "happy" : "open"; mouthMode = Math.floor(bt / 2) % 3 === 0 ? "grin" : "smirk"; mouth = 0;
       bodyY = bounce * 0.12; squash = 1 - bounce * 0.05; bodyX = 0; bodyRy = 0; bodyRz = 0; hx = 0.12 * bounce; hy = 0; hz = 0;
       let legA = Math.sin(ph) * 0.3;
+      // breaking power moves: the body tilts away from upright and spins around a contact point on the floor
+      const w = smooth(0, 0.12, f) * (1 - smooth(0.88, 1, f)), sp = (rev) => k * Math.PI * 2 * rev;
       switch (move) {
-        case 0: // bounce + arm pumps
+        case 0: // toprock: bounce + arm pumps
           aLx = -1.7 + Math.sin(ph * 2) * 0.7; aRx = -1.7 - Math.sin(ph * 2) * 0.7; aLz = 0.45; aRz = -0.45; break;
-        case 1: // scissors: legs cut open and closed on the beat, V fingers slide across the eyes
-          legA = beat ? 0.55 : -0.55; legZ = bounce * 0.35; bodyY += bounce * 0.06;
-          aRx = -2.05; aRz = lerp(0.55, -0.15, (Math.sin(ph) + 1) / 2); aLx = -0.4; aLz = 0.5; sign.R = "v"; hz = Math.sin(ph) * 0.1; mouthMode = "smirk"; break;
-        case 2: // hands on the head, heavy head nods
-          aLx = -2.85; aRx = -2.85; aLz = -0.55; aRz = 0.55; hx = 0.05 + bounce * 0.3; hz = Math.sin(ph * 0.5) * 0.15; bodyRz = Math.sin(ph * 0.5) * 0.08; legA = Math.max(0, Math.sin(ph)) * 0.35; break;
-        case 3: // gang sign: arms crossed over the chest, fingers out, lean back
-          aLx = -1.45; aRx = -1.45; aLz = -0.85; aRz = 0.85; sign.L = "v"; sign.R = "point"; hx = -0.18; hz = 0.12; bodyRz = 0.06; bodyY = bounce * 0.05; mouthMode = "smirk"; legA = 0; legZ = 0.2; break;
-        case 4: // arm wave rolling through both arms
-          aLx = 0; aRx = 0; aLz = 1.35 + Math.sin(ph * 2) * 0.35; aRz = -1.35 + Math.sin(ph * 2 + 1.4) * 0.35; bodyRz = Math.sin(ph * 2 + 0.7) * 0.1; hz = Math.sin(ph * 2 + 2) * 0.18; break;
-        case 5: // spin, then freeze with a sign up high
+        case 1: // windmill: rolling across the upper back, legs flared in a wide V
+          power = { tilt: Math.PI / 2 + 0.25 * Math.sin(sp(1.2) * 2), spin: sp(1.2), c: [0, 0.62, 0], floor: 0.32, w };
+          aLx = 0; aRx = 0; aLz = 1.45; aRz = -1.45; legZ = 0.65; legA = Math.sin(sp(1.2)) * 0.35; mouthMode = "smirk"; break;
+        case 2: // headspin: upside down on the crown, legs in a V
+          power = { tilt: Math.PI, spin: sp(2.4), c: [0, 1.86, 0], floor: 0.02, w };
+          aLx = 0; aRx = 0; aLz = 1.1; aRz = -1.1; legZ = 0.5; legA = 0; eyeMode = "closed"; mouthMode = "smirk"; break;
+        case 3: // 1990: handstand spin on one hand, free arm and legs straight
+          power = { tilt: Math.PI - 0.12, spin: sp(1.8), c: [-0.31, 1.27, 0], floor: 0.02, w };
+          aRx = 0; aRz = Math.PI - 0.05; aLx = 0; aLz = 1.25; legZ = 0.08; legA = 0; mouthMode = "smirk"; break;
+        case 4: // airflare: body sweeping round almost flat, legs scissored wide
+          power = { tilt: 1.25 + 0.35 * Math.sin(sp(1.4)), spin: sp(1.4), c: [0, 0.55, 0], floor: 0.8, w };
+          aLx = -0.4; aRx = -0.4; aLz = 0.35; aRz = -0.35; legZ = 0.75; legA = Math.sin(sp(1.4) * 2) * 0.4; break;
+        case 5: // halo: tilted spin around the side of the head
+          power = { tilt: 1.05, spin: sp(1.6), c: [0.2, 1.75, 0], floor: 0.08, w };
+          aLx = -0.3; aRx = -0.3; aLz = 1.2; aRz = -1.2; legZ = 0.45; legA = 0.3; eyeMode = "happy"; break;
+        case 6: // baby freeze to finish the set, V sign out
+          power = { tilt: 2.0, spin: 0.7, c: [-0.31, 1.27, 0], floor: 0.02, w };
+          aRx = 0; aRz = Math.PI - 0.2; aLx = -1.6; aLz = 0.4; sign.L = "v"; legZ = 0.3; legA = 0.6; mouthMode = "smirk"; break;
+        default: // toprock again, spin and freeze with a sign up high
           if (f < 0.45) { bodyRy = ease.io(f / 0.45) * Math.PI * 2; aLz = 1.2; aRz = -1.2; aLx = 0; aRx = 0; bodyY += 0.15; }
           else { aRx = -2.9; aRz = -0.2; aLx = -0.3; aLz = 0.9; hz = 0.28; bodyRz = 0.16; bodyY = 0; squash = 1; eyeMode = "open"; mouthMode = "smirk"; legA = 0; legZ = 0.15; sign.R = "v"; }
-          break;
-        case 6: // point up, point at you
-          aRx = beat ? -2.95 : -1.55; aRz = -0.15; aLx = -0.6; aLz = 0.25; bodyRz = beat ? -0.08 : 0.08; hx = beat ? -0.2 : 0.1; sign.R = "point"; break;
-        default: // side steps, shoulders rolling
-          bodyX = Math.sin(ph * 0.5) * 0.2; bodyRz = Math.sin(ph) * 0.12; aLx = -0.5; aRx = -0.5; aLz = 0.6 + Math.sin(ph) * 0.35; aRz = -0.6 + Math.sin(ph) * 0.35; hz = -Math.sin(ph) * 0.15; legA = Math.max(0, Math.sin(ph)) * 0.6;
       }
+      if (power) { bodyY = 0; squash = 1; hx = 0; hz = 0; }
       P.legs[0].rotation.x = legA; P.legs[1].rotation.x = -legA;
       if (Math.floor(bt) !== Math.floor((k - dt) / 0.6)) { P.root.getWorldPosition(_v); _v.y += 0.4; burst(_v, 3, { tex: pick(TEX.notes), speed: 1.6, size: 0.35, life: 1.1, up: 1.4 }); }
     }
@@ -1705,7 +1712,14 @@
     P.head.rotation.z += (hz - P.head.rotation.z) * s;
     P.body.position.y = bodyY + Math.sin(t * 2.2) * 0.012;
     P.body.position.x = bodyX;
-    P.body.rotation.y = bodyRy; P.body.rotation.z = bodyRz;
+    P.body.rotation.set(0, bodyRy, bodyRz);
+    if (power && power.w > 0.001) {
+      _pq.setFromAxisAngle(_Z, power.tilt * power.w); _ps.setFromAxisAngle(_Y, power.spin); _ps.multiply(_pq);
+      P.body.quaternion.copy(_ps);
+      _pc.set(power.c[0], power.c[1], power.c[2]).applyQuaternion(_ps);
+      P.body.position.set(-_pc.x * power.w, (power.floor + 0.3 - _pc.y) * power.w + (1 - power.w) * P.body.position.y, -_pc.z * power.w);
+      if (power.w > 0.5 && Math.random() < 0.3) { P.root.getWorldPosition(_v); burst(_v, 1, { tex: TEX.puff, speed: 1.2, size: 0.25, life: 0.6, up: 0.3 }); }
+    }
     P.body.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
     P.shadow.scale.setScalar(1 - bodyY * 0.5);
     // eyes
@@ -1725,7 +1739,7 @@
     });
     P.brows.forEach((b, i) => {
       const sd = i ? 1 : -1;
-      b.position.y += (0.1 + browY - b.position.y) * s;
+      b.position.y += (0.08 + browY - b.position.y) * s;
       b.rotation.z += (sd * browRz - b.rotation.z) * s;
     });
     // mouth
@@ -1758,11 +1772,12 @@
      ====================================================================== */
   const STATIONS = [
     { key: "hero", label: "Khởi hành", short: "Khởi hành", inst: "mic", tint: 0x8a0a1c, fx: "dolly" },
-    { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "mask" },
+    { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "ink" },
     { key: "tracks", label: "Chòm sao Track", short: "Track", inst: "electric", tint: 0x9c0d22, fx: "glitch" },
-    { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "vinyl" },
-    { key: "ads", label: "Nhạc quảng cáo", short: "Quảng cáo", inst: "bass", tint: 0xa3101f, fx: "shutter" },
-    { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "eq" },
+    { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "tear" },
+    { key: "mv", label: "Music Video", short: "MV", inst: "mic", tint: 0x7a0614, fx: "matchcut" },
+    { key: "ads", label: "Nhạc quảng cáo", short: "Quảng cáo", inst: "bass", tint: 0xa3101f, fx: "rgb" },
+    { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip" },
     { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly" },
   ];
   const INTRO = { x: 0, y: 0, z: 64 };
@@ -1931,13 +1946,27 @@
     updaters.push((t) => keys.children.forEach((k, i) => { k.userData.press *= 0.88; k.position.y = k.userData.baseY - k.userData.press * 0.25 + Math.sin(t * 1.5 + i * 0.5) * 0.08; }));
 
     // 4 — bass
-    const s4 = STATIONS[4].pos;
-    const gb = floatProp(INST.bass(), spot(4, 4, 3.8, 1.6), { spin: 0.1 }); gb.scale.setScalar(4.4); gb.rotation.z = 0.6;
+    // 4 — music videos: a floating cinema screen for the pinned MV, film strips drifting around it
+    const mvScr = new THREE.Group(); mvScr.rotation.y = stationYaw(4);
+    const scrM = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 2.7), basic(0xffffff, { map: mvTex(), side: THREE.DoubleSide })); mvScr.add(scrM);
+    const rim = new THREE.Mesh(new THREE.PlaneGeometry(5.1, 3.0), basic(0xe0102c, { transparent: true, opacity: 0.85, side: THREE.DoubleSide })); rim.position.z = -0.02; mvScr.add(rim);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 })); halo.scale.set(9, 6, 1); halo.position.z = -0.1; mvScr.add(halo);
+    floatProp(mvScr, spot(4, 5.5, 1.2, 3.4), { spin: 0, amp: 0.45 });
+    clickable(scrM, () => { mvScr.userData.wob = 1; Audio.pop(); if (state.station === 4) { const b = $('.panel[data-st="4"] .mv-feat .play-cover'); if (b) b.click(); } });
+    for (let i = 0; i < 4; i++) {
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.5), basic(0xffffff, { map: filmTex(), transparent: true, side: THREE.DoubleSide }));
+      const a = (i / 4) * Math.PI * 2, c = spot(4, 5.5, 1.2, 3.4);
+      strip.position.copy(c); scene.add(strip);
+      updaters.push((t) => { const k = a + t * 0.25; strip.position.set(c.x + Math.cos(k) * 4.2, c.y + Math.sin(k * 2) * 0.8, c.z + Math.sin(k) * 2.2); strip.rotation.set(0.2, -k, Math.sin(t + i) * 0.3); });
+    }
+
+    const s4 = STATIONS[5].pos;
+    const gb = floatProp(INST.bass(), spot(5, 4, 3.8, 1.6), { spin: 0.1 }); gb.scale.setScalar(4.4); gb.rotation.z = 0.6;
     clickable(gb, () => { gb.userData.wob = 1; [55, 73.4, 82.4, 110].forEach((f, k) => setTimeout(() => Audio.tone(f, { type: "sawtooth", dur: 0.8, vol: 0.08 }), k * 120)); act("dance"); });
     // floating billboards (ad screens)
     for (let i = 0; i < 3; i++) {
       const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.35), basic(0xffffff, { map: adTex(i), side: THREE.DoubleSide }));
-      floatProp(scr, spot(4, 5 + i, -1.5 + i * 2.2, 3 + (i % 2) * 1.1), { spin: 0, amp: 0.3 }); scr.rotation.y = stationYaw(4);
+      floatProp(scr, spot(5, 5 + i, -1.5 + i * 2.2, 3 + (i % 2) * 1.1), { spin: 0, amp: 0.3 }); scr.rotation.y = stationYaw(5);
       clickable(scr, () => { scr.userData.wob = 1; Audio.pop(); });
     }
 
@@ -1945,7 +1974,7 @@
     buildBand();
 
     // 6 — finale star
-    buildFinaleStar(spot(6, 3, -3, 2.6));
+    buildFinaleStar(spot(7, 3, -3, 2.6));
   }
   /* ---------- full band: 3D stage at the studio + pads in the panel ---------- */
   const DRUM = {
@@ -2003,7 +2032,7 @@
       Audio.init(); b.play(); if (!fromJam) BG.ping();
       const p = this.parts[id]; if (p) { p.userData.hitT = 1; const wp = new THREE.Vector3(); p.getWorldPosition(wp); burst(wp.add(new THREE.Vector3(0, 0.6, 0)), 5, { tex: pick(TEX.notes), speed: 1.4, size: 0.35, life: 1, up: 1.2 }); }
       const pad = $('[data-pad="' + id + '"]'); if (pad) { pad.classList.remove("hit"); void pad.offsetWidth; pad.classList.add("hit"); }
-      if (!fromJam && b.inst && state.station === 5) { setInstrument(b.inst); act(pick(["dance", "jump", "wave"])); }
+      if (!fromJam && b.inst && state.station === 6) { setInstrument(b.inst); act(pick(["dance", "jump", "wave"])); }
     },
     // 16-step groove at 96 BPM in A minor (Am, F, C, G) so the jam sits with the catalogue
     toggleJam() {
@@ -2013,7 +2042,7 @@
       const stepMs = 60000 / 96 / 4; let step = 0;
       const roots = [55, 43.65, 65.41, 49], chords = [[220, 261.6, 329.6], [174.6, 220, 261.6], [196, 261.6, 329.6], [196, 246.9, 293.7]];
       BG.duck("jam", true); if (btn) btn.textContent = "■ Dừng jam";
-      if (state.station === 5) { setInstrument("studio"); act("dance"); }
+      if (state.station === 6) { setInstrument("studio"); act("dance"); }
       this.jam = { iv: setInterval(() => {
         const s = step % 16, bar = Math.floor(step / 16) % 4;
         if (s === 0 || s === 6 || s === 10) this.hit("kick", true);
@@ -2034,13 +2063,13 @@
       $$("[data-pad]").forEach((el) => el.addEventListener("pointerdown", (e) => { e.preventDefault(); this.hit(el.dataset.pad); }));
       const j = $("#btnJam"); if (j) j.addEventListener("click", () => this.toggleJam());
       window.addEventListener("keydown", (e) => {
-        if (state.station !== 5 || state.modal || state.phase !== "live" || e.repeat || e.metaKey || e.ctrlKey) return;
+        if (state.station !== 6 || state.modal || state.phase !== "live" || e.repeat || e.metaKey || e.ctrlKey) return;
         const b = BAND.find((x) => x.key === e.key.toLowerCase()); if (b) this.hit(b.id);
       });
     },
   };
   function buildBand() {
-    const stage = new THREE.Group(); stage.position.copy(spot(5, 3.6, 2.2, 0)); stage.rotation.y = stationYaw(5); scene.add(stage);
+    const stage = new THREE.Group(); stage.position.copy(spot(6, 3.6, 2.2, 0)); stage.rotation.y = stationYaw(6); scene.add(stage);
     const riser = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.6, 0.35, 48, 1, false, -Math.PI * 0.62, Math.PI * 1.24), toon(0x141217));
     riser.position.y = -0.1; riser.position.z = -0.6; stage.add(riser);
     const rEdge = new THREE.Mesh(new THREE.TorusGeometry(4.45, 0.03, 6, 80, Math.PI * 1.24), basic(0xff2a40)); rEdge.rotation.set(Math.PI / 2, 0, Math.PI * 0.5 - Math.PI * 0.62 + Math.PI); rEdge.position.set(0, 0.08, -0.6); stage.add(rEdge);
@@ -2133,6 +2162,24 @@
     });
   }
 
+  function mvTex() {
+    return canvasTex(960, 540, (g, w, h) => {
+      const gr = g.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.5, w * 0.6); gr.addColorStop(0, "#5a0712"); gr.addColorStop(1, "#08070a");
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let k = 0; k < 60; k++) { g.fillStyle = "rgba(245,240,234," + (0.2 + Math.random() * 0.6) + ")"; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, Math.random() * 2.2, 0, 7); g.fill(); }
+      g.fillStyle = "#e0102c"; g.font = "700 26px 'Be Vietnam Pro', Arial"; g.fillText("📌  MV TÂM ĐẮC NHẤT", 48, 70);
+      g.fillStyle = "#f5f0ea"; g.font = "italic 300 96px 'Fraunces', Georgia"; g.fillText("Đừng Như Thế", 48, 300);
+      g.font = "500 28px 'Be Vietnam Pro', Arial"; g.fillStyle = "rgba(245,240,234,.75)"; g.fillText("MV Animation · Phương Anh Tú × souL", 52, 352);
+      g.fillStyle = "#e0102c"; g.beginPath(); g.arc(w - 140, h - 120, 56, 0, 7); g.fill(); g.fillStyle = "#f5f0ea"; g.beginPath(); g.moveTo(w - 160, h - 150); g.lineTo(w - 110, h - 120); g.lineTo(w - 160, h - 90); g.fill();
+    });
+  }
+  function filmTex() {
+    return canvasTex(440, 100, (g, w, h) => {
+      g.fillStyle = "#0d0b10"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#f5f0ea"; for (let x = 8; x < w; x += 22) { g.fillRect(x, 6, 10, 10); g.fillRect(x, h - 16, 10, 10); }
+      for (let k = 0; k < 4; k++) { const gr = g.createLinearGradient(0, 22, 0, h - 22); gr.addColorStop(0, "#e0102c"); gr.addColorStop(1, "#2a0208"); g.fillStyle = gr; g.fillRect(12 + k * 107, 24, 96, h - 48); }
+    });
+  }
   function adTex(i) {
     return canvasTex(480, 270, (g, w, h) => {
       const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, i % 2 ? "#f5f0ea" : "#e0102c"); gr.addColorStop(1, "#08070a");
@@ -2217,7 +2264,7 @@
     finaleStar.userData = { star, g1, g2, home: finaleStar.position.clone() };
     finaleStar.scale.setScalar(0.6);
     updaters.push((t, dt) => {
-      const u = finaleStar.userData, c = STATIONS[6].pos;
+      const u = finaleStar.userData, c = STATIONS[7].pos;
       // the star show runs on wall-clock time so slow frames don't stall it
       const now = performance.now(), fdt = Math.min((now - (finale.last || now)) / 1000, 0.5); finale.last = now;
       star.rotation.y += dt * 1.4; g2.material.rotation = t * 0.4;
@@ -2239,7 +2286,7 @@
         const s = 6 + Math.sin(t * 2.5) * 1.5; g1.scale.set(s, s, 1);
         finale.top = starTop();
         finaleStar.position.copy(finale.top); finaleStar.position.y += Math.sin(t * 1.2) * 0.2;
-      } else if (state.station === 6 && state.phase === "live") {
+      } else if (state.station === 7 && state.phase === "live") {
         // waiting at the last stop: park in the empty upper-right of the scene, clear of chibi and panel
         finaleStar.position.copy(starTop()); finaleStar.position.y += Math.sin(t * 1.3) * 0.15;
       } else {
@@ -2337,9 +2384,10 @@
       '<div class="pc-body"><h3 class="pc-title" data-tx>' + esc(e.title || "EP " + pad2(idx + 1)) + "</h3>" +
       '<div class="pc-sub">' + esc([e.date, items.length + " bài"].filter(Boolean).join(" · ")) + "</div>" +
       (e.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(e.story) + "</p>" : "") +
+      (e.producerStory ? '<div class="prod-card"><span class="pc-k">Music Producer</span><b>' + esc(e.producer || "") + '</b><p>' + esc(e.producerStory) + "</p></div>" : "") +
       '<div class="ep-gate" data-ep-gate><span><b>' + SINGLES.length + '</b> ngôi sao ở chương 03 là chìa khoá. Mở đủ, hộp quà sẽ xuất hiện và EP 075 thuộc về bạn.</span><button class="chip-btn chip-hot" data-go="2">Về Chòm sao Track</button></div>' +
-      '<ol class="ep-list" data-ep-open>' + items.map(([t, i]) => '<li><button data-ep-track="' + i + '"><span class="no">' + pad2(t.epNo || 0) + '</span><span class="tt">' + esc(t.title) + '</span><span class="td">' + esc(t.dur || "") + "</span></button></li>").join("") + "</ol>" +
-      '<div class="pc-row">' + (e.smartLink ? '<a class="src-link sl-main" href="' + esc(e.smartLink) + '" target="_blank" rel="noopener">Smart link EP ↗</a>' : "") + "</div>" +
+      '<ol class="ep-list" data-ep-open>' + items.map(([t, i]) => '<li><button data-ep-track="' + i + '"><span class="no">' + pad2(t.epNo || 0) + '</span><span class="tt">' + esc(t.title) + '</span><span class="td">' + (t.highlight ? "Highlight " + (t.highlight[1] - t.highlight[0]) + "s" : esc(t.dur || "")) + "</span></button></li>").join("") + "</ol>" +
+      '<div class="pc-row">' + (e.smartLink ? '<a class="ext-btn sl-main" href="' + esc(e.smartLink) + '" target="_blank" rel="noopener">Nghe trọn EP trên smart link ↗</a>' : "") + "</div>" +
       "</div></article>"
     );
   }
@@ -2407,7 +2455,7 @@
       '<section class="panel" data-st="2" aria-label="Chòm sao Track">' +
       '<div class="eyebrow rv">Chương 03 · Track</div>' +
       '<h2 class="p-title rv" data-tx>Chòm sao <em>Track</em></h2>' +
-      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao là một chặng đời của Tú: mở ra để nghe trọn bài hát, đọc câu chuyện phía sau nó, rồi mang theo smart link đến nền tảng bạn yêu thích. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
+      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao là một chặng đời của Tú: mở ra để nghe đoạn highlight, đọc câu chuyện phía sau nó, rồi mang theo smart link đến nền tảng bạn yêu thích. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
       '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span>" + "</div>" +
       '<ol class="tlist rv" id="tlist"></ol>' +
       "</section>"
@@ -2421,10 +2469,25 @@
       C.eps.map((e, i) => epCard(e, i)).join("") +
       "</section>"
     );
-    // 4 ads
+    // 4 music videos
+    const MV = C.musicVideos || { list: [] };
+    const ytThumb = (id) => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+    const mvFrame = (v, cls) => '<div class="mv-frame' + (cls ? " " + cls : "") + '" style="background-image:url(' + esc(ytThumb(v.youtubeId)) + ')"><button class="play-cover" data-yt="' + esc(v.youtubeId) + '" aria-label="Xem MV ' + esc(v.title) + '">' + ytThumbCover + "</button></div>";
+    const mvLink = (v) => '<a class="mv-link" data-mvlink href="' + esc(v.url) + '" target="_blank" rel="noopener">Xem trên kênh YouTube ↗</a>';
     html.push(
-      '<section class="panel" data-st="4" aria-label="Nhạc quảng cáo">' +
-      '<div class="eyebrow rv">Chương 05 · Quảng cáo</div>' +
+      '<section class="panel" data-st="4" aria-label="Music Video">' +
+      '<div class="eyebrow rv">Chương 05 · Music Video</div>' +
+      '<h2 class="p-title rv" data-tx>Câu chuyện <em>thành hình</em></h2>' +
+      '<p class="body-t rv">Có những câu chuyện phải được nhìn thấy. Đây là các MV của PAT, xem và nghe ngay tại đây, theo đúng thứ tự chúng ra đời.</p>' +
+      (MV.featured ? '<article class="mv-feat rv"><span class="mv-pin">📌 Ghim · MV tâm đắc nhất</span><div class="mv-float">' + mvFrame(MV.featured, "big") + '</div>' +
+        '<div class="mv-meta"><h3 class="pc-title" data-tx>' + esc(MV.featured.title) + '</h3><div class="pc-sub">' + esc(MV.featured.kind || "") + '</div><p class="body-t">' + esc(MV.featured.story || "") + "</p>" + mvLink(MV.featured) + "</div></article>" : "") +
+      '<ol class="mv-list">' + (MV.list || []).map((v, i) => '<li class="mv-item rv">' + mvFrame(v, v.tall ? "tall" : "") + '<div class="mv-cap"><span class="no">' + pad2(i + 1) + '</span><b>' + esc(v.title) + '</b><span class="pc-sub">' + esc(v.kind || "") + "</span>" + mvLink(v) + "</div></li>").join("") + "</ol>" +
+      "</section>"
+    );
+    // 5 ads
+    html.push(
+      '<section class="panel" data-st="5" aria-label="Nhạc quảng cáo">' +
+      '<div class="eyebrow rv">Chương 06 · Quảng cáo</div>' +
       '<h2 class="p-title rv" data-tx>Âm nhạc cho <em>thương hiệu</em></h2>' +
       '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đây là những thương hiệu đã tin giao vài giây đó cho PAT. Bấm phát để xem ngay tại đây.</p>' +
       C.ads.map((a, i) => adCard(a, i)).join("") +
@@ -2434,8 +2497,8 @@
     // 5 studio + band
     const tools = (C.tools || []).map((t, i) => '<div class="tool rv"><canvas data-tool="' + i + '"></canvas><b>' + esc(t.name) + "</b><span>" + esc(t.note || "") + "</span></div>").join("");
     html.push(
-      '<section class="panel" data-st="5" aria-label="Phòng thu và ban nhạc">' +
-      '<div class="eyebrow rv">Chương 06 · Phòng thu</div>' +
+      '<section class="panel" data-st="6" aria-label="Phòng thu và ban nhạc">' +
+      '<div class="eyebrow rv">Chương 07 · Phòng thu</div>' +
       '<h2 class="p-title rv" data-tx>Phòng thu &amp; <em>ban nhạc</em></h2>' +
       '<div class="tools">' + tools + "</div>" +
       '<div class="band rv"><div class="band-head"><h3>Ban nhạc của PAT</h3><button class="chip-btn" id="btnJam">▶ Jam cùng PAT</button></div>' +
@@ -2446,8 +2509,8 @@
     );
     // 6 finale
     html.push(
-      '<section class="panel" data-st="6" aria-label="Lời cảm ơn">' +
-      '<div class="eyebrow rv">Chương 07 · Ngôi sao</div>' +
+      '<section class="panel" data-st="7" aria-label="Lời cảm ơn">' +
+      '<div class="eyebrow rv">Chương 08 · Ngôi sao</div>' +
       '<h2 class="p-title rv" data-tx>Cảm ơn <em>bạn</em></h2>' +
       '<p class="thanks rv" data-tx>' + esc(C.thanks || "") + "</p>" +
       (C.artist.mission ? '<p class="mission rv">' + esc(C.artist.mission) + "</p>" : "") +
@@ -2473,10 +2536,20 @@
     });
     syncEPGate();
     $$(".play-cover").forEach((b) => b.addEventListener("click", () => playInline(b)));
+    $$("[data-mvlink]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); mvThanks(a.href); }));
     $$(".panel").forEach((p) => p.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true }));
     $$(".panel").forEach((p) => p.addEventListener("pointerdown", (e) => e.stopPropagation()));
   }
 
+  // before leaving for YouTube: a thank-you that asks for a subscribe and a like
+  function mvThanks(url) {
+    const yt = (C.follow || []).find((f) => /youtube/i.test(f.name));
+    $("#mvMsg").textContent = (C.musicVideos || {}).thanks || "Cảm ơn bạn đã xem!";
+    $("#mvGo").href = url;
+    $("#mvSub").href = yt ? yt.url : "https://www.youtube.com/@phuonganhtu.patmusic?sub_confirmation=1";
+    $("#mvModal").classList.add("on"); state.modal = true;
+    act("heart");
+  }
   function playInline(btn) {
     const id = btn.dataset.yt, wrap = btn.parentElement;
     btn.remove();
@@ -2663,11 +2736,11 @@
         const open = i < this.unlocked, next = i === this.unlocked;
         const cls = open ? "open" : next ? "next locked" : "locked";
         const title = open ? trackTitle(t, ti) : "★ ★ ★ ★ ★";
-        const date = open ? [t.date || PENDING, t.genre, t.dur, /,/.test(t.artists || "") ? "cùng " + t.artists.split(",").map((x) => x.trim()).filter((x) => x !== C.artist.stageName).join(", ") : ""].filter(Boolean).join(" · ") : next ? "Sẵn sàng mở khoá" : "Đang khoá";
+        const date = open ? [t.date || PENDING, t.genre, t.producer ? "Prod. " + t.producer : ""].filter(Boolean).join(" · ") : next ? "Sẵn sàng mở khoá" : "Đang khoá";
         return '<li><button class="titem ' + cls + '" data-i="' + i + '"' + (open || next ? "" : ' aria-disabled="true"') + ">" +
           '<canvas class="fx" data-fx="' + esc(t.fx) + '"></canvas>' +
           '<span class="no">' + pad2(i + 1) + '</span><span class="tt">' + esc(title) + '<span class="td">' + esc(date) + "</span></span>" +
-          '<span class="lk">' + (open ? "Nghe" : next ? "Mở khoá" : "Khoá") + "</span></button>" +
+          '<span class="lk">' + (open ? "Nghe highlight" : next ? "Mở khoá" : "Khoá") + "</span></button>" +
           (open && t.smartLink ? '<a class="tsl" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link ↗</a>' : "") + "</li>";
       }).join("");
       $$(".titem", ol).forEach((b) => b.addEventListener("click", () => this.tryOpen(+b.dataset.i)));
@@ -2700,20 +2773,32 @@
   };
 
   // full-length local audio for the ticket player
+  // plays a file, or only its highlight window [start, end] with short fades; the full song lives on the smart link
   class LocalPlayer {
-    constructor(src, onState) {
+    constructor(src, onState, range) {
       const a = document.createElement("audio"); a.src = src; a.preload = "auto"; a.volume = 0.85;
-      this.a = a; this.onState = onState;
-      a.addEventListener("playing", () => onState(1)); a.addEventListener("pause", () => onState(2)); a.addEventListener("ended", () => onState(0));
-      a.addEventListener("waiting", () => onState(3));
+      this.a = a; this.onState = onState; this.r = range && range.length === 2 ? range : null;
+      a.addEventListener("playing", () => onState(1)); a.addEventListener("pause", () => { if (!this._end) onState(2); });
+      a.addEventListener("ended", () => onState(0)); a.addEventListener("waiting", () => onState(3));
+      if (this.r) {
+        const [s0, s1] = this.r, F = 1.5;
+        a.addEventListener("loadedmetadata", () => { if (a.currentTime < s0) a.currentTime = s0; });
+        a.addEventListener("timeupdate", () => {
+          const t = a.currentTime;
+          if (t < s0 - 0.5) { a.currentTime = s0; return; }
+          a.volume = 0.85 * clamp(Math.min((t - s0) / F + 0.15, (s1 - t) / F), 0, 1);
+          if (t >= s1) { this._end = true; a.pause(); a.currentTime = s0; this._end = false; onState(0); }
+        });
+      }
     }
-    get time() { return this.a.currentTime || 0; }
-    get dur() { return isFinite(this.a.duration) ? this.a.duration : 0; }
-    play() { const p = this.a.play(); if (p && p.catch) p.catch(() => this.onState(2)); }
+    get time() { const t = this.a.currentTime || 0; return this.r ? clamp(t - this.r[0], 0, this.r[1] - this.r[0]) : t; }
+    get dur() { return this.r ? this.r[1] - this.r[0] : isFinite(this.a.duration) ? this.a.duration : 0; }
+    play() { if (this.r && (this.a.currentTime < this.r[0] || this.a.currentTime >= this.r[1])) { try { this.a.currentTime = this.r[0]; } catch (e) {} } const p = this.a.play(); if (p && p.catch) p.catch(() => this.onState(2)); }
     pause() { this.a.pause(); }
     seek(t) { this.a.currentTime = t; }
     destroy() { this.a.pause(); this.a.removeAttribute("src"); this.a.load(); }
   }
+  const durSec = (d) => { const m = /^(\d+):(\d{2})$/.exec(String(d || "")); return m ? +m[1] * 60 + +m[2] : 0; };
   const spotifyHref = (t) => t.spotify || "https://open.spotify.com/search/" + encodeURIComponent(t.title + " " + (C.artist.stageName || ""));
   const Ticket = {
     player: null, idx: -1, playing: false, peaks: null,
@@ -2723,16 +2808,21 @@
       $("#tkDate").textContent = (t.date || "PAT") + " · ADMIT ONE";
       $("#tkEyebrow").textContent = t.ep ? "EP " + t.ep + " · track " + t.epNo : (fresh ? "Ngôi sao vừa mở khoá" : "Ngôi sao số " + pad2(SINGLES.indexOf(i) + 1)) + " · Single";
       const title = $("#tkTitle"); title.textContent = trackTitle(t, i); title._tx = null; playText(title);
-      $("#tkSpec").innerHTML = [t.artists, t.genre, t.date, t.dur].filter(Boolean).map((x) => "<span>" + esc(String(x)) + "</span>").join("");
+      $("#tkSpec").innerHTML = [t.artists, t.producer ? "Music Producer: " + t.producer : "", t.genre, t.date, t.dur].filter(Boolean).map((x) => "<span>" + esc(String(x)) + "</span>").join("");
       const rows = { story: t.story || "Câu chuyện của bài hát sẽ sớm được kể ở đây.", journey: t.journey || t.formed || PENDING };
       (async () => { for (const p of $$(".tk-row p", $("#ticketModal"))) await typeInto(p, rows[p.dataset.k], 10); })();
       // smart link only: one door to every platform
       $("#tkLinks").innerHTML = t.smartLink ? '<a class="sl-main" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link · nghe trên mọi nền tảng ↗</a>' : "";
-      this.peaks = Array.isArray(t.peaks) ? t.peaks : null;
+      const hl = Array.isArray(t.highlight) ? t.highlight : null, full = durSec(t.dur);
+      this.peaks = Array.isArray(t.peaks) ? (hl && full ? t.peaks.slice(Math.floor((hl[0] / full) * t.peaks.length), Math.ceil((hl[1] / full) * t.peaks.length)) : t.peaks) : null;
+      $("#tkHl").innerHTML = hl ? "<b>Highlight " + (hl[1] - hl[0]) + " giây</b> · nghe trọn bài " + esc(t.dur || "") + " trên smart link" : "";
       this.seed = Array.from(trackTitle(t, i)).reduce((a, c) => a + c.charCodeAt(0), 7);
       this.stop();
-      $("#tkDur").textContent = t.dur || (t.audio ? "--:--" : "chưa có bản nghe");
-      if (t.audio) this.player = new LocalPlayer(t.audio, (st) => { this.playing = st === 1 || st === 3; this.setIcon(); BG.duck("ticket", this.playing); if (st === 0) emote("happy"); });
+      $("#tkDur").textContent = hl ? "0:" + pad2(hl[1] - hl[0]) : t.dur || (t.audio ? "--:--" : "chưa có bản nghe");
+      if (t.audio) this.player = new LocalPlayer(t.audio, (st) => {
+        this.playing = st === 1 || st === 3; this.setIcon(); BG.duck("ticket", this.playing);
+        if (st === 0) { emote("happy"); if (hl) { toast("Hết đoạn highlight. Nghe trọn bài trên smart link nhé ♪"); const sl = $("#tkLinks .sl-main"); if (sl) { sl.classList.remove("nudge"); void sl.offsetWidth; sl.classList.add("nudge"); } } }
+      }, hl);
       $("#ticketModal").classList.add("on");
       state.modal = true;
     },
@@ -2841,7 +2931,7 @@
 
   /* ---------- contact / finale ---------- */
   function openContact() {
-    if (state.station !== 6) return;
+    if (state.station !== 7) return;
     const ct = C.contact || {};
     const rows = [];
     if (ct.email) rows.push({ k: "Gmail", v: ct.email, href: mailHref(ct.email), act: "Gửi mail" });
@@ -2919,6 +3009,15 @@
     await sleep(reduced ? 80 : 620);
     return () => { w.classList.add("out"); setTimeout(() => (w.className = "wipe"), 900); };
   }
+  // cinematic cuts (match cut, whip pan, paper tear, ink splash, red-black glitch); returns the reveal
+  const TX_IN = { matchcut: 560, whip: 380, tear: 460, ink: 600, rgb: 500 };
+  async function cut(kind, label) {
+    const w = $("#tx"); w.className = "tx on " + kind; $(".tx-label", w).textContent = label;
+    void w.offsetWidth; w.classList.add("in");
+    if (kind === "rgb") { glitch(); Audio.swoosh(0.8); } else Audio.swoosh(kind === "whip" ? 1.2 : 0.6);
+    await sleep(reduced ? 60 : TX_IN[kind] + 260);
+    return () => { w.classList.remove("in"); w.classList.add("out"); if (kind === "rgb") glitch(); setTimeout(() => (w.className = "tx"), 800); };
+  }
   function glitch() { document.body.classList.remove("glitching"); void document.body.offsetWidth; document.body.classList.add("glitching"); cam.shake = 0.25; setTimeout(() => document.body.classList.remove("glitching"), 600); }
   function projectToScreen(v) { const p = v.clone().project(camera); return [(p.x * 0.5 + 0.5) * 100, (-p.y * 0.5 + 0.5) * 100]; }
 
@@ -2944,7 +3043,7 @@
     $("#btnPrev").disabled = i === 0;
     $("#nextLabel").textContent = i === STATIONS.length - 1 ? "Xuất phát điểm" : "Đi tiếp";
     U.tint.value.set(STATIONS[i].tint);
-    if (i === 6 && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
+    if (i === 7 && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
     if (i === 2 && Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === 2 && !state.modal && Gift.show(), 1800);
     setTimeout(() => state.station === i && say(pick(SAYINGS[i])), 1200);
   }
@@ -2954,7 +3053,7 @@
     if (state.moving || state.phase !== "live" || (j === state.station && !opts.force)) return;
     const i = state.station;
     state.moving = true;
-    if (Band.jam && j !== 5) Band.toggleJam();
+    if (Band.jam && j !== 6) Band.toggleJam();
     $$("video[data-ad]").forEach((v) => v.pause());
     if (Gift.dancing) Gift.end(true);
     PAT.idol = 0;
@@ -2968,6 +3067,7 @@
     Audio.swoosh(1);
     if (fx === "mask") reveal = await maskCut(STATIONS[j].short);
     else if (fx === "shutter" || fx === "vinyl" || fx === "eq") reveal = await wipe(fx, STATIONS[j].short);
+    else if (TX_IN[fx]) reveal = await cut(fx, STATIONS[j].short);
     if (fx === "glitch") glitch();
     const y0 = cam.baseYaw, y1 = stationYaw(j);
     let dy = y1 - y0; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -2997,6 +3097,8 @@
       const arc = Math.sin(p * Math.PI);
       if (mode === "finale") { cam.dist = 8.5 - e * 2.2 - arc * 1.2; cam.fovKick = arc * 14 - e * 4; soundWave.userData.draw(t0, t1, performance.now() / 1000, arc * 0.9); } // dolly in along the wave
       else if (fx === "dolly") { cam.fovKick = arc * 26; cam.dist = 7 - arc * 3.2; } // dolly-zoom (vertigo)
+      else if (fx === "matchcut" || fx === "ink") { cam.dist = 7 + arc * 6 - Math.sin(p * Math.PI * 2) * 1.5; cam.fovKick = -arc * 8; } // dolly out, then in
+      else if (fx === "whip") { cam.baseYaw += Math.sin(p * Math.PI) * 1.1; cam.dist = 7 + arc * 2; } // whip pan
       else cam.dist = 7 + arc * (2 + Math.min(3, lift));
       if (!swapped && p > 0.45) { swapped = true; setInstrument(mode === "finale" ? "mic" : STATIONS[j].inst); }
     });
@@ -3010,7 +3112,7 @@
       burst(PAT.root.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 30, { tex: TEX.notes[1], speed: 3, size: 0.4, life: 1.4, up: 1 });
       setTimeout(() => { emote("love"); say("Cảm ơn bạn đã đi cùng mình!"); }, 300);
       // then the thank-you on electric guitar
-      setTimeout(() => { if (state.station !== 6) return; setInstrument("acoustic"); PAT.idol = performance.now(); Audio.strum(); say("Bản guitar mộc này mình tặng bạn ♥"); }, 3900);
+      setTimeout(() => { if (state.station !== 7) return; setInstrument("acoustic"); PAT.idol = performance.now(); Audio.strum(); say("Bản guitar mộc này mình tặng bạn ♥"); }, 3900);
     } else if (mode !== "run") burst(PAT.root.position.clone(), 16, { tex: TEX.star, speed: 2.4, size: 0.26, life: 0.9 });
     // turn to face the viewer
     const faceY = cam.baseYaw - 0.25;
@@ -3022,7 +3124,7 @@
     showPanel(j);
   }
   /* ---------- how PAT travels between stations (one ride per stretch of road) ---------- */
-  const TRAVEL = ["run", "run", "guitar", "wings", "rocket", "staff", "finale"];
+  const TRAVEL = ["run", "run", "guitar", "wings", "rocket", "run", "staff", "finale"];
   const TRAVEL_SAY = {
     run: "Chạy nào ♪", guitar: "Lướt guitar nè!", wings: "Bay lên thôi~", rocket: "3, 2, 1... phóng!", staff: "Trượt theo khuông nhạc ♫", finale: "Hạ cánh cùng lời cảm ơn",
   };
@@ -3280,7 +3382,7 @@
   }
   const introSpin = { v: 0 };
   function tweenZoom(z) { const a = cam.zoom; z = clamp(z, 0.45, 2.4); tween(500, (p) => (cam.zoom = lerp(a, z, ease.out(p)))); }
-  function closeModals() { if ($("#ticketModal").classList.contains("on")) Ticket.close(); $("#contactModal").classList.remove("on"); state.modal = false; }
+  function closeModals() { if ($("#ticketModal").classList.contains("on")) Ticket.close(); $("#contactModal").classList.remove("on"); $("#mvModal").classList.remove("on"); state.modal = false; }
 
   function clickAt(x, y) {
     if (state.modal) return;

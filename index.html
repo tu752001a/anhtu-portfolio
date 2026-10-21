@@ -247,6 +247,8 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .tk-main{padding:22px 24px 22px;display:grid;gap:12px;min-width:0}
 .tk-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--blood);font-weight:700}
 .tk-title{font-family:var(--f-display);font-size:clamp(28px,4vw,44px);line-height:1.15;margin:0;font-style:italic;overflow-wrap:anywhere}
+.tk-hl{margin:8px 0 0;font-size:12px;color:#6a6168;letter-spacing:.02em}.tk-hl b{color:var(--blood);font-weight:700}
+.sl-main.nudge{animation:nudge .9s 2 var(--ease)}@keyframes nudge{0%,100%{transform:none}30%{transform:scale(1.08)}60%{transform:scale(.97)}}
 .tk-player{display:grid;grid-template-columns:54px 1fr;gap:14px;align-items:center}
 .tk-play{width:54px;height:54px;border-radius:50%;background:var(--ink);display:grid;place-items:center;transition:transform .3s var(--ease)}
 .tk-play:hover{transform:scale(1.08)}
@@ -264,6 +266,7 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .tk-links{display:flex;gap:10px;flex-wrap:wrap}
 .tk-links a{font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:999px;border:1px solid var(--ink);text-decoration:none}
 .tk-links a:hover{background:var(--ink);color:var(--bone)}
+.ext-btn{display:inline-block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:9px 16px;border-radius:999px;border:1px solid var(--blood);text-decoration:none;margin-top:6px}
 .x-btn{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(8,7,10,.08);z-index:2}
 .x-btn:hover{background:var(--blood);color:var(--bone)}
 .x-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
@@ -286,6 +289,56 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .spot-drawer iframe{width:100%;border:0;border-radius:14px;display:block}
 
 /* ---------- TRANSITIONS ---------- */
+/* cinematic cuts: match cut (iris), whip pan, paper tear, ink splash, red-black glitch */
+.tx{position:fixed;inset:0;z-index:46;pointer-events:none;display:none;overflow:hidden}
+.tx.on{display:block}
+.tx .tx-label{position:absolute;inset:0;display:grid;place-items:center;z-index:5;font-family:var(--f-poster);font-weight:900;font-size:clamp(40px,9vw,140px);text-transform:uppercase;letter-spacing:.04em;color:var(--bone);opacity:0;transition:opacity .3s .2s}
+.tx.in .tx-label{opacity:1}.tx.out .tx-label{opacity:0;transition-delay:0s}
+.tx .tx-a,.tx .tx-b{position:absolute;inset:0}
+/* match cut: the frame closes to a point, a red ring echoes it, the next scene opens from the same point */
+.tx.matchcut .tx-a{background:#08070a;clip-path:circle(150% at 50% 50%)}
+.tx.matchcut.in .tx-a{animation:iris-in .55s cubic-bezier(.7,0,.3,1) both}
+.tx.matchcut.out .tx-a{animation:iris-out .7s cubic-bezier(.7,0,.3,1) both}
+.tx.matchcut .tx-b{inset:auto;border:3px solid var(--blood);border-radius:50%;width:24vmin;height:24vmin;left:calc(50% - 12vmin);top:calc(50% - 12vmin);opacity:0}
+.tx.matchcut.in .tx-b{animation:ring 1.1s ease-out .3s both}
+@keyframes iris-in{from{clip-path:circle(0% at 50% 50%)}to{clip-path:circle(150% at 50% 50%)}}
+@keyframes iris-out{from{clip-path:circle(150% at 50% 50%)}to{clip-path:circle(0% at 50% 50%)}}
+@keyframes ring{0%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(5)}}
+/* whip pan: smeared light streaks rip across the frame */
+.tx.whip .tx-a{background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(224,16,44,.55) 7px 9px,rgba(245,240,234,.25) 9px 10px,rgba(8,7,10,.92) 10px 22px);filter:blur(6px);transform:translateX(-130%) skewX(-20deg)}
+.tx.whip.in .tx-a{animation:whip-in .38s cubic-bezier(.6,0,.4,1) both}
+.tx.whip.out .tx-a{animation:whip-out .38s cubic-bezier(.6,0,.4,1) both}
+@keyframes whip-in{to{transform:translateX(0) skewX(-20deg) scaleX(1.4)}}
+@keyframes whip-out{from{transform:translateX(0) skewX(-20deg) scaleX(1.4)}to{transform:translateX(130%) skewX(-20deg)}}
+/* paper tear: two torn sheets close, then rip apart */
+.tx.tear .tx-a,.tx.tear .tx-b{box-shadow:0 0 40px rgba(0,0,0,.6)}
+.tx.tear .tx-a{background:#efe8de;clip-path:polygon(0 0,100% 0,100% 52%,92% 49%,85% 55%,77% 50%,70% 56%,61% 50%,53% 54%,46% 49%,38% 56%,30% 50%,22% 55%,14% 49%,7% 54%,0 50%);transform:translateY(-100%)}
+.tx.tear .tx-b{background:#e6ddd0;clip-path:polygon(0 49%,7% 53%,14% 48%,22% 54%,30% 49%,38% 55%,46% 48%,53% 53%,61% 49%,70% 55%,77% 49%,85% 54%,92% 48%,100% 51%,100% 100%,0 100%);transform:translateY(100%)}
+.tx.tear.in .tx-a,.tx.tear.in .tx-b{animation:tear-in .45s cubic-bezier(.7,0,.3,1) both}
+.tx.tear.out .tx-a{animation:tear-out-a .7s cubic-bezier(.6,0,.3,1) both}
+.tx.tear.out .tx-b{animation:tear-out-b .7s cubic-bezier(.6,0,.3,1) both}
+.tx.tear .tx-label{color:#120306}
+@keyframes tear-in{to{transform:none}}
+@keyframes tear-out-a{from{transform:none}to{transform:translate(-8%,-110%) rotate(-6deg)}}
+@keyframes tear-out-b{from{transform:none}to{transform:translate(8%,110%) rotate(5deg)}}
+/* ink splash: a black-red blot blooms over the frame and drains away */
+.tx.ink .tx-a{background:radial-gradient(circle at 50% 50%,#08070a 0 55%,#3a0510 62%,transparent 70%);filter:url(#inkf);transform:scale(0)}
+.tx.ink .tx-b{background:radial-gradient(circle at 62% 40%,rgba(224,16,44,.95) 0 18%,transparent 26%),radial-gradient(circle at 30% 66%,rgba(224,16,44,.9) 0 10%,transparent 16%);filter:url(#inkf);transform:scale(0)}
+.tx.ink.in .tx-a{animation:ink-in .6s cubic-bezier(.5,0,.2,1) both}.tx.ink.in .tx-b{animation:ink-in .5s .08s cubic-bezier(.5,0,.2,1) both}
+.tx.ink.out .tx-a,.tx.ink.out .tx-b{animation:ink-out .6s ease-in both}
+@keyframes ink-in{from{transform:scale(0) rotate(-20deg)}to{transform:scale(3.2) rotate(0)}}
+@keyframes ink-out{from{transform:scale(3.2);opacity:1}to{transform:scale(3.6);opacity:0}}
+/* cinematic red-black glitch */
+.tx.rgb .tx-a{background:linear-gradient(180deg,#08070a 0 30%,#5a0412 30% 33%,#08070a 33% 61%,var(--blood) 61% 63%,#08070a 63%)}
+.tx.rgb .tx-b{background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(224,16,44,.25) 3px 4px)}
+.tx.rgb.in .tx-a{animation:rgb-in .5s steps(6) both}.tx.rgb.out .tx-a{animation:rgb-out .55s steps(7) both}
+.tx.rgb.out .tx-b{opacity:0;transition:opacity .4s}
+.tx.rgb .tx-label{text-shadow:-6px 0 #ff0033,6px 0 #ffffff;animation:rgbtxt .5s steps(5) infinite}
+@keyframes rgb-in{0%{clip-path:inset(40% 0 52% 0);transform:translateX(-30px)}20%{clip-path:inset(10% 0 70% 0);transform:translateX(24px)}40%{clip-path:inset(60% 0 10% 0);transform:translateX(-12px)}60%{clip-path:inset(0 0 40% 0)}80%{clip-path:inset(20% 0 0 0);transform:translateX(8px)}100%{clip-path:inset(0);transform:none}}
+@keyframes rgb-out{0%{clip-path:inset(0)}25%{clip-path:inset(0 0 55% 0);transform:translateX(18px)}50%{clip-path:inset(45% 0 20% 0);transform:translateX(-22px)}75%{clip-path:inset(80% 0 5% 0)}100%{clip-path:inset(100% 0 0 0)}}
+@keyframes rgbtxt{0%{transform:translate(0)}25%{transform:translate(-4px,2px) skewX(8deg)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,0) skewX(-6deg)}}
+@media (prefers-reduced-motion:reduce){.tx *{animation-duration:.01s!important}}
+
 #mask{position:fixed;inset:0;z-index:45;pointer-events:none;background:var(--blood);clip-path:circle(0% at 70% 55%);display:grid;place-items:center}
 #mask span{font-family:var(--f-num);font-weight:900;font-size:clamp(60px,14vw,220px);letter-spacing:.02em;color:var(--ink);text-transform:uppercase;line-height:1}
 /* extra wipes */
@@ -433,6 +486,33 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .panel .ct-card{margin-top:22px}
 .panel .pub{margin-top:18px;padding-top:12px;border-top:1px solid rgba(245,240,234,.1)}
 .ct-pub{margin-top:14px;text-align:center}
+.prod-card{margin:14px 0 6px;padding:14px 16px;border-left:2px solid var(--blood);background:linear-gradient(90deg,rgba(224,16,44,.14),transparent)}
+.prod-card .pc-k{display:block;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--ember)}
+.prod-card b{font-family:var(--f-display);font-style:italic;font-size:26px;font-weight:600}
+.prod-card p{margin:6px 0 0;font-size:13.5px;line-height:1.6;color:var(--ash)}
+.mv-feat{position:relative;margin:16px 0 22px;padding:16px;border-radius:22px;background:radial-gradient(120% 90% at 50% 0%,rgba(224,16,44,.35),rgba(8,7,10,.7) 70%);border:1px solid rgba(224,16,44,.55);box-shadow:0 0 0 1px rgba(224,16,44,.15),0 20px 60px -20px rgba(224,16,44,.6)}
+.mv-pin{position:absolute;top:-12px;left:16px;z-index:3;padding:5px 12px;border-radius:999px;background:var(--blood);color:var(--bone);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 6px 20px rgba(224,16,44,.5)}
+.mv-float{animation:mvfloat 5s ease-in-out infinite;transform-origin:50% 60%}
+@keyframes mvfloat{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-10px) rotate(.6deg)}}
+.mv-frame{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#120306 center/cover no-repeat;box-shadow:0 12px 40px rgba(0,0,0,.55)}
+.mv-frame.big{box-shadow:0 0 0 2px rgba(224,16,44,.6),0 24px 60px rgba(224,16,44,.35)}
+.mv-frame.tall{aspect-ratio:16/9}
+.mv-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.mv-frame .play-cover{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,transparent 40%,rgba(8,7,10,.55))}
+.mv-meta{margin-top:12px}
+.mv-meta .pc-title{font-size:30px}
+.mv-link{display:inline-flex;margin-top:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ember);text-decoration:none;border-bottom:1px solid currentColor}
+.mv-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.mv-item{min-width:0}
+.mv-cap{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.mv-cap .no{font-family:var(--f-num);color:var(--blood);font-size:13px;font-weight:700}
+.mv-cap b{font-size:14px;line-height:1.3}
+.mv-cap .mv-link{margin-top:4px;font-size:10.5px}
+.mv-thanks p{font-size:15px;line-height:1.6;color:var(--ash);text-align:center;margin:8px 0 16px}
+.mv-acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.mv-btn{padding:12px 18px;border-radius:999px;border:1px solid rgba(245,240,234,.25);color:var(--bone);text-decoration:none;font-weight:700;font-size:14px}
+.mv-btn.hot{background:var(--blood);border-color:var(--blood)}
+@media (max-width:520px){.mv-list{grid-template-columns:1fr}}
 .ct-card{margin:4px 0 18px;padding:14px 16px;border-radius:18px;border:1px solid rgba(224,16,44,.45);background:linear-gradient(135deg,rgba(224,16,44,.16),rgba(8,7,10,.55))}
 .ct-card h3{margin:0 0 8px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ember);font-weight:700}
 .ct-line{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
@@ -495,6 +575,8 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 <div id="flash"></div>
 <div class="glitch-bars"></div>
 <div id="mask"><span>PAT</span></div>
+<div class="tx" id="tx" aria-hidden="true"><div class="tx-a"></div><div class="tx-b"></div><span class="tx-label"></span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="inkf"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="90"/></filter></svg>
 <div id="wipe" class="wipe" aria-hidden="true"><div class="wp-bars"></div><div class="wp-disc"></div><span class="wp-label"></span></div>
 <div id="cursor"></div>
 <div class="bubble" id="bubble"></div>
@@ -568,6 +650,7 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
         <div class="tk-row"><h4>Câu chuyện bài hát</h4><p data-k="story"></p></div>
         <div class="tk-row"><h4>Tiến trình ra đời</h4><p data-k="journey"></p></div>
       </div>
+      <p class="tk-hl" id="tkHl"></p>
       <div class="tk-links" id="tkLinks"></div>
     </div>
   </article>
@@ -597,6 +680,15 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
   <span>PAT đang quẩy hiphop tặng bạn</span><i><b id="danceProg"></b></i><button class="chip-btn" id="danceSkip">Sang EP 075 →</button>
 </div>
 
+<div class="modal" id="mvModal" role="dialog" aria-modal="true" aria-label="Cảm ơn bạn">
+  <article class="contact mv-thanks">
+    <button class="x-btn" data-close aria-label="Đóng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="eyebrow" style="justify-content:center">Từ PAT với lòng biết ơn</div>
+    <h3>Cảm ơn bạn ♥</h3>
+    <p id="mvMsg"></p>
+    <div class="mv-acts"><a class="mv-btn hot" id="mvSub" target="_blank" rel="noopener">Đăng ký kênh</a><a class="mv-btn" id="mvGo" target="_blank" rel="noopener">Xem &amp; thích video ↗</a></div>
+  </article>
+</div>
 <div class="modal" id="contactModal" role="dialog" aria-modal="true" aria-label="Liên hệ">
   <article class="contact">
     <button class="x-btn" data-close aria-label="Đóng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>

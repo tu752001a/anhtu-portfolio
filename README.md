@@ -29,9 +29,20 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 ## Track: single và EP
 - Track **không có** `ep` là single. Chỉ single nằm trong chòm sao, mở khoá theo thứ tự ngày phát hành.
 - Track **có** `ep: "EP 075"` thuộc EP, chỉ mở sau khi người xem mở hết single và nhận hộp quà (chibi nhảy hiphop 30 giây rồi dẫn thẳng tới EP 075).
-- Mỗi track gồm: `title`, `artists`, `date` (dd/mm/yyyy), `genre`, `audio`, `smartLink` (nút nghe duy nhất, dẫn tới mọi nền tảng), `dur`, `story` (câu chuyện bài hát, viết như người kể chuyện), `journey` (tiến trình ra đời).
+- Mỗi track gồm: `title`, `artists`, `producer` (Music Producer), `date` (dd/mm/yyyy), `genre`, `audio`, `highlight`, `smartLink` (nút nghe duy nhất, dẫn tới mọi nền tảng), `dur`, `story` (câu chuyện bài hát, viết như người kể chuyện), `journey` (tiến trình ra đời).
+- **Highlight**: `highlight: [giây bắt đầu, giây kết thúc]`, ví dụ `[83, 123]`. Web chỉ phát đoạn này (30–45 giây) rồi nhắc người nghe bấm smart link để nghe trọn bài. Mình đã tự chọn đoạn sôi động nhất mỗi bài, bạn đổi số tuỳ ý.
+- **Music Producer**: Karrot cho mọi single, souL cho toàn bộ EP 075. Câu chuyện của souL nằm ở `producerStory` trong khối EP.
 - Track và EP chỉ hiện smart link, không hiện nút Spotify hay Apple Music riêng.
 - Đã bỏ ISRC, UPC và tông bài theo yêu cầu.
+
+## Music Video
+`musicVideos.featured` là MV được ghim (Đừng Như Thế, MV animation), hiện lớn nhất và nổi lơ lửng trong không gian 3D. `musicVideos.list` là 5 MV theo đúng thứ tự: Thức Tỉnh, Không Màu, Em Đau, Full EP 075, Sau Lớp Mặt Nạ (Phonk Version). Mỗi MV cần `youtubeId` (đoạn mã sau `youtu.be/`). Bấm "Xem trên kênh YouTube" sẽ hiện lời tri ân (`musicVideos.thanks`) kèm nút đăng ký kênh trước khi mở video.
+
+## Chân dung
+`photos` là danh sách ảnh trong thư mục `photos/`, hiện thành card nghệ sĩ bo góc.
+
+## Chuyển cảnh
+Mỗi chương có một kiểu chuyển cảnh riêng: dolly in/out, vẩy mực, glitch, xé giấy, match cut (vào Music Video), glitch đỏ đen (rời Music Video), whip pan.
 
 ## Nhạc quảng cáo
 Trong `ads: [ ... ]`, mỗi video gồm `brand`, `title`, `kind`, `shape` (`"wide"` cho video ngang, `"tall"` cho video dọc TikTok), `video`, `poster`, `credits`, `story`. Thêm video mới: tải file `.mp4` vào `video/` rồi chép một khối có sẵn.

@@ -26,8 +26,10 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 ## Thông điệp chính
 `artist.mission` là câu "Chỉ cần bản thân muốn, mọi thứ đều có thể thực hiện…". Câu này hiện ở phần mở đầu và chương cuối.
 
-## Hành trình 14 chặng
-Khởi hành → Chân dung → 5 chặng Track (mỗi single một chặng) → Quà tặng (breakdance) → EP 075 → Music Video → On Air 01, On Air 02 (mỗi quảng cáo một chặng) → Phòng thu → Ngôi sao. Thêm single hay quảng cáo vào `content.js` thì web tự thêm chặng mới. Cuối mỗi chặng có một dòng gợi ý bí mật về chặng sau; bản đồ góc phải chỉ hiện "?" cho những chặng người xem chưa tới.
+## Hành trình 20 chặng
+Khởi hành → Chân dung → **Dòng thời gian** → Track 01, Track 02 → **Đoán bài 5 giây** → Track 03, Track 04 → **Tủ đồ của PAT** → Track 05 → Quà tặng (breakdance) → EP 075 → **Người đứng sau beat** (Karrot, souL) → Music Video → Nhạc quảng cáo 01 → **Beat Lab** → Nhạc quảng cáo 02 → Phòng thu → **Vé fan** → Ngôi sao.
+
+Sáu chặng mới (in đậm) xen giữa các track để nhịp lúc nghe, lúc chơi: dòng thời gian hé lộ dần từng mốc khi người xem đi tới; đoán bài phát 5 giây highlight từ chính file nhạc; tủ đồ cho mặc nhanh phụ kiện và đổi cảm xúc; Beat Lab là bàn 4 x 8 pad (kick, snare, hi-hat, bass, 96 BPM); vé fan ghi tên người xem, số sao đã thắp, số chặng đã đi và cho lưu về máy dạng PNG. Thêm single hay quảng cáo vào `content.js` thì web tự thêm chặng. Cuối mỗi chặng có một dòng gợi ý bí mật về chặng sau; bản đồ góc phải chỉ hiện "?" cho những chặng chưa tới.
 
 ## Chibi
 Chibi 3D dựng theo hình mẫu 2D bạn gửi (áo dạ đen cúc vàng, cổ tay lông, tóc rẽ ngôi, khuyên tai), không có má hồng. Chương Chân dung có thẻ "Chibi PAT" gồm hình mẫu 2D và bảng nhiều góc nhìn (`photos/pat-chibi.png`, `photos/pat-chibi-angles.jpg`).
@@ -51,7 +53,7 @@ Chibi 3D dựng theo hình mẫu 2D bạn gửi (áo dạ đen cúc vàng, cổ 
 Mỗi chương có một kiểu chuyển cảnh riêng: dolly in/out, vẩy mực, glitch, xé giấy, match cut (vào Music Video), glitch đỏ đen (rời Music Video), whip pan.
 
 ## Nhạc quảng cáo
-Mỗi quảng cáo là một chặng "On Air": khung phát sóng có đèn ON AIR, timecode chạy theo video, 4 khung hình kèm chú thích (bấm để tua tới đoạn đó) và bảng mô tả. Trong `ads: [ ... ]`, mỗi video gồm `stills` (ảnh khung hình, `t` là giây, `cap` là chú thích), `brand`, `title`, `kind`, `shape` (`"wide"` cho video ngang, `"tall"` cho video dọc TikTok), `video`, `poster`, `credits`, `story`. Thêm video mới: tải file `.mp4` vào `video/` rồi chép một khối có sẵn.
+Mỗi quảng cáo là một chặng "Nhạc quảng cáo": khung phát sóng có đèn "Nhạc quảng cáo", timecode chạy theo video, 4 khung hình kèm chú thích (bấm để tua tới đoạn đó) và bảng mô tả. Trong `ads: [ ... ]`, mỗi video gồm `stills` (ảnh khung hình, `t` là giây, `cap` là chú thích), `brand`, `title`, `kind`, `shape` (`"wide"` cho video ngang, `"tall"` cho video dọc TikTok), `video`, `poster`, `credits`, `story`. Thêm video mới: tải file `.mp4` vào `video/` rồi chép một khối có sẵn.
 
 ## Nhạc nền
 `bgMusic.quietSeconds: 20`. Khi bất kỳ bài hát, video hay ban nhạc nào phát, nhạc nền tự giảm dần rồi tắt, và chỉ bật lại sau 20 giây không còn âm thanh. Tiếng click nhỏ của giao diện không làm tắt nhạc nền.

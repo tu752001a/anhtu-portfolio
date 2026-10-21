@@ -634,6 +634,44 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .chibi-card figcaption{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ash)}
 .chibi-card figcaption b{font-size:15px;color:var(--bone)}
 .chibi-card .cc-angles{grid-column:1/-1;width:100%;border-radius:10px;display:block}
+
+/* round 6 widgets */
+.tl{list-style:none;margin:16px 0 4px;padding:0 0 0 14px;border-left:2px solid rgba(224,16,44,.5);display:grid;gap:8px}
+.tl li{position:relative;opacity:0;transform:translateX(-10px);animation:tlIn .6s var(--ease) forwards;animation-delay:calc(var(--n)*80ms)}
+.tl li::before{content:"";position:absolute;left:-21px;top:14px;width:10px;height:10px;border-radius:50%;background:#08070a;border:2px solid rgba(255,255,255,.35)}
+.tl li.open::before{background:var(--blood);border-color:var(--ember);box-shadow:0 0 12px var(--blood)}
+.tl button{display:grid;grid-template-columns:92px 1fr;gap:0 10px;width:100%;text-align:left;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(8,7,10,.45);color:inherit;cursor:pointer}
+.tl button:hover{border-color:var(--ember)}
+.tl time{grid-row:span 2;font-size:12px;letter-spacing:.08em;opacity:.7;align-self:center}
+.tl b{font-weight:700}.tl li:not(.open) b{letter-spacing:.3em;opacity:.55}
+.tl span{font-size:12px;opacity:.6}
+@keyframes tlIn{to{opacity:1;transform:none}}
+.quiz{margin:16px 0 4px;padding:16px;border-radius:14px;border:1px solid rgba(224,16,44,.4);background:rgba(8,7,10,.5)}
+.qz-top{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.06em;margin-bottom:12px}
+.qz-top span{color:var(--ember)}
+.qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.qz-opts button{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:inherit;cursor:pointer;font:inherit;font-size:14px;transition:background .25s,border-color .25s,transform .25s}
+.qz-opts button:hover{border-color:var(--ember);transform:translateY(-2px)}
+.qz-opts button.ok{background:rgba(40,190,110,.25);border-color:#3ad08a}
+.qz-opts button.no{background:rgba(224,16,44,.3);border-color:var(--blood);animation:qzShake .4s}
+.qz-msg{min-height:1.4em;margin:10px 0 0;font-size:14px}
+@keyframes qzShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.wd-quick{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.wd-quick button{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(8,7,10,.5);color:inherit;font:inherit;font-size:13px;cursor:pointer;transition:border-color .25s,transform .25s}
+.wd-quick button:hover,.wd-quick button.on{border-color:var(--ember);transform:translateY(-2px)}
+.wd-quick i{font-style:normal}
+.bl{margin:16px 0 8px;display:grid;gap:6px}
+.bl-row{display:grid;grid-template-columns:56px repeat(8,1fr);gap:5px;align-items:center}
+.bl-row span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.bl-row button{aspect-ratio:1;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);cursor:pointer;transition:background .15s,box-shadow .15s}
+.bl-row button:nth-of-type(4n+1){border-color:rgba(255,255,255,.3)}
+.bl-row button.on{background:var(--blood);border-color:var(--ember);box-shadow:0 0 12px rgba(224,16,44,.6)}
+.bl-row button.now{outline:2px solid #fff;outline-offset:1px}
+.bl-ctl{display:flex;flex-wrap:wrap;gap:8px}
+.fan-in{display:grid;gap:6px;margin:14px 0 10px;font-size:13px}
+.fan-in input{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(8,7,10,.6);color:inherit;font:inherit;font-size:16px}
+.fan-in input:focus{outline:none;border-color:var(--ember)}
+.fan-tk{display:block;width:100%;height:auto;margin:0 0 12px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 </style>
 
 <canvas id="stage" aria-label="Không gian 3D tương tác của Phương Anh Tú"></canvas>

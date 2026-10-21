@@ -1037,60 +1037,46 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — soft, messy Korean cut: volume on top, curtain fringe parted just off centre,
-    // wavy locks that flick outward over the temples and at the nape; ears stay visible
+    // Hair — matched to the 2D reference: a big, messy volume wider than the face, a heavy swoop from a part
+    // just off centre down over his right brow (viewer's left), the forehead open on the other side,
+    // tufts flicking out above both ears, a cowlick on the crown and glossy grey highlights
     const hair = new THREE.Group(); head.add(hair);
-    const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.57, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.1, 1.04, 1.06); cap.position.set(0, 0.06, -0.02); cap.rotation.x = -0.32; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
+    const lockMat = toon(0x1b181f, { side: THREE.DoubleSide });
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
+    cap.scale.set(1.1, 1.0, 1.06); cap.position.set(0, 0.05, -0.03); cap.rotation.x = -0.5; hair.add(cap);
     const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.46), M.hair);
     nape.scale.set(1.075, 0.97, 1.045); hair.add(nape);
-    const H = (ctrl, w0, th = 0.05, w1 = 0.006) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    const PA = -0.14, jit = (i, a) => Math.sin(i * 12.9898) * a;
-    // crown volume: broad, soft locks swept forward and to the sides; they stop above the forehead
-    for (let i = 0; i < 8; i++) {
-      const u = i / 7, az = lerp(-1.25, 1.25, u);
-      H([[PA + az * 0.25, 1.48, 0.56], [az * 0.62, 1.2 + jit(i, 0.06), 0.88], [az * 0.95, 0.86, 0.8], [az * 1.1, 0.6, 0.67]], 0.24, 0.09, 0.03);
+    const H = (ctrl, w0, th = 0.08, w1 = 0.02) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
+    const PA = 0.06, jit = (i, a) => Math.sin(i * 12.9898 + 4.1) * a;
+    // the volume: big clumps radiating from the crown, bulging well past the face, ending in outward flicks
+    for (let i = 0; i < 20; i++) {
+      const az = -Math.PI + ((i + 0.5) / 20) * Math.PI * 2;
+      if (Math.abs(az) < 0.7) continue; // the front belongs to the fringe
+      const s = Math.sign(az), back = Math.abs(az) > 2.1;
+      if (back) H([[az * 0.3, 1.45, 0.6], [az, 1.0, 0.84 + jit(i, 0.03)], [az + jit(i, 0.06), 0.35, 0.74], [az, -0.12, 0.62], [az + s * 0.06, -0.3, 0.68]], 0.34, 0.1, 0.03);
+      else H([[az * 0.3, 1.45, 0.6], [az, 1.05, 0.88 + jit(i, 0.04)], [az + s * 0.04, 0.5, 0.86], [az + s * 0.1, 0.22, 0.84], [az + s * 0.18, 0.1 + jit(i + 3, 0.06), 0.97 + jit(i + 5, 0.05)]], 0.32, 0.1, 0.02);
     }
-    // curtain fringe — his right side (viewer's left): sweeps from the part down to the temple
-    for (let i = 0; i < 4; i++) {
-      const ea = -0.42 - i * 0.2, ee = 0.42 - i * 0.05 + jit(i + 3, 0.03);
-      H([[PA, 1.22, 0.6], [PA - 0.1 - i * 0.06, 0.92, 0.72], [ea + 0.12, ee + 0.17, 0.67], [ea, ee, 0.605], [ea - 0.08, ee + 0.01, 0.64]], 0.2, 0.06, 0.03);
-    }
-    // curtain fringe — his left side (viewer's right), longer sweep
+    // heavy swoop from the part over his right brow (viewer's left)
     for (let i = 0; i < 5; i++) {
-      const ea = 0.3 + i * 0.18, ee = 0.46 - i * 0.05 + jit(i + 7, 0.03);
-      H([[PA + 0.03, 1.22, 0.6], [PA + 0.12 + i * 0.07, 0.94, 0.73], [ea - 0.12, ee + 0.17, 0.675], [ea, ee, 0.605], [ea + 0.09, ee + 0.02, 0.645]], 0.2, 0.06, 0.03);
+      H([[PA, 1.32, 0.6], [PA - 0.08 - i * 0.06, 1.02, 0.8], [-0.22 - i * 0.12, 0.6 - i * 0.03, 0.74], [-0.42 - i * 0.14, 0.24 + i * 0.02, 0.61], [-0.56 - i * 0.16, 0.08 + i * 0.05, 0.66]], 0.3, 0.1, 0.025);
     }
-    // two loose strands falling over the forehead, just off the part
-    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.68], [-0.2, 0.48, 0.62], [-0.16, 0.3, 0.575]], 0.08, 0.045);
-    H([[PA + 0.04, 1.2, 0.6], [PA + 0.1, 0.86, 0.68], [0.12, 0.52, 0.62], [0.2, 0.38, 0.58]], 0.07, 0.04);
-    // flyaway strands on the crown
-    H([[0.15, 1.42, 0.58], [0.22, 1.6, 0.74], [0.5, 1.56, 0.84]], 0.05, 0.03, 0.004);
-    H([[-0.35, 1.42, 0.58], [-0.42, 1.58, 0.72], [-0.7, 1.52, 0.8]], 0.045, 0.028, 0.004);
-    // sides: wavy locks over the temples that flick outward above the ears
-    [-1, 1].forEach((s) => {
-      for (let i = 0; i < 5; i++) {
-        const az = s * (1.0 + i * 0.2), endEl = lerp(0.14, 0.24, i / 4);
-        H([[az - s * 0.15, 1.05, 0.66], [az, 0.62, 0.69], [az + s * 0.04, endEl + 0.14, 0.62], [az + s * 0.1, endEl + 0.03, 0.665]], 0.17, 0.055, 0.025);
-      }
+    // the other side of the part arcs out to the temple and leaves the forehead open
+    for (let i = 0; i < 3; i++) {
+      H([[PA + 0.05, 1.32, 0.6], [0.3 + i * 0.1, 1.02, 0.8], [0.62 + i * 0.12, 0.66, 0.76], [0.86 + i * 0.12, 0.44, 0.7], [1.02 + i * 0.12, 0.36, 0.78]], 0.24, 0.08, 0.02);
+    }
+    // a few loose strands falling onto the forehead
+    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.7], [-0.04, 0.48, 0.62], [0.02, 0.33, 0.57]], 0.07, 0.045, 0.006);
+    H([[PA + 0.05, 1.2, 0.6], [0.16, 0.86, 0.7], [0.22, 0.56, 0.62], [0.3, 0.44, 0.585]], 0.06, 0.04, 0.006);
+    // messy tufts sticking up off the crown and a cowlick
+    for (let i = 0; i < 7; i++) { const az = -2.4 + i * 0.8 + jit(i, 0.2); H([[az, 1.3, 0.72], [az, 1.15, 0.92], [az + jit(i + 1, 0.2), 1.0, 1.0]], 0.22, 0.08, 0.02); }
+    H([[0.15, 1.42, 0.6], [0.2, 1.6, 0.78], [0.35, 1.66, 0.94], [0.5, 1.56, 0.98]], 0.08, 0.05, 0.006);
+    H([[-0.2, 1.42, 0.6], [-0.3, 1.58, 0.76], [-0.55, 1.55, 0.88]], 0.06, 0.04, 0.006);
+    // glossy grey highlights like the drawing
+    const shineMat = basic(0x7f7988);
+    [[-0.45, 0.95, 0.3], [-0.05, 1.12, -0.1], [0.5, 1.0, 0.25], [0.95, 0.75, 0.5], [-1.1, 0.8, -0.4], [2.6, 0.9, 0.2], [-2.7, 0.85, -0.2]].forEach(([az, el, rz]) => {
+      const sh = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 6), shineMat); sh.scale.set(1.7, 0.42, 0.2);
+      const p = headPt(az, el, 0.95); sh.position.copy(p); sh.lookAt(p.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
     });
-    // messy tufts that break the silhouette, flicking up and out like the drawing
-    for (let i = 0; i < 12; i++) {
-      const az = lerp(-1.7, 1.7, i / 11) + jit(i + 20, 0.1), el = 0.92 + Math.abs(Math.sin(i * 2.3)) * 0.3;
-      H([[az * 0.9, el + 0.3, 0.8], [az, el + 0.1, 0.86], [az * 1.04 + jit(i, 0.08), el - 0.02, 0.9]], 0.24, 0.06, 0.05);
-    }
-    // glossy highlight streaks on the crown, as drawn in the reference
-    const shineMat = basic(0x8d8794);
-    [[-0.55, 1.12, 0.12], [-0.2, 1.22, -0.2], [0.3, 1.16, 0.25], [0.7, 1.0, 0.4], [-0.9, 0.9, -0.35]].forEach(([az, el, rz]) => {
-      const sh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 6), shineMat); sh.scale.set(1.7, 0.45, 0.2);
-      sh.position.copy(headPt(az, el, 0.87)); sh.lookAt(sh.position.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
-    });
-    // back: layered locks down to the nape, tips flicking out
-    for (let i = 0; i < 12; i++) {
-      const az = Math.PI + (i - 5.5) * 0.22;
-      H([[az * 0.5 + PA * 0.2, 1.4, 0.6], [az, 0.95, 0.66], [az + jit(i, 0.05), 0.35, 0.615], [az, -0.2, 0.575], [az + (i - 5.5) * 0.04, -0.34, 0.62]], 0.22, 0.05, 0.03);
-    }
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
     const headphones = new THREE.Group(); head.add(headphones);
@@ -1508,7 +1494,13 @@
     gift: ["Có quà cho bạn đó!", "Đủ năm sao là mở được", "Xem mình breakdance nha", "Windmill nè!"],
     ep: ["souL phối cả EP này đó", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe full trên smart link nha"],
     mv: ["Xem MV Đừng Như Thế đi!", "MV mình tâm đắc nhất đó", "Đăng ký kênh giúp mình nha", "Like video nữa nhé ♥"],
-    ad: ["ON AIR rồi nè!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
+    ad: ["Lên sóng rồi nè!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
+    timeline: ["Hai năm rồi đó", "Ngày nào cũng là một bài học", "Ô nào còn khoá thì đi tiếp nha", "Từ 2024 đến giờ ♪"],
+    quiz: ["Đoán thử đi!", "5 giây thôi nha", "Sai cũng không sao ♪", "Bạn nhớ bài nào nhất?"],
+    wardrobe: ["Chọn đồ cho mình đi~", "Đội mũ nào đẹp?", "Thử kính vàng nha", "Mình đổi cảm xúc được đó"],
+    producers: ["Karrot đánh beat cho mình", "souL phối cả EP 075", "Beat là nửa bài hát", "Cảm ơn hai anh ♪"],
+    beatlab: ["Bấm ô để thêm nhịp!", "Thử kick ở phách 1 nè", "Bạn có tố chất producer đó", "Bật Play đi!"],
+    ticket: ["Ghi tên bạn vào nha", "Lưu vé về máy nhé", "Bạn là fan số 1!", "Sắp tới đích rồi"],
     studio: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Theo dõi mình nha ♪"],
     finale: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
   };
@@ -1797,22 +1789,45 @@
     { inst: "bass", tint: 0x6e0a18, fx: "tear", ride: "staff" },
     { inst: "electric", tint: 0x8a0a1c, fx: "rgb", ride: "run" },
   ];
+  const TRACK_STOP = (k) => Object.assign({ key: "t" + k, track: SINGLES[k], k, label: "Track " + pad2(k + 1) + " · " + C.tracks[SINGLES[k]].title, short: "Track " + pad2(k + 1),
+    tease: ["Ngôi sao đầu tiên: khoảnh khắc chàng trai ấy thức tỉnh.", "Ngôi sao thứ hai không có màu. Vì sao vậy?", "Ngôi sao thứ ba là một vết thương được mang lên sàn nhảy.", "Ngôi sao thứ tư bắt đầu trôi, nhẹ như không.", "Ngôi sao thứ năm đeo một lớp mặt nạ."][k] || "Một ngôi sao nữa đang chờ." }, TRACK_LOOK[k % TRACK_LOOK.length]);
+  const AD_STOP = (k) => ({ key: "ad" + k, ad: k, label: "Nhạc quảng cáo · " + (C.ads[k].brand || C.ads[k].title), short: "Quảng cáo " + pad2(k + 1), inst: "bass", tint: k % 2 ? 0x8a0a1c : 0xa3101f, fx: k ? "whip" : "rgb", ride: k % 2 ? "staff" : "run",
+    tease: k ? "Một thương hiệu nữa, một giai điệu nữa sắp lên sóng." : "Đèn lên sóng sắp bật. Âm nhạc dành cho thương hiệu." });
+  const EXTRA = {
+    timeline: { key: "timeline", label: "Dòng thời gian", short: "Thời gian", inst: "acoustic", tint: 0x5e0712, fx: "tear", ride: "staff",
+      tease: "Hai năm, mười hai bài hát. Có những ngày còn đang bị che kín." },
+    quiz: { key: "quiz", label: "Đoán bài 5 giây", short: "Đoán bài", inst: "mic", tint: 0x9c0d22, fx: "rgb", ride: "rocket",
+      tease: "Một trò chơi nhỏ. Bạn nhớ giai điệu của PAT đến đâu?" },
+    wardrobe: { key: "wardrobe", label: "Tủ đồ của PAT", short: "Tủ đồ", inst: "mic", tint: 0x7a0614, fx: "ink", ride: "wings",
+      tease: "Một căn phòng đầy mũ, kính và những người bạn nhỏ." },
+    producers: { key: "producers", label: "Người đứng sau beat", short: "Producer", inst: "studio", tint: 0x5a0812, fx: "whip", ride: "staff",
+      tease: "Hai cái tên đứng sau mọi bản beat. Họ là ai?" },
+    beatlab: { key: "beatlab", label: "Beat Lab", short: "Beat Lab", inst: "studio", tint: 0x8a0a1c, fx: "glitch", ride: "rocket",
+      tease: "Đến lượt bạn làm producer." },
+    ticket: { key: "ticket", label: "Vé fan PAT", short: "Vé fan", inst: "mic", tint: 0xa3101f, fx: "tear", ride: "wings",
+      tease: "Một tấm vé mang tên bạn. Gần đến đích rồi." },
+  };
   const STATIONS = [
     { key: "hero", label: "Khởi hành", short: "Khởi hành", inst: "mic", tint: 0x8a0a1c, fx: "dolly", ride: "run" },
     { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "ink", ride: "run",
       tease: "Bức chân dung của một chàng trai từng không tin vào chính mình." },
-    ...SINGLES.map((ti, k) => Object.assign({ key: "t" + k, track: ti, k, label: "Track " + pad2(k + 1) + " · " + C.tracks[ti].title, short: "Track " + pad2(k + 1),
-      tease: ["Ngôi sao đầu tiên: khoảnh khắc chàng trai ấy thức tỉnh.", "Ngôi sao thứ hai không có màu. Vì sao vậy?", "Ngôi sao thứ ba là một vết thương được mang lên sàn nhảy.", "Ngôi sao thứ tư bắt đầu trôi, nhẹ như không.", "Ngôi sao thứ năm đeo một lớp mặt nạ."][k] || "Một ngôi sao nữa đang chờ." }, TRACK_LOOK[k % TRACK_LOOK.length])),
+    EXTRA.timeline,
+    TRACK_STOP(0), TRACK_STOP(1),
+    EXTRA.quiz,
+    TRACK_STOP(2), TRACK_STOP(3),
+    EXTRA.wardrobe,
+    ...SINGLES.slice(4).map((_, n) => TRACK_STOP(4 + n)),
     { key: "gift", label: "Quà tặng", short: "Quà tặng", inst: "mic", tint: 0xb3142a, fx: "dolly", ride: "rocket",
       tease: "Một hộp quà. Bên trong có gì, phải đi đủ năm ngôi sao mới biết." },
     { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "tear", ride: "wings",
       tease: "Bảy cánh cửa, một con số: 075." },
+    EXTRA.producers,
     { key: "mv", label: "Music Video", short: "MV", inst: "mic", tint: 0x7a0614, fx: "matchcut", ride: "rocket",
       tease: "Những câu chuyện bắt đầu chuyển động. Có một MV được ghim." },
-    ...C.ads.map((a, k) => ({ key: "ad" + k, ad: k, label: "On Air · " + (a.brand || a.title), short: "On Air " + pad2(k + 1), inst: "bass", tint: k % 2 ? 0x8a0a1c : 0xa3101f, fx: k ? "whip" : "rgb", ride: k % 2 ? "staff" : "run",
-      tease: k ? "Đèn ON AIR thứ " + (k + 1) + " sắp bật." : "Đèn ON AIR sắp bật. Âm nhạc lên sóng cho thương hiệu." })),
+    ...C.ads.flatMap((_, k) => (k === 0 && C.ads.length > 1 ? [AD_STOP(0), EXTRA.beatlab] : [AD_STOP(k)])),
     { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip", ride: "run",
       tease: "Một căn phòng đầy nhạc cụ đang chờ bạn chạm vào." },
+    EXTRA.ticket,
     { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly", ride: "finale",
       tease: "Ngôi sao cuối cùng. Và một lời cảm ơn." },
   ];
@@ -2010,6 +2025,41 @@
       strip.position.copy(c); scene.add(strip);
       updaters.push((t) => { const k = a + t * 0.25; strip.position.set(c.x + Math.cos(k) * 4.2, c.y + Math.sin(k * 2) * 0.8, c.z + Math.sin(k) * 2.2); strip.rotation.set(0.2, -k, Math.sin(t + i) * 0.3); });
     }
+
+    // timeline — floating year discs
+    ["2024", "2025", "2026"].forEach((y, k) => {
+      const d = new THREE.Group();
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.08, 40), toon(0x111014)); disc.rotation.x = Math.PI / 2; d.add(disc);
+      const lab = new THREE.Mesh(new THREE.CircleGeometry(0.42, 32), toon(0xe0102c)); lab.position.z = 0.05; d.add(lab);
+      const t = textSprite(y, { size: 60, scale: 0.7, font: "'Big Shoulders Display', Arial", weight: 900 }); t.position.y = 1.3; d.add(t);
+      floatProp(d, spot(SI.timeline, 4.5 + k * 0.6, -2.4 + k * 3.2, 2.2 + k * 0.7), { spin: 0.4, amp: 0.3 });
+      clickable(d, () => { d.userData.wob = 1; Audio.chime(k * 2); });
+    });
+    // quiz — a giant pulsing question mark
+    { const q = textSprite("?", { size: 140, scale: 3.2, font: "'Big Shoulders Display', Arial", weight: 900, color: "#ff2a40" }); const ar = q.scale.x / q.scale.y; const g = new THREE.Group(); g.add(q);
+      floatProp(g, spot(SI.quiz, 4.6, 3, 3.2), { spin: 0, amp: 0.5 }); updaters.push((t) => { const k = 3.2 + Math.sin(t * 3) * 0.25; q.scale.set(k * ar, k, 1); }); }
+    // wardrobe — a clothes rail with a few hats
+    { const g = new THREE.Group();
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.2, 10), M.silver); bar.rotation.z = Math.PI / 2; bar.position.y = 1.6; g.add(bar);
+      [-1, 1].forEach((k) => { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.7, 8), M.silver); leg.position.set(k * 1.6, 0.8, 0); g.add(leg); });
+      [0xe0102c, 0xf6f3ee, 0x111014, 0xd9a441].forEach((c, k) => { const h = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.025, 6, 16, Math.PI), M.silver); h.position.set(-1.1 + k * 0.72, 1.45, 0); g.add(h);
+        const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.08), toon(c)); shirt.position.set(-1.1 + k * 0.72, 1.0, 0); g.add(shirt); });
+      g.rotation.y = stationYaw(SI.wardrobe); floatProp(g, spot(SI.wardrobe, 4.5, 3.2, 0.6), { spin: 0, amp: 0.15 });
+      clickable(g, () => { g.userData.wob = 1; if (state.station === SI.wardrobe) Wardrobe.open(); }); }
+    // producers — two studio monitors facing each other
+    [-1, 1].forEach((k) => { const sp = INST.studio(); sp.scale.setScalar(3.2); floatProp(sp, spot(SI.producers, 4.5, k * 3.4 + 0.8, 1.6), { spin: 0.1, amp: 0.3 }); clickable(sp, () => { sp.userData.wob = 1; Band.hit(k < 0 ? "kick" : "synth"); }); });
+    // beat lab — a 4 × 8 pad grid that lights up with the sequencer
+    { const g = new THREE.Group(); g.rotation.y = stationYaw(SI.beatlab);
+      BeatLab.pads3d = [];
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.1), basic(0x2a2730)); m.position.set(-1.75 + c * 0.5, 3.2 - r * 0.5, 0); g.add(m);
+        m.userData.onClick = () => BeatLab.toggle(r, c); interactive.push(m); BeatLab.pads3d.push(m);
+      }
+      floatProp(g, spot(SI.beatlab, 5, 1.6, 0.6), { spin: 0, amp: 0.2 }); }
+    // fan ticket — a big floating ticket
+    { const tk = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.8), basic(0xffffff, { map: ticketTex(), side: THREE.DoubleSide, transparent: true }));
+      floatProp(tk, spot(SI.ticket, 5, 1.8, 3.2), { spin: 0, amp: 0.4 }); tk.rotation.y = stationYaw(SI.ticket);
+      clickable(tk, () => { tk.userData.wob = 1; Audio.unlock(); }); }
 
     // ad stops — an ON AIR broadcast screen showing the ad's own poster, a blinking lamp, the bass and a couple of billboards
     STATIONS.forEach((st, i) => {
@@ -2246,12 +2296,23 @@
       for (let k = 0; k < 4; k++) { const gr = g.createLinearGradient(0, 22, 0, h - 22); gr.addColorStop(0, "#e0102c"); gr.addColorStop(1, "#2a0208"); g.fillStyle = gr; g.fillRect(12 + k * 107, 24, 96, h - 48); }
     });
   }
+  function ticketTex() {
+    return canvasTex(840, 360, (g, w, h) => {
+      g.fillStyle = "#f5f0ea"; g.beginPath(); g.roundRect ? g.roundRect(0, 0, w, h, 28) : g.rect(0, 0, w, h); g.fill();
+      g.fillStyle = "#e0102c"; g.fillRect(0, 0, 210, h);
+      g.fillStyle = "#f5f0ea"; g.font = "900 120px 'Big Shoulders Display', Arial"; g.textAlign = "center"; g.fillText("PAT", 105, 220);
+      g.textAlign = "left"; g.fillStyle = "#08070a"; g.font = "800 46px 'Be Vietnam Pro', Arial"; g.fillText("VÉ FAN", 250, 110);
+      g.font = "italic 300 64px 'Fraunces', Georgia"; g.fillText("Phương Anh Tú", 250, 200);
+      g.font = "600 24px 'Be Vietnam Pro', Arial"; g.fillStyle = "#6a6266"; g.fillText("ADMIT ONE · HÀNH TRÌNH 20 CHẶNG", 252, 270);
+      g.setLineDash([10, 10]); g.strokeStyle = "#08070a"; g.lineWidth = 3; g.beginPath(); g.moveTo(210, 20); g.lineTo(210, h - 20); g.stroke();
+    });
+  }
   function onAirTex() {
-    return canvasTex(300, 84, (g, w, h) => {
+    return canvasTex(360, 84, (g, w, h) => {
       g.fillStyle = "#e0102c"; g.beginPath(); g.roundRect ? g.roundRect(4, 4, w - 8, h - 8, 14) : g.rect(4, 4, w - 8, h - 8); g.fill();
       g.strokeStyle = "#f5f0ea"; g.lineWidth = 4; g.stroke();
       g.fillStyle = "#f5f0ea"; g.beginPath(); g.arc(44, h / 2, 13, 0, 7); g.fill();
-      g.font = "900 46px 'Big Shoulders Display', Arial"; g.textBaseline = "middle"; g.fillText("ON AIR", 72, h / 2 + 2);
+      g.font = "800 30px 'Be Vietnam Pro', Arial"; g.textBaseline = "middle"; g.fillText("NHẠC QUẢNG CÁO", 70, h / 2 + 2);
     });
   }
   function adTex(i) {
@@ -2259,7 +2320,7 @@
       const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, i % 2 ? "#f5f0ea" : "#e0102c"); gr.addColorStop(1, "#08070a");
       g.fillStyle = gr; g.fillRect(0, 0, w, h);
       g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 3; g.strokeRect(10, 10, w - 20, h - 20);
-      g.fillStyle = i % 2 ? "#08070a" : "#f5f0ea"; g.font = "900 54px 'Big Shoulders Display', Arial"; g.fillText("ON AIR", 30, 80);
+      g.fillStyle = i % 2 ? "#08070a" : "#f5f0ea"; g.font = "800 40px 'Be Vietnam Pro', Arial"; g.fillText("NHẠC QUẢNG CÁO", 30, 78);
       g.font = "500 22px 'Be Vietnam Pro', Arial"; g.fillText("Nhạc quảng cáo · PAT", 30, 120);
       for (let k = 0; k < 40; k++) { const x = 30 + k * 10.5, hh = 10 + Math.abs(Math.sin(k * 0.7 + i)) * 70; g.fillRect(x, h - 40 - hh, 6, hh); }
     });
@@ -2506,7 +2567,7 @@
     const tall = o.shape === "tall";
     return (
       '<article class="onair rv' + (tall ? " tall" : "") + '" data-oa="' + i + '">' +
-      '<div class="oa-top"><span class="oa-lamp"><i></i>ON AIR</span><span class="oa-ch">CH ' + pad2(i + 1) + " · " + esc(o.brand || "") + '</span><span class="oa-tc">00:00:00:00</span></div>' +
+      '<div class="oa-top"><span class="oa-lamp"><i></i>Nhạc quảng cáo</span><span class="oa-ch">CH ' + pad2(i + 1) + " · " + esc(o.brand || "") + '</span><span class="oa-tc">00:00:00:00</span></div>' +
       '<div class="oa-screen"><b class="oa-c tl"></b><b class="oa-c tr"></b><b class="oa-c bl"></b><b class="oa-c br"></b>' +
       '<video src="' + esc(o.video) + '"' + (o.poster ? ' poster="' + esc(o.poster) + '"' : "") + ' controls playsinline preload="none" data-ad="' + i + '"></video><span class="oa-scan"></span><span class="oa-rec">● REC</span></div>' +
       ((o.stills || []).length ? '<div class="oa-strip">' + o.stills.map((x, n) => '<button style="--n:' + n + '" data-seek="' + (x.t || 0) + '"><img src="' + esc(x.src) + '" alt="' + esc((o.brand || "") + " · khung hình " + (n + 1)) + '" loading="lazy"><span>' + esc(x.cap || "") + "</span></button>").join("") + "</div>" : "") +
@@ -2525,6 +2586,101 @@
         v.addEventListener("timeupdate", () => { const t = v.currentTime, f = Math.floor((t % 1) * 25); tc.textContent = "00:" + pad2(Math.floor(t / 60)) + ":" + pad2(Math.floor(t % 60)) + ":" + pad2(f); });
         v.addEventListener("play", () => card.classList.add("live")); ["pause", "ended"].forEach((ev) => v.addEventListener(ev, () => card.classList.remove("live")));
       });
+    },
+  };
+  const Timeline = {
+    render() {
+      const ol = $("#timeline"); if (!ol) return;
+      const rows = [];
+      SINGLES.forEach((ti, k) => { const t = C.tracks[ti]; rows.push({ d: t.date, open: k < Tracks.unlocked, title: t.title, kind: "Single · " + (t.genre || ""), go: trackSt(k) }); });
+      C.eps.forEach((e) => rows.push({ d: e.date, open: Gift.opened, title: e.title, kind: "EP · 7 bài · producer " + (e.producer || ""), go: SI.ep }));
+      const key = (d) => { const m = /(\d+)\/(\d+)\/(\d+)/.exec(d || ""); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; };
+      rows.sort((a, b) => key(a.d) - key(b.d));
+      ol.innerHTML = rows.map((r, n) => '<li class="' + (r.open ? "open" : "") + '" style="--n:' + n + '"><button data-go="' + r.go + '"><time>' + esc(r.d || "") + "</time><b>" + (r.open ? esc(r.title) : "? ? ?") + "</b><span>" + esc(r.kind) + "</span></button></li>").join("");
+      $$("[data-go]", ol).forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
+    },
+  };
+  // guess the single from five seconds
+  const Quiz = {
+    n: 0, score: 0, cur: -1, audio: null, answered: false,
+    bind() { $("#qzPlay").addEventListener("click", () => this.play()); this.next(); },
+    next() {
+      this.answered = false; this.cur = Math.floor(Math.random() * SINGLES.length);
+      const opts = [this.cur]; while (opts.length < Math.min(3, SINGLES.length)) { const r = Math.floor(Math.random() * SINGLES.length); if (!opts.includes(r)) opts.push(r); }
+      opts.sort(() => Math.random() - 0.5);
+      $("#qzOpts").innerHTML = opts.map((k) => '<button data-qa="' + k + '">' + esc(C.tracks[SINGLES[k]].title) + "</button>").join("");
+      $$("[data-qa]").forEach((b) => b.addEventListener("click", () => this.answer(+b.dataset.qa, b)));
+      $("#qzNo").textContent = "Câu " + Math.min(this.n + 1, 5) + " / 5"; $("#qzMsg").textContent = ""; $("#qzPlay").textContent = "▶ Nghe 5 giây";
+    },
+    play() {
+      Audio.init(); this.stopClip();
+      const t = C.tracks[SINGLES[this.cur]]; if (!t || !t.audio) return;
+      const a = new window.Audio(t.audio); this.audio = a; a.volume = 0.85;
+      const st = Array.isArray(t.highlight) ? t.highlight[0] + 4 : 30;
+      a.addEventListener("loadedmetadata", () => { a.currentTime = st; a.play().catch(() => {}); }, { once: true });
+      BG.duck("quiz", true); $("#qzPlay").textContent = "♪ Đang phát..."; act("dance");
+      this.to = setTimeout(() => this.stopClip(), 5000);
+    },
+    stopClip() { clearTimeout(this.to); if (this.audio) { this.audio.pause(); this.audio.removeAttribute("src"); this.audio = null; } BG.duck("quiz", false); if (!this.answered) $("#qzPlay").textContent = "▶ Nghe lại"; },
+    answer(k, btn) {
+      if (this.answered) return; this.answered = true; this.stopClip();
+      const ok = k === this.cur; if (ok) this.score++;
+      btn.classList.add(ok ? "ok" : "no"); $$("[data-qa]").forEach((b) => +b.dataset.qa === this.cur && b.classList.add("ok"));
+      $("#qzScore").textContent = this.score + " điểm"; ok ? (Audio.unlock(), emote("happy")) : emote("awkward");
+      this.n++;
+      if (this.n >= 5) { $("#qzMsg").textContent = this.score >= 4 ? "Fan cứng rồi! " + this.score + "/5 câu đúng." : this.score + "/5 câu đúng. Nghe thêm vài vòng ở các ngôi sao rồi thử lại nhé."; store.set("quizBest", Math.max(this.score, store.get("quizBest", 0))); this.n = 0; this.score = 0; setTimeout(() => this.next(), 2600); return; }
+      $("#qzMsg").textContent = ok ? "Chuẩn luôn!" : "Bài này là " + C.tracks[SINGLES[this.cur]].title + ".";
+      setTimeout(() => this.next(), 1600);
+    },
+  };
+  // 4 × 8 step sequencer
+  const BeatLab = {
+    rows: ["kick", "snare", "hat", "bass"], names: ["Kick", "Snare", "Hi-hat", "Bass"], grid: [], step: 0, iv: null, pads3d: [],
+    preset: [[1, 0, 0, 0, 1, 0, 1, 0], [0, 0, 1, 0, 0, 0, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 1, 0, 0, 1, 0]],
+    bind() {
+      this.grid = (store.get("beatlab", null) || this.preset).map((r) => r.slice());
+      $("#beatlab").innerHTML = this.rows.map((r, ri) => '<div class="bl-row"><span>' + this.names[ri] + "</span>" + Array.from({ length: 8 }, (_, c) => '<button data-bl="' + ri + "," + c + '" aria-label="' + this.names[ri] + " nhịp " + (c + 1) + '"></button>').join("") + "</div>").join("");
+      $$("[data-bl]").forEach((b) => b.addEventListener("click", () => { const [r, c] = b.dataset.bl.split(",").map(Number); this.toggle(r, c); }));
+      $("#blPlay").addEventListener("click", () => (this.iv ? this.stop() : this.start()));
+      $("#blPreset").addEventListener("click", () => { this.grid = this.preset.map((r) => r.slice()); this.sync(); });
+      $("#blClear").addEventListener("click", () => { this.grid = this.rows.map(() => Array(8).fill(0)); this.sync(); });
+      this.sync();
+    },
+    toggle(r, c) { Audio.init(); this.grid[r][c] = this.grid[r][c] ? 0 : 1; if (this.grid[r][c]) this.hit(r); this.sync(); },
+    hit(r) { const id = this.rows[r]; if (id === "bass") BAND[5].play(0, 55); else Band.hit(id, true); },
+    sync() {
+      store.set("beatlab", this.grid);
+      $$("[data-bl]").forEach((b) => { const [r, c] = b.dataset.bl.split(",").map(Number); b.classList.toggle("on", !!this.grid[r][c]); b.classList.toggle("now", !!this.iv && c === (this.step + 7) % 8); });
+      this.pads3d.forEach((m, n) => { const r = Math.floor(n / 8), c = n % 8, on = this.grid[r] && this.grid[r][c], now = !!this.iv && c === (this.step + 7) % 8; m.material.color.setHex(on ? (now ? 0xffffff : 0xe0102c) : now ? 0x5a5560 : 0x2a2730); });
+    },
+    start() {
+      Audio.init(); BG.duck("beatlab", true); $("#blPlay").textContent = "■ Dừng"; this.step = 0; setInstrument("studio"); act("dance");
+      this.iv = setInterval(() => { const c = this.step % 8; this.grid.forEach((row, r) => row[c] && this.hit(r)); this.step++; this.sync(); }, 60000 / 96 / 2);
+    },
+    stop() { clearInterval(this.iv); this.iv = null; BG.duck("beatlab", false); const b = $("#blPlay"); if (b) b.textContent = "▶ Play"; this.sync(); },
+  };
+  // the viewer's fan ticket, drawn on a canvas and saved as PNG
+  const FanTicket = {
+    img: null,
+    bind() {
+      this.img = new Image(); this.img.src = "photos/pat-chibi.png"; this.img.onload = () => this.draw();
+      const inp = $("#fanName"); inp.value = store.get("fanName", ""); inp.addEventListener("input", () => { store.set("fanName", inp.value); this.draw(); });
+      $("#fanSave").addEventListener("click", () => { this.draw(); const a = document.createElement("a"); a.download = "ve-fan-PAT.png"; a.href = $("#fanTk").toDataURL("image/png"); a.click(); Audio.unlock(); act("heart"); });
+    },
+    draw() {
+      const cv = $("#fanTk"); if (!cv) return; const g = cv.getContext("2d"), w = cv.width, h = cv.height;
+      const name = ($("#fanName").value || "Bạn của PAT").trim();
+      g.clearRect(0, 0, w, h);
+      g.fillStyle = "#f5f0ea"; g.beginPath(); g.roundRect ? g.roundRect(0, 0, w, h, 26) : g.rect(0, 0, w, h); g.fill();
+      g.fillStyle = "#e0102c"; g.fillRect(0, 0, 250, h);
+      if (this.img && this.img.complete && this.img.naturalWidth) { const ih = h - 40, iw = ih * this.img.naturalWidth / this.img.naturalHeight; g.drawImage(this.img, 125 - iw / 2, 20, iw, ih); }
+      g.setLineDash([10, 10]); g.strokeStyle = "#08070a"; g.lineWidth = 3; g.beginPath(); g.moveTo(250, 18); g.lineTo(250, h - 18); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#e0102c"; g.font = "800 22px 'Be Vietnam Pro', Arial"; g.fillText("VÉ FAN · PHƯƠNG ANH TÚ · PAT", 285, 62);
+      g.fillStyle = "#08070a"; g.font = "italic 300 62px 'Fraunces', Georgia"; g.fillText(name.slice(0, 24), 285, 150);
+      g.font = "600 24px 'Be Vietnam Pro', Arial"; g.fillStyle = "#3a3236";
+      const lines = [Tracks.unlocked + " / " + SINGLES.length + " ngôi sao đã thắp", Gift.opened ? "Đã mở hộp quà và EP 075" : "Hộp quà vẫn đang chờ", "Đã đi " + Visited.set.size + " / " + STATIONS.length + " chặng"];
+      lines.forEach((l, k) => g.fillText("★ " + l, 285, 212 + k * 40));
+      g.fillStyle = "#8a8286"; g.font = "500 18px 'Be Vietnam Pro', Arial"; g.fillText("ADMIT ONE · " + new Date().toLocaleDateString("vi-VN"), 285, h - 28);
     },
   };
   // stops the viewer has reached; the map and teasers keep the rest a secret
@@ -2562,6 +2718,36 @@
       '<img class="cc-angles" src="photos/pat-chibi-angles.jpg" alt="Chibi PAT ở nhiều góc nhìn: chính diện, nghiêng, phía sau" loading="lazy"></figure>' +
       teaser(SI.about) +
       "</section>"
+    );
+    // dòng thời gian: every release in order; singles not reached yet stay hidden
+    html.push(
+      '<section class="panel" data-st="' + SI.timeline + '" aria-label="Dòng thời gian">' +
+      '<div class="eyebrow rv">' + chapter(SI.timeline) + ' · Dòng thời gian</div>' +
+      '<h2 class="p-title rv" data-tx>Hai năm, <em>một hành trình</em></h2>' +
+      '<p class="body-t rv">Mỗi mốc dưới đây là một ngày PAT đưa một phần câu chuyện của mình ra thế giới. Những mốc còn khoá sẽ hiện tên khi bạn đi tới ngôi sao của nó.</p>' +
+      '<ol class="tl rv" id="timeline"></ol>' +
+      teaser(SI.timeline) + "</section>"
+    );
+    // đoán bài 5 giây
+    html.push(
+      '<section class="panel" data-st="' + SI.quiz + '" aria-label="Đoán bài 5 giây">' +
+      '<div class="eyebrow rv">' + chapter(SI.quiz) + ' · Trò chơi</div>' +
+      '<h2 class="p-title rv" data-tx>Đoán bài <em>5 giây</em></h2>' +
+      '<p class="body-t rv">PAT phát 5 giây của một single bất kỳ. Bạn chọn đúng tên bài. Năm câu, xem bạn nhớ giai điệu của PAT đến đâu.</p>' +
+      '<div class="quiz rv" id="quiz"><div class="qz-top"><b id="qzNo">Câu 1 / 5</b><span id="qzScore">0 điểm</span></div>' +
+      '<button class="chip-btn chip-hot qz-play" id="qzPlay">▶ Nghe 5 giây</button><div class="qz-opts" id="qzOpts"></div><p class="qz-msg" id="qzMsg"></p></div>' +
+      teaser(SI.quiz) + "</section>"
+    );
+    // tủ đồ
+    html.push(
+      '<section class="panel" data-st="' + SI.wardrobe + '" aria-label="Tủ đồ của PAT">' +
+      '<div class="eyebrow rv">' + chapter(SI.wardrobe) + ' · Tủ đồ</div>' +
+      '<h2 class="p-title rv" data-tx>Tủ đồ <em>của PAT</em></h2>' +
+      '<p class="body-t rv">Hơn 40 món đồ và 8 biểu cảm. Chạm thử vài món dưới đây, hoặc mở cả tủ đồ để phối cho PAT một bộ của riêng bạn. Bộ đồ bạn chọn sẽ đi theo PAT đến hết hành trình.</p>' +
+      '<div class="wd-quick rv">' + ["yellowglasses", "snapback", "crown", "phones", "shades", "beanie"].map((id) => { const a = ACC.find((x) => x.id === id); return a ? '<button data-qeq="' + id + '"><i>' + a.icon + "</i>" + esc(a.name) + "</button>" : ""; }).join("") + "</div>" +
+      '<div class="wd-quick emo rv">' + EMOTES.map((e) => '<button data-qemo="' + e.id + '"><i>' + e.icon + "</i>" + esc(e.name) + "</button>").join("") + "</div>" +
+      '<button class="chip-btn chip-hot rv" id="btnWdOpen">Mở cả tủ đồ</button>' +
+      teaser(SI.wardrobe) + "</section>"
     );
     // one stop per single
     STATIONS.forEach((st, si) => {
@@ -2606,6 +2792,18 @@
       teaser(SI.ep) +
       "</section>"
     );
+    // người đứng sau beat
+    const karrotTracks = SINGLES.map((ti) => C.tracks[ti]).filter((t) => /karrot/i.test(t.producer || ""));
+    const ep0 = C.eps[0] || {};
+    html.push(
+      '<section class="panel" data-st="' + SI.producers + '" aria-label="Người đứng sau beat">' +
+      '<div class="eyebrow rv">' + chapter(SI.producers) + ' · Music Producer</div>' +
+      '<h2 class="p-title rv" data-tx>Người đứng sau <em>beat</em></h2>' +
+      '<p class="body-t rv">Một bài hát là giọng hát cộng với bản phối. Đây là hai người đã dựng nên phần còn lại cho âm nhạc của PAT.</p>' +
+      '<article class="prod-card rv"><span class="pc-k">Music Producer · Single</span><b>Karrot</b><p>Karrot sản xuất beat cho cả ' + karrotTracks.length + ' single, từ Thức Tỉnh năm 2024 đến bản Phonk của Sau Lớp Mặt Nạ. Mỗi bài một màu: ' + esc(karrotTracks.map((t) => t.title + " (" + t.genre + ")").join(", ")) + ".</p></article>" +
+      (ep0.producerStory ? '<article class="prod-card rv"><span class="pc-k">Music Producer · ' + esc(ep0.title || "EP") + '</span><b>' + esc(ep0.producer || "souL") + "</b><p>" + esc(ep0.producerStory) + "</p></article>" : "") +
+      teaser(SI.producers) + "</section>"
+    );
     // music videos
     const MV = C.musicVideos || { list: [] };
     const ytThumb = (id) => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
@@ -2630,13 +2828,23 @@
         '<section class="panel" data-st="' + si + '" aria-label="' + esc(st.label) + '">' +
         '<div class="eyebrow rv">' + chapter(si) + " · Nhạc quảng cáo " + pad2(st.ad + 1) + " / " + pad2(C.ads.length) + "</div>" +
         '<h2 class="p-title rv" data-tx>' + (st.ad ? "Lên sóng <em>lần nữa</em>" : "Âm nhạc cho <em>thương hiệu</em>") + "</h2>" +
-        (st.ad ? "" : '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đèn ON AIR đã bật: đây là những thương hiệu đã tin giao vài giây đó cho PAT.</p>') +
+        (st.ad ? "" : '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đèn đã bật: đây là những thương hiệu đã tin giao vài giây đó cho PAT.</p>') +
         onAirCard(a, st.ad) +
         (st.ad === C.ads.length - 1 ? '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Mọi cách liên hệ đang chờ bạn ở ngôi sao cuối hành trình.</p>' : "") +
         teaser(si) +
         "</section>"
       );
     });
+    // beat lab: a 4 × 8 step sequencer the viewer programs
+    html.push(
+      '<section class="panel" data-st="' + SI.beatlab + '" aria-label="Beat Lab">' +
+      '<div class="eyebrow rv">' + chapter(SI.beatlab) + ' · Beat Lab</div>' +
+      '<h2 class="p-title rv" data-tx>Đến lượt <em>bạn</em></h2>' +
+      '<p class="body-t rv">Bật từng ô để đặt nhịp, rồi bấm Play. Bốn hàng là kick, snare, hi-hat và bass. Lưới trôi trong không gian 3D cũng sáng theo nhịp của bạn.</p>' +
+      '<div class="bl rv" id="beatlab"></div>' +
+      '<div class="bl-ctl rv"><button class="chip-btn chip-hot" id="blPlay">▶ Play</button><button class="chip-btn" id="blPreset">Mẫu của PAT</button><button class="chip-btn" id="blClear">Xoá</button></div>' +
+      teaser(SI.beatlab) + "</section>"
+    );
     // 5 studio + band
     const tools = (C.tools || []).map((t, i) => '<div class="tool rv"><canvas data-tool="' + i + '"></canvas><b>' + esc(t.name) + "</b><span>" + esc(t.note || "") + "</span></div>").join("");
     html.push(
@@ -2650,6 +2858,17 @@
       followCard() +
       teaser(SI.studio) +
       "</section>"
+    );
+    // vé fan: the viewer's own ticket, saved as an image
+    html.push(
+      '<section class="panel" data-st="' + SI.ticket + '" aria-label="Vé fan PAT">' +
+      '<div class="eyebrow rv">' + chapter(SI.ticket) + ' · Vé fan</div>' +
+      '<h2 class="p-title rv" data-tx>Vé fan <em>của bạn</em></h2>' +
+      '<p class="body-t rv">Bạn đã đi gần hết hành trình. Ghi tên vào đây, PAT in cho bạn một tấm vé ghi lại số ngôi sao bạn đã thắp và những gì bạn đã mở khoá. Lưu về máy để giữ làm kỷ niệm.</p>' +
+      '<label class="fan-in rv"><span>Tên của bạn</span><input id="fanName" maxlength="24" placeholder="Nhập tên" autocomplete="off"></label>' +
+      '<canvas class="fan-tk rv" id="fanTk" width="900" height="380"></canvas>' +
+      '<div class="rv"><button class="chip-btn chip-hot" id="fanSave">Lưu vé về máy</button></div>' +
+      teaser(SI.ticket) + "</section>"
     );
     // 6 finale
     html.push(
@@ -2678,6 +2897,10 @@
     $$("[data-hl]").forEach((b) => b.addEventListener("click", () => Tracks.tryOpen(+b.dataset.hl)));
     $("#btnGift").addEventListener("click", () => { if (!Tracks.allOpen) goTo(trackSt(Tracks.unlocked)); else if (!Gift.opened) Gift.show(); else Gift.dance(); });
     OnAir.bind();
+    Quiz.bind(); BeatLab.bind(); FanTicket.bind();
+    $$("[data-qeq]").forEach((b) => b.addEventListener("click", () => { Audio.init(); equip(b.dataset.qeq); act("wink"); }));
+    $$("[data-qemo]").forEach((b) => b.addEventListener("click", () => { Audio.init(); emote(b.dataset.qemo); }));
+    $("#btnWdOpen").addEventListener("click", () => Wardrobe.open());
     $$("video[data-ad]").forEach((v) => {
       const key = "ad-" + v.dataset.ad;
       v.addEventListener("play", () => { $$("video[data-ad]").forEach((o) => o !== v && o.pause()); BG.duck(key, true); });
@@ -3195,6 +3418,9 @@
     if (i === SI.gift) { Tracks.renderList(); if (Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === i && !state.modal && Gift.show(), 1800); }
     const st = STATIONS[i];
     if (st.track != null) setTimeout(() => state.station === i && Tracks.visit(st.k), 900);
+    if (i === SI.timeline) Timeline.render();
+    if (i === SI.ticket) FanTicket.draw();
+    if (i !== SI.beatlab && BeatLab.iv) BeatLab.stop();
     Visited.add(i);
     setTimeout(() => state.station === i && say(pick(sayings(i))), 1200);
   }

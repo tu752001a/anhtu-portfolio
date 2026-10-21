@@ -29,7 +29,8 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 ## Track: single và EP
 - Track **không có** `ep` là single. Chỉ single nằm trong chòm sao, mở khoá theo thứ tự ngày phát hành.
 - Track **có** `ep: "EP 075"` thuộc EP, chỉ mở sau khi người xem mở hết single và nhận hộp quà (chibi nhảy hiphop 30 giây rồi dẫn thẳng tới EP 075).
-- Mỗi track gồm: `title`, `artists`, `date` (dd/mm/yyyy), `genre`, `audio`, `smartLink` (nút đỏ, trước Spotify), `spotify`, `dur`, `story` (câu chuyện bài hát), `journey` (tiến trình ra đời).
+- Mỗi track gồm: `title`, `artists`, `date` (dd/mm/yyyy), `genre`, `audio`, `smartLink` (nút nghe duy nhất, dẫn tới mọi nền tảng), `dur`, `story` (câu chuyện bài hát, viết như người kể chuyện), `journey` (tiến trình ra đời).
+- Track và EP chỉ hiện smart link, không hiện nút Spotify hay Apple Music riêng.
 - Đã bỏ ISRC, UPC và tông bài theo yêu cầu.
 
 ## Nhạc quảng cáo
@@ -38,8 +39,14 @@ Trong `ads: [ ... ]`, mỗi video gồm `brand`, `title`, `kind`, `shape` (`"wid
 ## Nhạc nền
 `bgMusic.quietSeconds: 20`. Khi bất kỳ bài hát, video hay ban nhạc nào phát, nhạc nền tự giảm dần rồi tắt, và chỉ bật lại sau 20 giây không còn âm thanh. Tiếng click nhỏ của giao diện không làm tắt nhạc nền.
 
+## Theo dõi nhanh
+`follow` trong `content.js` tạo các nút ở chương Phòng thu: Đăng ký kênh YouTube (mở sẵn hộp xác nhận đăng ký), Theo dõi TikTok, Facebook, Instagram. Các nền tảng không cho trang web tự bấm theo dõi thay người xem, nên mỗi nút mở đúng trang để họ bấm một lần.
+
 ## Liên hệ
-Phần liên hệ riêng nằm ngay dưới các nền tảng mạng xã hội: `contact.email`, `contact.phone`, `contact.zalo`. Bấm email mở trình gửi thư, bấm số điện thoại để gọi, nút Zalo mở chat. Chương cuối có nút "Gửi lời nhắn cho PAT" dẫn thẳng tới Zalo; lời mời nằm ở `messageInvite`.
+Phần liên hệ nằm ở cuối cùng hành trình (chương Ngôi sao): `contact.email`, `contact.phone`, `contact.zalo`. Euphoria Media Vietnam chỉ hiện một dòng nhỏ "Đơn vị phân phối" ở dưới cùng, tách khỏi phần liên hệ. Bấm email mở trình gửi thư, bấm số điện thoại để gọi, nút Zalo mở chat. Chương cuối có nút "Gửi lời nhắn cho PAT" dẫn thẳng tới Zalo; lời mời nằm ở `messageInvite`.
+
+## Chương cuối
+Chibi ôm guitar thùng, lần lượt tạo 7 dáng biểu diễn kiểu idol để tri ân người nghe.
 
 ## Tủ đồ & cảm xúc
 Người xem bấm "Tủ đồ & cảm xúc" để thay 40 món (30 phụ kiện và 10 bạn đồng hành) và 8 biểu cảm cho chibi. Nút "Đeo kính vàng" bật/tắt kính. Lựa chọn được nhớ trên trình duyệt của họ.

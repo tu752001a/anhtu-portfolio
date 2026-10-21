@@ -225,6 +225,16 @@
       this.tone(f * 1.005, { type: "triangle", dur: 1.4, vol: 0.08 });
     },
     unlock() { [0, 2, 4, 7].forEach((n, k) => setTimeout(() => this.chime(n), k * 110)); },
+    // a gentle acoustic strum: G · D · Em · C, each chord rolled low to high
+    strum() {
+      if (!this.ctx || this.muted) return;
+      const chords = [[98, 123.47, 146.83, 196, 246.94, 392], [146.83, 220, 293.66, 369.99], [82.41, 123.47, 164.81, 196, 246.94, 329.63], [130.81, 164.81, 196, 261.63, 329.63]];
+      chords.forEach((ch, ci) => [0, 0.5, 0.75, 1.0, 1.5].forEach((b, bi) => ch.forEach((f, i) => {
+        const when = ci * 2 + b + (bi % 2 ? (ch.length - i) : i) * 0.012;
+        this.tone(f, { type: "triangle", dur: 1.1, vol: bi ? 0.035 : 0.05, attack: 0.003, when });
+        this.tone(f * 2, { type: "sine", dur: 0.4, vol: 0.012, attack: 0.002, when });
+      })));
+    },
     // a short overdriven guitar lick: E5 · G5 · A5 · E5, then a ringing high note
     riff() {
       if (!this.ctx || this.muted) return;
@@ -797,6 +807,28 @@
       g.fillStyle = "#e0102c"; g.fillRect(0, 0, 128, 64);
       g.fillStyle = "#f5f0ea"; g.font = "900 40px Arial"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("PAT", 64, 34);
     });
+    // big glossy anime eyes (Korean chibi style); `m` mirrors so the lash flick sits on the outer corner
+    const eyeTex = (m) => canvasTex(256, 256, (g) => {
+      if (m) { g.translate(256, 0); g.scale(-1, 1); }
+      g.save(); g.beginPath(); g.ellipse(130, 150, 96, 100, 0, 0, Math.PI * 2); g.clip();
+      g.fillStyle = "#fbf7f4"; g.fillRect(0, 0, 256, 256);
+      const ir = g.createLinearGradient(0, 60, 0, 240); ir.addColorStop(0, "#141217"); ir.addColorStop(0.45, "#35323b"); ir.addColorStop(1, "#8d8893");
+      g.fillStyle = ir; g.beginPath(); g.ellipse(134, 152, 74, 90, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#0c0b0f"; g.lineWidth = 7; g.stroke();
+      g.fillStyle = "#0b0a0e"; g.beginPath(); g.ellipse(134, 150, 34, 46, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(190,186,198,.5)"; g.beginPath(); g.ellipse(134, 212, 46, 16, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fff"; g.beginPath(); g.ellipse(102, 108, 28, 25, -0.4, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(170, 196, 12, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(158, 96, 7, 0, Math.PI * 2); g.fill();
+      g.restore();
+      // upper lash line, thick, with a flick at the outer corner
+      g.fillStyle = "#0d0b10"; g.beginPath();
+      g.moveTo(14, 112); g.quadraticCurveTo(40, 52, 128, 44); g.quadraticCurveTo(206, 42, 240, 104);
+      g.quadraticCurveTo(206, 66, 130, 66); g.quadraticCurveTo(60, 70, 34, 120); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(18, 112); g.lineTo(2, 86); g.lineTo(34, 100); g.closePath(); g.fill();
+      // soft lower lash
+      g.strokeStyle = "rgba(90,52,52,.75)"; g.lineWidth = 5; g.lineCap = "round"; g.beginPath(); g.moveTo(70, 244); g.quadraticCurveTo(132, 256, 196, 238); g.stroke();
+    });
+    TEX.eyeL = eyeTex(false); TEX.eyeR = eyeTex(true);
     TEX.shield = canvasTex(96, 128, (g) => {
       const path = () => { g.beginPath(); g.moveTo(48, 6); g.lineTo(88, 18); g.quadraticCurveTo(88, 86, 48, 122); g.quadraticCurveTo(8, 86, 8, 18); g.closePath(); };
       path(); g.fillStyle = "#cfd3da"; g.fill();
@@ -858,12 +890,12 @@
       return hip;
     });
 
-    // Torso — black velvet turtleneck under an open blazer with satin shawl lapels
+    // Torso — black double-breasted wool peacoat over a black turtleneck, gold buttons, fur cuffs
     const TC = new THREE.Vector3(0, 0.58, 0);
     const BR = 0.345, BS = new THREE.Vector3(1.03, 1.16, 0.9), BY = 0.565;
     const blazer = new THREE.Mesh(new THREE.SphereGeometry(BR, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.93), C2.blazer);
-    blazer.scale.copy(BS); blazer.position.set(0, BY, 0); body.add(blazer); outline(blazer, 1.05, 0x3a0a12);
-    // a point on the blazer's front surface, lifted by `off`
+    blazer.scale.copy(BS); blazer.position.set(0, BY, 0); body.add(blazer); outline(blazer, 1.05, 0x2a0a10);
+    // a point on the coat's front surface, lifted by `off`
     const surf = (x, y, off) => {
       const k = 1 - (x / (BR * BS.x)) ** 2 - ((y - BY) / (BR * BS.y)) ** 2;
       return new THREE.Vector3(x, y, BR * BS.z * Math.sqrt(Math.max(0, k)) + off);
@@ -876,109 +908,122 @@
       const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
       return new THREE.Mesh(g, mat);
     };
-    // the open V: black velvet turtleneck showing between the satin shawl lapels
-    const VT = 0.94, VB = 0.4, VW = 0.15, N = 14;
+    // short V at the chest: turtleneck showing between wide notched lapels
+    const VT = 0.94, VB = 0.6, VW = 0.13, N = 12;
     const vRows = [];
     for (let i = 0; i <= N; i++) { const y = lerp(VT, VB, i / N), w = lerp(VW, 0.005, i / N); vRows.push([surf(-w, y, 0.006), surf(w, y, 0.006)]); }
     body.add(meshFrom(vRows, toon(0x0c0b0e, { side: THREE.DoubleSide })));
     [-1, 1].forEach((s) => {
       const rows = [];
       for (let i = 0; i <= N; i++) {
-        const y = lerp(VT + 0.02, VB - 0.02, i / N), w = lerp(VW, 0.005, i / N), lw = lerp(0.085, 0.035, i / N);
-        const inner = surf(s * w, y, 0.012), outer = surf(s * (w + lw), y - 0.01, 0.012);
+        const y = lerp(VT + 0.02, VB - 0.03, i / N), w = lerp(VW, 0.005, i / N), lw = lerp(0.12, 0.05, i / N) * (Math.abs(i - 3) < 1 ? 0.55 : 1);
+        const inner = surf(s * w, y, 0.012), outer = surf(s * (w + lw), y - 0.012, 0.012);
         rows.push(s < 0 ? [outer, inner] : [inner, outer]);
       }
       body.add(meshFrom(rows, C2.satin));
-      // satin edge highlight
-      const pts = []; for (let i = 0; i <= N; i++) { const y = lerp(VT + 0.02, VB - 0.02, i / N); pts.push(surf(s * (lerp(VW, 0.005, i / N) + 0.004), y, 0.016)); }
-      body.add(tube(pts, 0.004, basic(0x5a5560), 30));
+      const pts = []; for (let i = 0; i <= N; i++) { const y = lerp(VT + 0.02, VB - 0.03, i / N); pts.push(surf(s * (lerp(VW, 0.005, i / N) + 0.004), y, 0.016)); }
+      body.add(tube(pts, 0.004, basic(0x3a3640), 24));
+      // pocket flaps
+      body.add(tube([surf(s * 0.15, 0.37, 0.008), surf(s * 0.22, 0.375, 0.008), surf(s * 0.29, 0.37, 0.008)], 0.006, basic(0x2c2930), 8));
+      // gold buttons, two rows
+      [0.52, 0.4].forEach((y) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 10), M.gold); b.scale.z = 0.55; b.position.copy(surf(s * 0.11, y, 0.012)); body.add(b); });
     });
-    // pocket line on the left chest
-    const pocket = tube([surf(0.2, 0.68, 0.01), surf(0.25, 0.69, 0.01), surf(0.3, 0.7, 0.01)], 0.006, basic(0x3a3640), 8); body.add(pocket);
-    // belt + silver buckle, seen through the open front
-    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.012), toon(0x5d6168)); buckle.position.copy(surf(0, 0.36, 0.006)); body.add(buckle);
-    
+    // front closing line of the coat
+    body.add(tube([surf(0.02, 0.6, 0.008), surf(0.025, 0.45, 0.008), surf(0.02, 0.24, 0.008)], 0.004, basic(0x2c2930), 8));
+
     // turtleneck collar (no skin at the neck)
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.2, 18), C2.velvet); neck.position.y = 0.93; body.add(neck);
     const roll = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.035, 8, 24), C2.velvet); roll.rotation.x = Math.PI / 2; roll.position.y = 0.99; body.add(roll);
-    // long silver chain with the amber PAT shield
-    const chain = tube([
-      new THREE.Vector3(-0.13, 0.99, 0.03), new THREE.Vector3(-0.125, 0.9, 0.13), surf(-0.08, 0.75, 0.02), surf(-0.035, 0.62, 0.022),
-      surf(0, 0.57, 0.024), surf(0.035, 0.62, 0.022), surf(0.08, 0.75, 0.02), new THREE.Vector3(0.125, 0.9, 0.13), new THREE.Vector3(0.13, 0.99, 0.03),
-    ], 0.006, M.silver, 60);
-    body.add(chain);
-    const pendant = new THREE.Group(); pendant.position.copy(surf(0, 0.51, 0.03)); pendant.rotation.x = -0.25; body.add(pendant);
-    const bail = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 14), M.silver); bail.position.y = 0.05; pendant.add(bail);
-    const shield = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.1), basic(0xffffff, { map: TEX.shield, transparent: true, side: THREE.DoubleSide }));
-    shield.position.z = 0.004; pendant.add(shield);
     const chestHolder = new THREE.Group(); chestHolder.position.set(0, 0.56, 0.36); body.add(chestHolder);
 
-    // Arms — plain blazer sleeves
+    // Arms — coat sleeves ending in fluffy fur cuffs
+    const furMat = toon(0x1c1a20);
     const mkArm = (s) => {
       const sh = new THREE.Group(); sh.position.set(s * 0.31, 0.8, 0); body.add(sh);
       const pad = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), C2.blazer); pad.scale.set(1, 0.8, 1); sh.add(pad);
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.115, 0.36, 14), C2.blazer); sleeve.position.y = -0.18; sh.add(sleeve); outline(sleeve, 1.08, 0x3a0a12);
-      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.09, 0.05, 14), C2.velvet); cuff.position.y = -0.375; sh.add(cuff);
-      const hand = new THREE.Group(); hand.position.y = -0.43; sh.add(hand);
-      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 12), M.skin); hand.add(palm);
-      return { sh, hand };
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve); outline(sleeve, 1.08, 0x2a0a10);
+      const fur = new THREE.Group(); fur.position.y = -0.35; sh.add(fur);
+      for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2, b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (i % 3) * 0.008, 8, 6), furMat); b.position.set(Math.cos(a) * 0.1, ((i % 2) - 0.5) * 0.04, Math.sin(a) * 0.1); fur.add(b); }
+      const hand = new THREE.Group(); hand.position.y = -0.44; sh.add(hand);
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), M.skin); palm.scale.set(1, 1.1, 0.85); hand.add(palm);
+      // fingers for hand signs: V (scissors / peace) and a pointed index; hidden unless a move needs them
+      const fm = M.skin, mkF = (x, rz, len = 0.11) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, len, 8), fm); f.position.set(x, -0.08 - len / 2 + 0.02, 0.02); f.rotation.z = rz; return f; };
+      const vSign = new THREE.Group(); vSign.add(mkF(-0.025, 0.22), mkF(0.025, -0.22)); vSign.visible = false; hand.add(vSign);
+      const point = new THREE.Group(); point.add(mkF(0, 0, 0.12)); point.visible = false; hand.add(point);
+      return { sh, hand, vSign, point };
     };
     const armR = mkArm(-1), armL = mkArm(1);
 
-    // Head
-    const head = new THREE.Group(); head.position.y = 1.24; body.add(head);
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 30), C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a0a12);
+    // Head — oversized for a Korean-chibi proportion
+    const head = new THREE.Group(); head.position.y = 1.25; head.scale.setScalar(1.07); body.add(head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 30), C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a1a16);
     [-1, 1].forEach((s) => {
       const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), M.skin); ear.scale.set(0.55, 1, 0.8); ear.position.set(s * 0.555, -0.07, -0.02); head.add(ear);
-      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.009, 8, 20), M.silver); hoop.position.set(s * 0.585, -0.17, 0.0); hoop.rotation.y = Math.PI / 2; head.add(hoop);
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), M.silver); spike.rotation.x = Math.PI; spike.position.set(s * 0.585, -0.255, 0.0); head.add(spike);
+      const inner = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xe8a58c)); inner.scale.set(0.4, 1, 0.6); inner.position.set(s * 0.6, -0.07, 0.0); head.add(inner);
+      // his right ear (viewer's left): hoop with a spike; his left ear: two small hoops and a dangling cross
+      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.008, 8, 20), M.silver); hoop.position.set(s * 0.585, -0.17, 0.0); hoop.rotation.y = Math.PI / 2; head.add(hoop);
+      const spike = new THREE.Group(); spike.position.set(s * 0.585, -0.205, 0.0); head.add(spike);
+      if (s < 0) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), M.silver); c.rotation.x = Math.PI; c.position.y = -0.045; spike.add(c); }
+      else {
+        const h2 = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 8, 18), M.silver); h2.position.set(s * 0.58, -0.12, 0.06); h2.rotation.y = Math.PI / 2; head.add(h2);
+        const v = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.1, 0.014), M.silver); v.position.y = -0.06; spike.add(v);
+        const hb = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.014), M.silver); hb.position.y = -0.04; spike.add(hb);
+      }
       head.userData["ear" + s] = { hoop, spike };
     });
 
-    // Eyes: one group per eye holding every expression shape
+    // Eyes: one group per eye holding every expression shape; the open eye is a painted patch that hugs the face
     const eyes = [-1, 1].map((s) => {
-      const g = new THREE.Group(); g.position.set(s * 0.19, -0.05, 0.462); g.rotation.y = s * 0.33; head.add(g);
+      const g = new THREE.Group(); g.position.set(s * 0.2, -0.06, 0.47); g.rotation.y = s * 0.36; head.add(g);
+      g.updateMatrix(); const inv = g.matrix.clone().invert();
       const open = new THREE.Group(); g.add(open);
-      const e = new THREE.Mesh(new THREE.SphereGeometry(0.078, 18, 14), M.eye); e.scale.set(0.95, 0.84, 0.45); open.add(e);
-      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.032, 0.05), C2.lid); lid.position.set(0, 0.058, 0.01); lid.rotation.z = s * 0.1; open.add(lid);
-      const lash = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.016, 0.04), C2.lid); lash.position.set(s * 0.1, 0.055, 0.01); lash.rotation.z = -s * 0.5; open.add(lash);
-      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), C2.white); hl.position.set(-0.022, 0.03, 0.03); open.add(hl);
-      const hl2 = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), C2.white); hl2.position.set(0.02, -0.03, 0.03); open.add(hl2);
-      const arcGeo = new THREE.TorusGeometry(0.058, 0.013, 6, 18, Math.PI);
-      const happy = new THREE.Mesh(arcGeo, M.eye); happy.position.y = -0.02; g.add(happy);
-      const closed = new THREE.Mesh(arcGeo, M.eye); closed.rotation.z = Math.PI; closed.position.y = 0.03; g.add(closed);
-      const squeeze = new THREE.Group(); g.add(squeeze);
-      [1, -1].forEach((k) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.022, 0.02), M.eye); b.position.set(0, k * 0.022, 0); b.rotation.z = k * s * 0.5; squeeze.add(b); });
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), M.eye); g.add(dot);
-      const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.heart, transparent: true, depthWrite: false })); heart.scale.set(0.2, 0.2, 1); heart.position.z = 0.04; g.add(heart);
-      const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false })); star.scale.set(0.2, 0.2, 1); star.position.z = 0.05; g.add(star);
+      const pc = Math.PI / 2 + s * 0.36, tc = Math.PI / 2 + 0.118, pw = 0.5, th = 0.6;
+      const geo = new THREE.SphereGeometry(0.536, 16, 14, pc - pw / 2, pw, tc - th / 2, th); geo.scale(1.06, 0.95, 1); geo.applyMatrix4(inv);
+      const e = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: s < 0 ? TEX.eyeL : TEX.eyeR, transparent: true, alphaTest: 0.35 })); open.add(e);
+      const lid = e;
+      const arcGeo = new THREE.TorusGeometry(0.075, 0.016, 6, 18, Math.PI);
+      const happy = new THREE.Mesh(arcGeo, M.eye); happy.position.set(0, -0.02, 0.035); g.add(happy);
+      const closed = new THREE.Mesh(arcGeo, M.eye); closed.rotation.z = Math.PI; closed.position.set(0, 0.03, 0.035); g.add(closed);
+      const squeeze = new THREE.Group(); squeeze.position.z = 0.035; g.add(squeeze);
+      [1, -1].forEach((k) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.024, 0.02), M.eye); b.position.set(0, k * 0.024, 0); b.rotation.z = k * s * 0.5; squeeze.add(b); });
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), M.eye); dot.position.z = 0.03; g.add(dot);
+      const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.heart, transparent: true, depthWrite: false })); heart.scale.set(0.2, 0.2, 1); heart.position.z = 0.05; g.add(heart);
+      const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false })); star.scale.set(0.2, 0.2, 1); star.position.z = 0.06; g.add(star);
       g.userData = { open, happy, closed, squeeze, dot, heart, star, lid };
       return g;
     });
+    // thick, softly arched brows
     const brows = [-1, 1].map((s) => {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.155, 0.03, 0.03), M.hair); b.position.set(s * 0.19, 0.1, 0.48); b.rotation.set(0, s * 0.33, s * 0.06); head.add(b); return b;
+      const b = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 16, 0.75), M.hair); b.scale.set(1, 1, 0.8);
+      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.1, 0.49); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
+      b.rotation.z = Math.PI / 2 - 0.375; b.position.set(0, -0.19, 0); piv.add(b);
+      return piv;
     });
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), toon(0xe2a77f)); nose.position.set(0, -0.11, 0.505); head.add(nose);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), toon(0xe6a184)); nose.position.set(0, -0.13, 0.5); head.add(nose);
     // mouths
-    const mouths = new THREE.Group(); mouths.position.set(0, -0.21, 0.472); head.add(mouths);
+    const mouths = new THREE.Group(); mouths.position.set(0, -0.23, 0.468); mouths.rotation.x = -0.25; head.add(mouths);
     const smile = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.01, 6, 16, Math.PI), M.mouth); smile.rotation.z = Math.PI; mouths.add(smile);
     const frown = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.01, 6, 16, Math.PI), M.mouth); frown.position.y = -0.03; mouths.add(frown);
     const flat = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.014, 0.02), M.mouth); mouths.add(flat);
     const mouthO = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 10), M.mouth); mouthO.scale.set(0.9, 0.4, 0.4); mouths.add(mouthO);
+    // big toothy grin, like the reference: open half-moon, a row of white teeth, pink tongue
     const grin = new THREE.Group(); mouths.add(grin);
-    const grinM = new THREE.Mesh(new THREE.CircleGeometry(0.075, 20, Math.PI, Math.PI), M.mouth); grinM.position.y = 0.015; grin.add(grinM);
-    const tongue = new THREE.Mesh(new THREE.CircleGeometry(0.035, 16, Math.PI, Math.PI), basic(0xff7a8a)); tongue.position.set(0, -0.035, 0.004); tongue.scale.y = 0.6; grin.add(tongue);
+    const grinM = new THREE.Mesh(new THREE.CircleGeometry(0.09, 24, Math.PI, Math.PI), M.mouth); grinM.scale.y = 0.78; grinM.position.y = 0.02; grin.add(grinM);
+    const teeth = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.026), basic(0xffffff)); teeth.position.set(0, 0.006, 0.002); grin.add(teeth);
+    const tongue = new THREE.Mesh(new THREE.CircleGeometry(0.04, 16, Math.PI, Math.PI), basic(0xff7a8a)); tongue.position.set(0, -0.026, 0.003); tongue.scale.y = 0.55; grin.add(tongue);
+    const lipLine = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.006, 6, 24, Math.PI), basic(0x4a1418)); lipLine.rotation.z = Math.PI; lipLine.scale.y = 0.78; lipLine.position.set(0, 0.02, 0.001); grin.add(lipLine);
     const wobPts = []; for (let i = 0; i <= 12; i++) wobPts.push(new THREE.Vector3(-0.06 + i * 0.01, Math.sin(i * 1.6) * 0.012, 0));
     const wobble = tube(wobPts, 0.009, M.mouth, 24); mouths.add(wobble);
     const fang = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.025, 4), C2.white); fang.rotation.z = Math.PI; fang.position.set(0.02, -0.01, 0.01); frown.add(fang);
-    // default: a small, one-sided smirk — cool rather than cute
     const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.009, 6, 14, Math.PI * 0.62), M.mouth); smirk.rotation.z = Math.PI + 0.5; smirk.position.set(0.012, 0.012, 0); mouths.add(smirk);
     const mouthSet = { smile, frown, flat, mouthO, grin, wobble, smirk };
-    const blushMat = basic(0xff6f86, { transparent: true, opacity: 0, depthWrite: false });
+    // soft rosy cheeks and a tiny heart sticker, as in the reference
+    const blushMat = basic(0xff8a9c, { transparent: true, opacity: 0.5, depthWrite: false });
     const blushes = [-1, 1].map((s) => {
-      const p = new THREE.Vector3(s * 0.31, -0.16, 0.415);
-      const b = decal(new THREE.CircleGeometry(0.075, 24), blushMat, p); b.scale.set(1.25, 0.8, 1); head.add(b); return b;
+      const p = new THREE.Vector3(s * 0.31, -0.17, 0.42);
+      const b = decal(new THREE.CircleGeometry(0.075, 24), blushMat, p); b.scale.set(1.3, 0.8, 1); head.add(b); return b;
     });
+    const cheekHeart = decal(new THREE.PlaneGeometry(0.06, 0.06), basic(0xffffff, { map: TEX.heart, transparent: true, depthWrite: false }), new THREE.Vector3(0.36, -0.12, 0.392)); head.add(cheekHeart);
     // emotion effects
     const tears = [-1, 1].map((s) => {
       const p = new THREE.Vector3(s * 0.22, -0.27, 0.43);
@@ -993,41 +1038,49 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — two-block side part like the photo: short sides, volume on top,
-    // a fringe parted on his right (viewer's left) that sweeps across the forehead in separated strands
+    // Hair — soft, messy Korean cut: volume on top, curtain fringe parted just off centre,
+    // wavy locks that flick outward over the temples and at the nape; ears stay visible
     const hair = new THREE.Group(); head.add(hair);
     const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.565, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.08, 1.04, 1.05); cap.position.y = 0.03; cap.rotation.x = -0.3; hair.add(cap); outline(cap, 1.03, 0x6a0c1c);
-    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.56, 32, 16, Math.PI * 1.5 - 1.0, 2.0, Math.PI * 0.4, Math.PI * 0.3), M.hair);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.57, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
+    cap.scale.set(1.08, 1.06, 1.05); cap.position.set(0, 0.07, -0.02); cap.rotation.x = -0.52; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
+    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.44), M.hair);
     nape.scale.set(1.07, 0.98, 1.04); hair.add(nape);
-    const H = (ctrl, w0, th = 0.055, w1 = 0.005) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    const PA = -0.42;
-    // volume: thick locks rising from the part and arching forward over the crown
-    for (let i = 0; i < 7; i++) {
-      const u = i / 6;
-      H([[PA + 0.05, 1.32, 0.56], [lerp(PA + 0.15, 0.55, u), 1.02, 0.77], [lerp(-0.05, 0.95, u), 0.66, 0.71], [lerp(0.0, 1.05, u), 0.38, 0.61]], 0.17 - u * 0.03, 0.09);
-    }
-    // fringe: strands falling across the forehead toward his left brow
-    const drop = [0, 0.08, 0.02, 0.11, 0.04, 0.09, 0.03, 0.12];
+    const H = (ctrl, w0, th = 0.05, w1 = 0.006) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
+    const PA = -0.14, jit = (i, a) => Math.sin(i * 12.9898) * a;
+    // crown volume: broad, soft locks swept forward and to the sides; they stop above the forehead
     for (let i = 0; i < 8; i++) {
-      const u = i / 7, ex = lerp(-0.2, 0.9, u), ey = 0.15 + drop[i] + u * 0.05;
-      H([[PA + 0.04, 1.2, 0.58], [lerp(PA + 0.18, 0.35, u), 0.86, 0.69], [ex - 0.24, ey + 0.2, 0.625], [ex, ey, 0.565]], 0.15, 0.055);
+      const u = i / 7, az = lerp(-1.25, 1.25, u);
+      H([[PA + az * 0.25, 1.48, 0.56], [az * 0.62, 1.2 + jit(i, 0.06), 0.88], [az * 0.95, 0.86, 0.8], [az * 1.1, 0.6, 0.67]], 0.24, 0.09, 0.03);
     }
-    // left of the part: shorter strands brushed down to the temple
+    // curtain fringe — his right side (viewer's left): sweeps from the part down to the temple
     for (let i = 0; i < 4; i++) {
-      const u = i / 3;
-      H([[PA - 0.02, 1.2, 0.58], [PA - 0.16 - u * 0.25, 0.85, 0.665], [PA - 0.36 - u * 0.42, 0.34 + u * 0.06, 0.585]], 0.1, 0.05);
+      const ea = -0.42 - i * 0.2, ee = 0.42 - i * 0.05 + jit(i + 3, 0.03);
+      H([[PA, 1.22, 0.6], [PA - 0.1 - i * 0.06, 0.92, 0.72], [ea + 0.12, ee + 0.17, 0.67], [ea, ee, 0.605], [ea - 0.08, ee + 0.01, 0.64]], 0.2, 0.06, 0.03);
     }
-    // crown and back: texture swept backwards
-    for (let i = 0; i < 11; i++) {
-      const az = Math.PI + (i - 5) * 0.2;
-      H([[PA + 0.3 + (i - 5) * 0.12, 1.3, 0.6], [az, 0.85, 0.7], [az + 0.04, 0.2, 0.635], [az + 0.06, -0.2, 0.58]], 0.14, 0.06);
+    // curtain fringe — his left side (viewer's right), longer sweep
+    for (let i = 0; i < 5; i++) {
+      const ea = 0.3 + i * 0.18, ee = 0.46 - i * 0.05 + jit(i + 7, 0.03);
+      H([[PA + 0.03, 1.22, 0.6], [PA + 0.12 + i * 0.07, 0.94, 0.73], [ea - 0.12, ee + 0.17, 0.675], [ea, ee, 0.605], [ea + 0.09, ee + 0.02, 0.645]], 0.2, 0.06, 0.03);
     }
-    // short two-block sides: close to the skull, ears stay visible
+    // two loose strands falling over the forehead, just off the part
+    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.68], [-0.2, 0.48, 0.62], [-0.16, 0.3, 0.575]], 0.08, 0.045);
+    H([[PA + 0.04, 1.2, 0.6], [PA + 0.1, 0.86, 0.68], [0.12, 0.52, 0.62], [0.2, 0.38, 0.58]], 0.07, 0.04);
+    // flyaway strands on the crown
+    H([[0.15, 1.42, 0.58], [0.22, 1.6, 0.74], [0.5, 1.56, 0.84]], 0.05, 0.03, 0.004);
+    H([[-0.35, 1.42, 0.58], [-0.42, 1.58, 0.72], [-0.7, 1.52, 0.8]], 0.045, 0.028, 0.004);
+    // sides: wavy locks over the temples that flick outward above the ears
     [-1, 1].forEach((s) => {
-      for (let i = 0; i < 5; i++) { const az = s * (1.0 + i * 0.22); H([[az - s * 0.1, 0.95, 0.66], [az, 0.55, 0.62], [az + s * 0.06, 0.2, 0.585]], 0.1, 0.035); }
+      for (let i = 0; i < 5; i++) {
+        const az = s * (1.0 + i * 0.2), endEl = lerp(0.14, 0.24, i / 4);
+        H([[az - s * 0.15, 1.05, 0.66], [az, 0.62, 0.68], [az + s * 0.04, endEl + 0.12, 0.62], [az + s * 0.1, endEl, 0.68]], 0.17, 0.055, 0.03);
+      }
     });
+    // back: layered locks down to the nape, tips flicking out
+    for (let i = 0; i < 12; i++) {
+      const az = Math.PI + (i - 5.5) * 0.22;
+      H([[az * 0.5 + PA * 0.2, 1.4, 0.6], [az, 0.9, 0.7], [az + jit(i, 0.05), 0.2, 0.66], [az, -0.25, 0.6], [az + (i - 5.5) * 0.03, -0.36, 0.67]], 0.2, 0.06, 0.03);
+    }
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
     const headphones = new THREE.Group(); head.add(headphones);
@@ -1183,15 +1236,20 @@
         g.rotation.set(-0.08, 0, -0.12); return g; } },
       // FACE (6)
       { id: "yellowglasses", slot: "face", name: "Kính vàng", icon: "🕶️", build() {
-        const g = new THREE.Group();
+        const g = new THREE.Group(), fm = basic(0xf6f3ee, { side: THREE.DoubleSide });
         [-1, 1].forEach((s) => {
-          const lg = new THREE.Group(); lg.position.set(s * 0.19, -0.03, 0.545); lg.rotation.y = s * 0.28; g.add(lg);
-          const outer = roundRectShape(0.29, 0.21, 0.06); outer.holes.push(roundRectShape(0.245, 0.165, 0.045));
-          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(outer), basic(0xf6f3ee, { side: THREE.DoubleSide })));
-          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(roundRectShape(0.25, 0.17, 0.045)), M.lens));
-          const temple = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.02, 0.5), basic(0xf6f3ee)); temple.position.set(s * 0.14, 0.05, -0.24); temple.rotation.y = -s * 0.12; lg.add(temple);
+          const lg = new THREE.Group(); lg.position.set(s * 0.2, -0.04, 0.555); lg.rotation.y = s * 0.3; g.add(lg);
+          const outer = roundRectShape(0.32, 0.25, 0.08); outer.holes.push(roundRectShape(0.275, 0.205, 0.06));
+          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(outer), fm));
+          lg.add(new THREE.Mesh(new THREE.ShapeGeometry(roundRectShape(0.28, 0.21, 0.06)), M.lens));
+          // hinge, then a temple arm that runs back along the side of the head and hooks behind the ear
+          const hinge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.035, 0.05), fm); hinge.position.set(s * 0.165, 0.07, -0.02); lg.add(hinge);
+          g.add(tube([
+            new THREE.Vector3(s * 0.355, 0.03, 0.5), new THREE.Vector3(s * 0.47, 0.035, 0.4), new THREE.Vector3(s * 0.62, 0.03, 0.2),
+            new THREE.Vector3(s * 0.68, 0.01, 0.0), new THREE.Vector3(s * 0.65, -0.06, -0.1), new THREE.Vector3(s * 0.6, -0.16, -0.13),
+          ], 0.013, fm, 28));
         });
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.026, 0.02), basic(0xf6f3ee)); bar.position.set(0, 0.085, 0.56); g.add(bar);
+        const bar = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.014, 6, 14, Math.PI), fm); bar.position.set(0, 0.0, 0.585); g.add(bar);
         return g; } },
       { id: "shades", slot: "face", name: "Kính đen ngầu", icon: "😎", build() {
         const g = new THREE.Group();
@@ -1438,7 +1496,7 @@
     5: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Cả ban nhạc sẵn sàng rồi ♪"],
     6: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
   };
-  const ACTS = ["jump", "spin", "wave", "heart", "wink", "dance", "star"];
+  const ACTS = ["jump", "spin", "wave", "heart", "wink", "dance", "star", "cute"];
   const EMOTES = [
     { id: "happy", name: "Vui vẻ", icon: "😄", say: ["Hihi vui quá trời!", "Yeahhh ♪", "Hôm nay đẹp trời ghê~"] },
     { id: "angry", name: "Tức giận", icon: "💢", say: ["Hứ! Giận rồi đó!", "Đừng chọc nữa mà!", "Grrr..."] },
@@ -1517,7 +1575,7 @@
     }
 
     // face defaults: calm, cool, a hint of a smile
-    let eyeMode = "open", mouthMode = "smirk", blushTarget = 0, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.07, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
+    let eyeMode = "open", mouthMode = "grin", blushTarget = 0.5, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.07, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
     const fxOn = { anger: false, sweat: false, gloom: false, zzz: false };
     if (P.acting) {
       P.actT += dt;
@@ -1530,6 +1588,7 @@
         case "wink": winkR = 1 - env * 0.92; hz += env * 0.22; mouth = Math.max(mouth, env * 0.3); break;
         case "dance": bodyRz += Math.sin(k * 10) * 0.18 * env; bodyY += Math.abs(Math.sin(k * 10)) * 0.12 * env; aLx = lerp(aLx, -1.5 + Math.sin(k * 10) * 0.8, env); aRx = lerp(aRx, -1.5 - Math.sin(k * 10) * 0.8, env); hz += Math.sin(k * 10) * 0.15 * env; mouthMode = "grin"; break;
         case "star": eyeMode = "star"; bodyY += env * 0.15; hx -= env * 0.2; mouth = Math.max(mouth, env * 0.8); break;
+        case "cute": aLx = lerp(aLx, -1.75, env); aRx = lerp(aRx, -1.75, env); aLz = lerp(aLz, -0.8, env); aRz = lerp(aRz, 0.8, env); hz += env * 0.18; eyeMode = "happy"; mouthMode = "grin"; bodyY += Math.abs(Math.sin(k * 6)) * 0.04 * env; break;
       }
       if (k >= d) P.acting = null;
     }
@@ -1582,34 +1641,61 @@
       if (k >= EMO_DUR) P.emo = null;
     }
     // the gift: 30 seconds of hiphop, a new move every 3.75s (8 moves), on a ~100 BPM bounce
+    let sign = { L: null, R: null }, legZ = 0, holdRz = 0, holdY = 0;
     if (P.dance != null) {
-      const k = P.dance, bt = k / 0.6, ph = bt * Math.PI, move = Math.floor(k / 3.75) % 8, f = (k % 3.75) / 3.75, bounce = Math.abs(Math.sin(ph));
+      const k = P.dance, bt = k / 0.6, ph = bt * Math.PI, move = Math.floor(k / 3.75) % 8, f = (k % 3.75) / 3.75, bounce = Math.abs(Math.sin(ph)), beat = Math.floor(bt) % 2;
       eyeMode = Math.floor(bt) % 4 === 3 ? "happy" : "open"; mouthMode = Math.floor(bt / 2) % 3 === 0 ? "grin" : "smirk"; mouth = 0;
       bodyY = bounce * 0.12; squash = 1 - bounce * 0.05; bodyX = 0; bodyRy = 0; bodyRz = 0; hx = 0.12 * bounce; hy = 0; hz = 0;
       let legA = Math.sin(ph) * 0.3;
       switch (move) {
         case 0: // bounce + arm pumps
           aLx = -1.7 + Math.sin(ph * 2) * 0.7; aRx = -1.7 - Math.sin(ph * 2) * 0.7; aLz = 0.45; aRz = -0.45; break;
-        case 1: // side steps, shoulders rolling
-          bodyX = Math.sin(ph * 0.5) * 0.2; bodyRz = Math.sin(ph) * 0.12; aLx = -0.5; aRx = -0.5; aLz = 0.6 + Math.sin(ph) * 0.35; aRz = -0.6 + Math.sin(ph) * 0.35; hz = -Math.sin(ph) * 0.15; legA = Math.max(0, Math.sin(ph)) * 0.6; break;
-        case 2: // toprock: cross steps, arms swinging open
-          bodyRy = Math.sin(ph * 0.5) * 0.5; aLx = -0.8; aRx = -0.8; aLz = 0.9 + Math.sin(ph) * 0.5; aRz = -0.9 + Math.sin(ph) * 0.5; legA = Math.sin(ph * 0.5) * 0.7; break;
-        case 3: // arm wave rolling through both arms
+        case 1: // scissors: legs cut open and closed on the beat, V fingers slide across the eyes
+          legA = beat ? 0.55 : -0.55; legZ = bounce * 0.35; bodyY += bounce * 0.06;
+          aRx = -2.05; aRz = lerp(0.55, -0.15, (Math.sin(ph) + 1) / 2); aLx = -0.4; aLz = 0.5; sign.R = "v"; hz = Math.sin(ph) * 0.1; mouthMode = "smirk"; break;
+        case 2: // hands on the head, heavy head nods
+          aLx = -2.85; aRx = -2.85; aLz = -0.55; aRz = 0.55; hx = 0.05 + bounce * 0.3; hz = Math.sin(ph * 0.5) * 0.15; bodyRz = Math.sin(ph * 0.5) * 0.08; legA = Math.max(0, Math.sin(ph)) * 0.35; break;
+        case 3: // gang sign: arms crossed over the chest, fingers out, lean back
+          aLx = -1.45; aRx = -1.45; aLz = -0.85; aRz = 0.85; sign.L = "v"; sign.R = "point"; hx = -0.18; hz = 0.12; bodyRz = 0.06; bodyY = bounce * 0.05; mouthMode = "smirk"; legA = 0; legZ = 0.2; break;
+        case 4: // arm wave rolling through both arms
           aLx = 0; aRx = 0; aLz = 1.35 + Math.sin(ph * 2) * 0.35; aRz = -1.35 + Math.sin(ph * 2 + 1.4) * 0.35; bodyRz = Math.sin(ph * 2 + 0.7) * 0.1; hz = Math.sin(ph * 2 + 2) * 0.18; break;
-        case 4: // spin, then freeze
+        case 5: // spin, then freeze with a sign up high
           if (f < 0.45) { bodyRy = ease.io(f / 0.45) * Math.PI * 2; aLz = 1.2; aRz = -1.2; aLx = 0; aRx = 0; bodyY += 0.15; }
-          else { aRx = -2.9; aRz = -0.2; aLx = -0.3; aLz = 0.9; hz = 0.28; bodyRz = 0.16; bodyY = 0; squash = 1; eyeMode = "open"; mouthMode = "smirk"; legA = 0; }
+          else { aRx = -2.9; aRz = -0.2; aLx = -0.3; aLz = 0.9; hz = 0.28; bodyRz = 0.16; bodyY = 0; squash = 1; eyeMode = "open"; mouthMode = "smirk"; legA = 0; legZ = 0.15; sign.R = "v"; }
           break;
-        case 5: // point up, point at you
-          aRx = Math.floor(bt) % 2 ? -2.95 : -1.55; aRz = -0.15; aLx = -0.6; aLz = 0.25; bodyRz = Math.floor(bt) % 2 ? -0.08 : 0.08; hx = Math.floor(bt) % 2 ? -0.2 : 0.1; break;
-        case 6: // twist on the heels, hips wiggling
-          bodyRy = Math.sin(ph * 2) * 0.4; aLx = -1.2; aRx = -1.2; aLz = -0.3; aRz = 0.3; hy = -Math.sin(ph * 2) * 0.3; legA = Math.sin(ph * 2) * 0.4; break;
-        default: // jumps with windmill arms
-          bodyY += Math.max(0, Math.sin(ph)) * 0.35; aLx = -1.6 + Math.sin(k * 7) * 1.4; aRx = -1.6 - Math.sin(k * 7) * 1.4; aLz = 0.35; aRz = -0.35; legA = Math.max(0, Math.sin(ph)) * 0.5; mouthMode = "grin";
+        case 6: // point up, point at you
+          aRx = beat ? -2.95 : -1.55; aRz = -0.15; aLx = -0.6; aLz = 0.25; bodyRz = beat ? -0.08 : 0.08; hx = beat ? -0.2 : 0.1; sign.R = "point"; break;
+        default: // side steps, shoulders rolling
+          bodyX = Math.sin(ph * 0.5) * 0.2; bodyRz = Math.sin(ph) * 0.12; aLx = -0.5; aRx = -0.5; aLz = 0.6 + Math.sin(ph) * 0.35; aRz = -0.6 + Math.sin(ph) * 0.35; hz = -Math.sin(ph) * 0.15; legA = Math.max(0, Math.sin(ph)) * 0.6;
       }
       P.legs[0].rotation.x = legA; P.legs[1].rotation.x = -legA;
       if (Math.floor(bt) !== Math.floor((k - dt) / 0.6)) { P.root.getWorldPosition(_v); _v.y += 0.4; burst(_v, 3, { tex: pick(TEX.notes), speed: 1.6, size: 0.35, life: 1.1, up: 1.4 }); }
     }
+    // the finale: acoustic guitar, cycling through seven idol stage poses
+    if (P.idol && P.cur === "acoustic" && !P.travel && P.dance == null && !P.emo && !P.acting) {
+      const k = (performance.now() - P.idol) / 1000, pose = Math.floor(k / 3.2) % 7, f = (k % 3.2) / 3.2, strum = Math.sin(t * 9) * 0.18, env = Math.sin(Math.min(1, f * 5) * Math.PI / 2);
+      aLx = -1.0; aLz = 0.75; aRx = -0.62 + strum; aRz = 0.55; mouthMode = "grin";
+      switch (pose) {
+        case 0: // ballad: eyes closed, head tilted into the song
+          eyeMode = "happy"; hz = 0.2 * env + Math.sin(t * 1.6) * 0.05; hx = 0.12; bodyRz = Math.sin(t * 1.6) * 0.05; break;
+        case 1: // rock star: neck of the guitar up, leaning back
+          holdRz = 0.55 * env; hx = -0.28 * env; bodyRz = -0.12 * env; aLx = -1.5; aLz = 0.95; mouthMode = "O"; mouth = 0.6; break;
+        case 2: // kick and strum
+          P.legs[1].rotation.x = -0.9 * env; bodyY += Math.max(0, Math.sin(f * Math.PI)) * 0.25; hz = -0.15; break;
+        case 3: // wink to the fans
+          winkR = 0.1; hz = -0.22 * env; hy = 0.2 * env; aRx = -0.55 + strum * 0.4; break;
+        case 4: // solo face: low crouch, head down, fast picking
+          squash = 1 - 0.08 * env; hx = 0.3 * env; aRx = -0.62 + Math.sin(t * 18) * 0.12; holdRz = 0.2 * env; eyeMode = "squeeze"; mouthMode = "smirk"; break;
+        case 5: // spin with the guitar, land facing you
+          bodyRy = f < 0.4 ? ease.io(f / 0.4) * Math.PI * 2 : 0; bodyY += f < 0.4 ? 0.12 : 0; eyeMode = f < 0.4 ? "happy" : "star"; break;
+        default: // headbang on the downbeat
+          hx = 0.1 + Math.abs(Math.sin(t * 6)) * 0.28; bodyY += Math.abs(Math.sin(t * 6)) * 0.04; aRx = -0.62 + Math.sin(t * 12) * 0.2; holdY = 0.03;
+      }
+    }
+    [["L", P.armL], ["R", P.armR]].forEach(([k2, a]) => { a.vSign.visible = sign[k2] === "v"; a.point.visible = sign[k2] === "point"; });
+    if (P.dance != null || legZ) { P.legs[0].rotation.z += (-legZ - P.legs[0].rotation.z) * 0.3; P.legs[1].rotation.z += (legZ - P.legs[1].rotation.z) * 0.3; }
+    else { P.legs[0].rotation.z *= 0.8; P.legs[1].rotation.z *= 0.8; }
+    P.chestHolder.rotation.z += (holdRz - P.chestHolder.rotation.z) * 0.15; P.chestHolder.position.y += (0.56 + holdY - P.chestHolder.position.y) * 0.15;
     const s = 1 - Math.exp(-dt * 12);
     P.armL.sh.rotation.x += (aLx - P.armL.sh.rotation.x) * s; P.armL.sh.rotation.z += (aLz - P.armL.sh.rotation.z) * s;
     P.armR.sh.rotation.x += (aRx - P.armR.sh.rotation.x) * s; P.armR.sh.rotation.z += (aRz - P.armR.sh.rotation.z) * s;
@@ -1645,7 +1731,7 @@
     // mouth
     const MS = P.mouths;
     let mm = mouthMode;
-    if ((mm === "smile" || mm === "smirk") && mouth > 0.15) mm = "O";
+    if ((mm === "smile" || mm === "smirk" || mm === "grin") && mouth > 0.15) mm = "O";
     MS.smile.visible = mm === "smile"; MS.smirk.visible = mm === "smirk"; MS.frown.visible = mm === "frown"; MS.flat.visible = mm === "flat";
     MS.mouthO.visible = mm === "O"; MS.grin.visible = mm === "grin"; MS.wobble.visible = mm === "wobble" || mm === "cry";
     MS.mouthO.scale.y = 0.3 + Math.max(mouth, P.emo === "surprised" ? 0.9 : 0.3) * 0.7;
@@ -1677,7 +1763,7 @@
     { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "vinyl" },
     { key: "ads", label: "Nhạc quảng cáo", short: "Quảng cáo", inst: "bass", tint: 0xa3101f, fx: "shutter" },
     { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "eq" },
-    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "electric", tint: 0xb3142a, fx: "dolly" },
+    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly" },
   ];
   const INTRO = { x: 0, y: 0, z: 64 };
   let curve, stationT = [], vinyls = [];
@@ -2267,7 +2353,7 @@
       '<article class="vcard rv' + (tall ? " tall" : "") + '">' +
       '<video src="' + esc(o.video) + '"' + (o.poster ? ' poster="' + esc(o.poster) + '"' : "") + ' controls playsinline preload="none" data-ad="' + i + '"></video>' +
       '<div class="pc-body"><h3 class="pc-title" data-tx>' + esc(o.title || o.brand) + "</h3>" +
-      '<div class="pc-sub">' + esc([o.brand, o.kind].filter(Boolean).join(" · ")) + "</div>" +
+      '<div class="pc-sub">' + esc(o.kind || "") + "</div>" +
       (o.credits && o.credits.length ? '<div class="credit">' + o.credits.map((c) => "<span>" + esc(c) + "</span>").join("") + "</div>" : "") +
       (o.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(o.story) + "</p>" : "") +
       "</div></article>"
@@ -2283,6 +2369,12 @@
     }
     return rows.length ? '<section class="ct-card rv" aria-label="Liên hệ"><h3>Liên hệ</h3>' + rows.join("") + "</section>" : "";
   }
+  function followCard() {
+    const f = (C.follow || []).filter((x) => x.url);
+    return f.length ? '<section class="follow rv" aria-label="Theo dõi PAT"><h3>Đồng hành cùng PAT</h3><p>Một chạm để đăng ký kênh YouTube, theo dõi TikTok, Facebook và Instagram. Bài mới, hậu trường phòng thu và những câu chuyện chưa kể sẽ đến với bạn đầu tiên.</p><div class="fl-grid">' +
+      f.map((x) => '<a class="fl-btn" data-net="' + esc(x.name.toLowerCase()) + '" href="' + esc(x.url) + '" target="_blank" rel="noopener"><i>' + esc(x.name) + "</i><b>" + esc(x.action || "Theo dõi") + "</b></a>").join("") + "</div></section>" : "";
+  }
+  const pubLine = () => (C.publisher ? '<div class="pub rv">' + esc(C.publisher.label) + ' · <a href="' + esc(C.publisher.url) + '" target="_blank" rel="noopener">' + esc(C.publisher.name) + "</a></div>" : "");
   const zaloHref = () => "https://zalo.me/" + String((C.contact || {}).zalo || (C.contact || {}).phone || "").replace(/[^\d]/g, "");
 
   function buildPanels() {
@@ -2298,8 +2390,6 @@
       '<p class="body-t rv">' + esc(A.intro || "") + "</p>" +
       '<ul class="roles rv"><li>Tên thật · ' + esc(A.realName || "") + "</li>" + (A.roles || []).map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" +
       '<div class="socials rv">' + socialHTML() + "</div>" +
-      contactCard() +
-      (C.publisher ? '<div class="pub rv">' + esc(C.publisher.label) + ' · <a href="' + esc(C.publisher.url) + '" target="_blank" rel="noopener">' + esc(C.publisher.name) + "</a></div>" : "") +
       "</section>"
     );
     // 1 about
@@ -2317,10 +2407,9 @@
       '<section class="panel" data-st="2" aria-label="Chòm sao Track">' +
       '<div class="eyebrow rv">Chương 03 · Track</div>' +
       '<h2 class="p-title rv" data-tx>Chòm sao <em>Track</em></h2>' +
-      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao mở ra một bài hát nghe trọn vẹn, câu chuyện phía sau nó và smart link đến mọi nền tảng. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
+      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao là một chặng đời của Tú: mở ra để nghe trọn bài hát, đọc câu chuyện phía sau nó, rồi mang theo smart link đến nền tảng bạn yêu thích. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
       '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span>" + "</div>" +
       '<ol class="tlist rv" id="tlist"></ol>' +
-      '<div class="spot-drawer rv"><button class="chip-btn" id="btnSpotify">Nghe toàn bộ trên Spotify</button><div id="spotBox"></div></div>' +
       "</section>"
     );
     // 3 EP
@@ -2339,7 +2428,7 @@
       '<h2 class="p-title rv" data-tx>Âm nhạc cho <em>thương hiệu</em></h2>' +
       '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đây là những thương hiệu đã tin giao vài giây đó cho PAT. Bấm phát để xem ngay tại đây.</p>' +
       C.ads.map((a, i) => adCard(a, i)).join("") +
-      '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Liên hệ ở trang đầu hoặc ngôi sao cuối hành trình.</p>' +
+      '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Mọi cách liên hệ đang chờ bạn ở ngôi sao cuối hành trình.</p>' +
       "</section>"
     );
     // 5 studio + band
@@ -2352,6 +2441,7 @@
       '<div class="band rv"><div class="band-head"><h3>Ban nhạc của PAT</h3><button class="chip-btn" id="btnJam">▶ Jam cùng PAT</button></div>' +
       '<p class="stats-note">Chạm vào từng nhạc cụ trên sân khấu 3D hoặc các nút dưới đây để tự chơi cùng PAT. Bàn phím: A S D F G H J K L ; \'</p>' +
       '<div class="pads" id="pads">' + Band.padsHTML() + "</div></div>" +
+      followCard() +
       "</section>"
     );
     // 6 finale
@@ -2365,6 +2455,8 @@
       '<ul class="msg-kinds rv"><li>Lời chúc</li><li>Câu hỏi</li><li>Góp ý</li><li>Hợp tác</li><li>Kể PAT nghe câu chuyện của bạn</li></ul>' +
       '<a class="zalo-cta rv" href="' + esc(zaloHref()) + '" target="_blank" rel="noopener"><i>Zalo</i>Gửi lời nhắn cho PAT</a>' +
       '<div><button class="star-cta rv" id="starCta">Chạm vào ngôi sao để xem mọi cách liên hệ</button></div>' +
+      contactCard() +
+      pubLine() +
       "</section>"
     );
     $("#panels").innerHTML = html.join("");
@@ -2380,7 +2472,6 @@
       ["pause", "ended"].forEach((ev) => v.addEventListener(ev, () => BG.duck(key, false)));
     });
     syncEPGate();
-    $("#btnSpotify").addEventListener("click", toggleSpotify);
     $$(".play-cover").forEach((b) => b.addEventListener("click", () => playInline(b)));
     $$(".panel").forEach((p) => p.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true }));
     $$(".panel").forEach((p) => p.addEventListener("pointerdown", (e) => e.stopPropagation()));
@@ -2635,13 +2726,8 @@
       $("#tkSpec").innerHTML = [t.artists, t.genre, t.date, t.dur].filter(Boolean).map((x) => "<span>" + esc(String(x)) + "</span>").join("");
       const rows = { story: t.story || "Câu chuyện của bài hát sẽ sớm được kể ở đây.", journey: t.journey || t.formed || PENDING };
       (async () => { for (const p of $$(".tk-row p", $("#ticketModal"))) await typeInto(p, rows[p.dataset.k], 10); })();
-      // smart link first, then Spotify, then the rest
-      const links = [];
-      if (t.smartLink) links.push('<a class="sl-main" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link · mọi nền tảng ↗</a>');
-      links.push('<a href="' + esc(spotifyHref(t)) + '" target="_blank" rel="noopener">Spotify ↗</a>');
-      links.push('<a href="https://music.apple.com/us/artist/ph%C6%B0%C6%A1ng-anh-t%C3%BA/1778922650" target="_blank" rel="noopener">Apple Music ↗</a>');
-      if (hasYT(t.youtubeId)) links.push('<a href="https://www.youtube.com/watch?v=' + esc(t.youtubeId) + '" target="_blank" rel="noopener">YouTube ↗</a>');
-      $("#tkLinks").innerHTML = links.join("");
+      // smart link only: one door to every platform
+      $("#tkLinks").innerHTML = t.smartLink ? '<a class="sl-main" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link · nghe trên mọi nền tảng ↗</a>' : "";
       this.peaks = Array.isArray(t.peaks) ? t.peaks : null;
       this.seed = Array.from(trackTitle(t, i)).reduce((a, c) => a + c.charCodeAt(0), 7);
       this.stop();
@@ -2763,7 +2849,8 @@
     $("#ctList").innerHTML = rows.length
       ? rows.map((r) => '<div class="ct-row"><span>' + r.k + '</span><a class="ct-v" href="' + esc(r.href) + '"' + (r.href.startsWith("http") ? ' target="_blank" rel="noopener"' : "") + ">" + esc(r.v) + '</a><span class="ct-acts"><a class="ct-go" href="' + esc(r.href) + '">' + r.act + "</a>" + (r.alt ? '<a class="ct-go" href="' + esc(r.alt.href) + '" target="_blank" rel="noopener">' + r.alt.label + "</a>" : "") + '<button data-copy="' + esc(r.v) + '">Sao chép</button></span></div>').join("")
       : '<div class="ct-row"><span>Liên hệ</span><b>Nhắn PAT qua các kênh bên dưới</b><span></span></div>';
-    $("#ctSocials").innerHTML = socialHTML() + (C.publisher ? '<a class="soc" href="' + esc(C.publisher.url) + '" target="_blank" rel="noopener"><i></i>' + esc(C.publisher.name) + "</a>" : "");
+    $("#ctSocials").innerHTML = socialHTML();
+    $("#ctPub").innerHTML = pubLine();
     $$("[data-copy]").forEach((b) => b.addEventListener("click", () => {
       const v = b.dataset.copy;
       const done = () => { b.textContent = "Đã chép"; setTimeout(() => (b.textContent = "Sao chép"), 1600); };
@@ -2870,6 +2957,7 @@
     if (Band.jam && j !== 5) Band.toggleJam();
     $$("video[data-ad]").forEach((v) => v.pause());
     if (Gift.dancing) Gift.end(true);
+    PAT.idol = 0;
     document.body.classList.add("navd");
     hidePanels();
     const fx = opts.fx || STATIONS[j].fx;
@@ -2922,7 +3010,7 @@
       burst(PAT.root.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 30, { tex: TEX.notes[1], speed: 3, size: 0.4, life: 1.4, up: 1 });
       setTimeout(() => { emote("love"); say("Cảm ơn bạn đã đi cùng mình!"); }, 300);
       // then the thank-you on electric guitar
-      setTimeout(() => { if (state.station !== 6) return; setInstrument("electric"); Audio.riff(); say("Bản guitar này mình tặng bạn ♥"); }, 3900);
+      setTimeout(() => { if (state.station !== 6) return; setInstrument("acoustic"); PAT.idol = performance.now(); Audio.strum(); say("Bản guitar mộc này mình tặng bạn ♥"); }, 3900);
     } else if (mode !== "run") burst(PAT.root.position.clone(), 16, { tex: TEX.star, speed: 2.4, size: 0.26, life: 0.9 });
     // turn to face the viewer
     const faceY = cam.baseYaw - 0.25;
@@ -3024,7 +3112,7 @@
   async function toOrigin() {
     if (state.moving) return;
     $("#contactModal").classList.remove("on"); state.modal = false;
-    state.moving = true; hidePanels();
+    state.moving = true; hidePanels(); PAT.idol = 0;
     finale.mode = "idle"; finaleStar.position.copy(finaleStar.userData.home); finaleStar.scale.setScalar(0.6);
     Audio.swoosh(1.3); glitch();
     // PAT turns into a shooting star and flies home; camera warps back along the staff

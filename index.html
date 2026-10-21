@@ -421,6 +421,18 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
   .wd-emos{grid-template-columns:repeat(4,1fr)}
 }
 /* ---------- contact card (hero) ---------- */
+.follow{margin:18px 0 6px;padding:16px;border-radius:18px;border:1px solid rgba(245,240,234,.14);background:rgba(8,7,10,.5)}
+.follow h3{margin:0 0 6px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ember);font-weight:700}
+.follow p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--ash)}
+.fl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fl-btn{display:flex;flex-direction:column;gap:2px;padding:11px 14px;border-radius:14px;color:var(--bone);text-decoration:none;border:1px solid rgba(245,240,234,.16);background:rgba(245,240,234,.04);transition:transform .2s,background .2s,border-color .2s}
+.fl-btn i{font-style:normal;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.fl-btn b{font-size:15px;font-weight:700}
+.fl-btn:hover,.fl-btn:focus-visible{transform:translateY(-2px);border-color:var(--blood);background:rgba(224,16,44,.18)}
+.fl-btn[data-net="youtube"]{background:linear-gradient(135deg,rgba(224,16,44,.55),rgba(224,16,44,.2));border-color:rgba(224,16,44,.7)}
+.panel .ct-card{margin-top:22px}
+.panel .pub{margin-top:18px;padding-top:12px;border-top:1px solid rgba(245,240,234,.1)}
+.ct-pub{margin-top:14px;text-align:center}
 .ct-card{margin:4px 0 18px;padding:14px 16px;border-radius:18px;border:1px solid rgba(224,16,44,.45);background:linear-gradient(135deg,rgba(224,16,44,.16),rgba(8,7,10,.55))}
 .ct-card h3{margin:0 0 8px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ember);font-weight:700}
 .ct-line{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
@@ -592,6 +604,7 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
     <h3>Hẹn gặp bạn</h3>
     <div class="ct-list" id="ctList"></div>
     <div class="socials" id="ctSocials" style="justify-content:center"></div>
+    <div class="ct-pub" id="ctPub"></div>
     <button class="origin-btn" id="btnOrigin">★ Xuất phát điểm</button>
   </article>
 </div>
@@ -600,5 +613,3 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 <script src="content.js" defer></script>
 <script src="audio/peaks.js" defer></script>
 <script src="app.js" defer></script>
-
-</html>

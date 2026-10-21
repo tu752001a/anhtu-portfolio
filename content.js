@@ -203,12 +203,25 @@ window.PAT_CONTENT = {
     {
       brand: "Livotec", title: "Livotec", kind: "Music video thương hiệu", shape: "wide",
       video: "video/livotec.mp4", poster: "video/livotec.jpg", fx: "waves",
+      // khung hình kèm theo (t = giây trong video; bấm vào ảnh để tua tới đó)
+      stills: [
+        { src: "video/livotec-s1.jpg", t: 8, cap: "Cả nhà vào nhịp" },
+        { src: "video/livotec-s2.jpg", t: 30, cap: "Bữa cơm gia đình" },
+        { src: "video/livotec-s3.jpg", t: 55, cap: "Nỗi lo mùi clo" },
+        { src: "video/livotec-s4.jpg", t: 82, cap: "Livotec lên sóng" }
+      ],
       credits: ["Sáng tác: Phương Anh Tú", "Sản xuất âm nhạc: Fillinus"],
       story: "Một ca khúc thương hiệu dài hơn một phút rưỡi, đi cùng một ngày của gia đình trẻ: cái nóng, điện sụt áp, bình nước nóng, quạt và máy lọc không khí. Giai điệu phải đủ vui để cả nhà cùng hát, đủ dễ nhớ để người xem nhắc lại tên Livotec sau khi video kết thúc."
     },
     {
       brand: "BCONS New Sky", title: "BCONS New Sky", kind: "Video ngắn TikTok", shape: "tall",
       video: "video/bcons.mp4", poster: "video/bcons.jpg", fx: "sparks",
+      stills: [
+        { src: "video/bcons-s1.jpg", t: 4, cap: "Chữ bật theo phách" },
+        { src: "video/bcons-s2.jpg", t: 16, cap: "Từng câu đúng nhịp" },
+        { src: "video/bcons-s3.jpg", t: 28, cap: "Toà nhà New Sky" },
+        { src: "video/bcons-s4.jpg", t: 42, cap: "Hook chốt hạ" }
+      ],
       credits: ["Âm nhạc: Phương Anh Tú"],
       story: "Video dọc gần 50 giây cho dự án căn hộ BCONS New Sky. Chữ chạy theo nhịp nhạc, từng câu bật lên đúng phách, đúng kiểu nội dung giữ chân người xem trên TikTok ngay từ giây đầu."
     }

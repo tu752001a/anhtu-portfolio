@@ -26,9 +26,15 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 ## Thông điệp chính
 `artist.mission` là câu "Chỉ cần bản thân muốn, mọi thứ đều có thể thực hiện…". Câu này hiện ở phần mở đầu và chương cuối.
 
+## Hành trình 14 chặng
+Khởi hành → Chân dung → 5 chặng Track (mỗi single một chặng) → Quà tặng (breakdance) → EP 075 → Music Video → On Air 01, On Air 02 (mỗi quảng cáo một chặng) → Phòng thu → Ngôi sao. Thêm single hay quảng cáo vào `content.js` thì web tự thêm chặng mới. Cuối mỗi chặng có một dòng gợi ý bí mật về chặng sau; bản đồ góc phải chỉ hiện "?" cho những chặng người xem chưa tới.
+
+## Chibi
+Chibi 3D dựng theo hình mẫu 2D bạn gửi (áo dạ đen cúc vàng, cổ tay lông, tóc rẽ ngôi, khuyên tai), không có má hồng. Chương Chân dung có thẻ "Chibi PAT" gồm hình mẫu 2D và bảng nhiều góc nhìn (`photos/pat-chibi.png`, `photos/pat-chibi-angles.jpg`).
+
 ## Track: single và EP
-- Track **không có** `ep` là single. Chỉ single nằm trong chòm sao, mở khoá theo thứ tự ngày phát hành.
-- Track **có** `ep: "EP 075"` thuộc EP, chỉ mở sau khi người xem mở hết single và nhận hộp quà (chibi nhảy hiphop 30 giây rồi dẫn thẳng tới EP 075).
+- Track **không có** `ep` là single. Mỗi single là một chặng riêng; ngôi sao của nó sáng lên khi người xem tới chặng đó, theo thứ tự phát hành.
+- Track **có** `ep: "EP 075"` thuộc EP, chỉ mở sau khi người xem đi đủ 5 ngôi sao và mở hộp quà ở chặng Quà tặng (chibi breakdance 30 giây: Windmill, Headspin, 1990, Airflare, Halo, Freeze, rồi dẫn tới EP 075).
 - Mỗi track gồm: `title`, `artists`, `producer` (Music Producer), `date` (dd/mm/yyyy), `genre`, `audio`, `highlight`, `smartLink` (nút nghe duy nhất, dẫn tới mọi nền tảng), `dur`, `story` (câu chuyện bài hát, viết như người kể chuyện), `journey` (tiến trình ra đời).
 - **Highlight**: `highlight: [giây bắt đầu, giây kết thúc]`, ví dụ `[83, 123]`. Web chỉ phát đoạn này (30–45 giây) rồi nhắc người nghe bấm smart link để nghe trọn bài. Mình đã tự chọn đoạn sôi động nhất mỗi bài, bạn đổi số tuỳ ý.
 - **Music Producer**: Karrot cho mọi single, souL cho toàn bộ EP 075. Câu chuyện của souL nằm ở `producerStory` trong khối EP.
@@ -45,7 +51,7 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 Mỗi chương có một kiểu chuyển cảnh riêng: dolly in/out, vẩy mực, glitch, xé giấy, match cut (vào Music Video), glitch đỏ đen (rời Music Video), whip pan.
 
 ## Nhạc quảng cáo
-Trong `ads: [ ... ]`, mỗi video gồm `brand`, `title`, `kind`, `shape` (`"wide"` cho video ngang, `"tall"` cho video dọc TikTok), `video`, `poster`, `credits`, `story`. Thêm video mới: tải file `.mp4` vào `video/` rồi chép một khối có sẵn.
+Mỗi quảng cáo là một chặng "On Air": khung phát sóng có đèn ON AIR, timecode chạy theo video, 4 khung hình kèm chú thích (bấm để tua tới đoạn đó) và bảng mô tả. Trong `ads: [ ... ]`, mỗi video gồm `stills` (ảnh khung hình, `t` là giây, `cap` là chú thích), `brand`, `title`, `kind`, `shape` (`"wide"` cho video ngang, `"tall"` cho video dọc TikTok), `video`, `poster`, `credits`, `story`. Thêm video mới: tải file `.mp4` vào `video/` rồi chép một khối có sẵn.
 
 ## Nhạc nền
 `bgMusic.quietSeconds: 20`. Khi bất kỳ bài hát, video hay ban nhạc nào phát, nhạc nền tự giảm dần rồi tắt, và chỉ bật lại sau 20 giây không còn âm thanh. Tiếng click nhỏ của giao diện không làm tắt nhạc nền.

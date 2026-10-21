@@ -807,23 +807,26 @@
       g.fillStyle = "#e0102c"; g.fillRect(0, 0, 128, 64);
       g.fillStyle = "#f5f0ea"; g.font = "900 40px Arial"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("PAT", 64, 34);
     });
-    // narrow monolid eyes like his photos: almond, outer corner slightly lifted, dark iris, no lashes.
-    // `m` mirrors the texture so the lifted corner sits on the outside of each eye
+    // big glossy anime eyes (Korean chibi style); `m` mirrors so the lash flick sits on the outer corner
     const eyeTex = (m) => canvasTex(256, 256, (g) => {
       if (m) { g.translate(256, 0); g.scale(-1, 1); }
-      const almond = () => { g.beginPath(); g.moveTo(22, 132); g.bezierCurveTo(70, 104, 170, 108, 236, 150); g.bezierCurveTo(176, 186, 76, 186, 22, 132); g.closePath(); };
-      g.save(); almond(); g.clip();
-      g.fillStyle = "#f4efe9"; g.fillRect(0, 0, 256, 256);
-      const ir = g.createRadialGradient(132, 150, 6, 132, 150, 50); ir.addColorStop(0, "#0a090c"); ir.addColorStop(0.6, "#221d22"); ir.addColorStop(1, "#4a3f42");
-      g.fillStyle = ir; g.beginPath(); g.arc(132, 146, 46, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(0, 100, 256, 26);
-      g.fillStyle = "#fff"; g.beginPath(); g.arc(116, 134, 8, 0, Math.PI * 2); g.fill();
+      g.save(); g.beginPath(); g.ellipse(130, 150, 96, 100, 0, 0, Math.PI * 2); g.clip();
+      g.fillStyle = "#fbf7f4"; g.fillRect(0, 0, 256, 256);
+      const ir = g.createLinearGradient(0, 60, 0, 240); ir.addColorStop(0, "#141217"); ir.addColorStop(0.45, "#35323b"); ir.addColorStop(1, "#8d8893");
+      g.fillStyle = ir; g.beginPath(); g.ellipse(134, 152, 74, 90, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#0c0b0f"; g.lineWidth = 7; g.stroke();
+      g.fillStyle = "#0b0a0e"; g.beginPath(); g.ellipse(134, 150, 34, 46, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(190,186,198,.5)"; g.beginPath(); g.ellipse(134, 212, 46, 16, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fff"; g.beginPath(); g.ellipse(102, 108, 28, 25, -0.4, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(170, 196, 12, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(158, 96, 7, 0, Math.PI * 2); g.fill();
       g.restore();
-      // heavy straight upper lid line, thin lower line
-      g.strokeStyle = "#0d0b10"; g.lineCap = "round"; g.lineWidth = 11;
-      g.beginPath(); g.moveTo(20, 133); g.bezierCurveTo(70, 104, 170, 108, 238, 148); g.stroke();
-      g.strokeStyle = "rgba(60,36,34,.7)"; g.lineWidth = 4;
-      g.beginPath(); g.moveTo(60, 160); g.bezierCurveTo(100, 180, 170, 182, 222, 158); g.stroke();
+      // upper lash line, thick, with a flick at the outer corner
+      g.fillStyle = "#0d0b10"; g.beginPath();
+      g.moveTo(14, 112); g.quadraticCurveTo(40, 52, 128, 44); g.quadraticCurveTo(206, 42, 240, 104);
+      g.quadraticCurveTo(206, 66, 130, 66); g.quadraticCurveTo(60, 70, 34, 120); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(18, 112); g.lineTo(2, 86); g.lineTo(34, 100); g.closePath(); g.fill();
+      // soft lower lash
+      g.strokeStyle = "rgba(90,52,52,.75)"; g.lineWidth = 5; g.lineCap = "round"; g.beginPath(); g.moveTo(70, 244); g.quadraticCurveTo(132, 256, 196, 238); g.stroke();
     });
     TEX.eyeL = eyeTex(false); TEX.eyeR = eyeTex(true);
     TEX.shield = canvasTex(96, 128, (g) => {
@@ -868,7 +871,7 @@
     chibiTextures();
     const C2 = {
       blazer: toon(0x17151a), satin: toon(0x2a2630, { side: THREE.DoubleSide }), velvet: toon(0x0c0b0e), trouser: toon(0x111015),
-      belt: toon(0x0a090c), skinFace: toon(0xebb994), lid: basic(0x0d0b10), white: basic(0xffffff),
+      belt: toon(0x0a090c), skinFace: toon(0xf2c4a0), lid: basic(0x0d0b10), white: basic(0xffffff),
       tearMat: basic(0x8fd6ff, { transparent: true, opacity: 0, depthWrite: false }),
     };
     const root = new THREE.Group();
@@ -889,7 +892,7 @@
 
     // Torso — black double-breasted wool peacoat over a black turtleneck, gold buttons, fur cuffs
     const TC = new THREE.Vector3(0, 0.58, 0);
-    const BR = 0.345, BS = new THREE.Vector3(1.14, 1.14, 0.92), BY = 0.565;
+    const BR = 0.345, BS = new THREE.Vector3(1.03, 1.16, 0.9), BY = 0.565;
     const blazer = new THREE.Mesh(new THREE.SphereGeometry(BR, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.93), C2.blazer);
     blazer.scale.copy(BS); blazer.position.set(0, BY, 0); body.add(blazer); outline(blazer, 1.05, 0x2a0a10);
     // a point on the coat's front surface, lifted by `off`
@@ -905,48 +908,42 @@
       const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
       return new THREE.Mesh(g, mat);
     };
-    // open front: a black scoop-neck tee and a silver chain between the fur panels
-    const VT = 0.96, VB = 0.3, VW = 0.17, N = 14;
+    // short V at the chest: turtleneck showing between wide notched lapels
+    const VT = 0.94, VB = 0.6, VW = 0.13, N = 12;
     const vRows = [];
-    for (let i = 0; i <= N; i++) { const y = lerp(VT, VB, i / N), w = lerp(VW, 0.07, i / N); vRows.push([surf(-w, y, 0.012), surf(w, y, 0.012)]); }
+    for (let i = 0; i <= N; i++) { const y = lerp(VT, VB, i / N), w = lerp(VW, 0.005, i / N); vRows.push([surf(-w, y, 0.006), surf(w, y, 0.006)]); }
     body.add(meshFrom(vRows, toon(0x0c0b0e, { side: THREE.DoubleSide })));
-    // fluffy black fur: tufts scattered over the coat, leaving the open front
-    const furMat = toon(0x1a181d), tuft = new THREE.ConeGeometry(0.05, 0.13, 5); tuft.translate(0, 0.05, 0);
-    const furPts = [];
-    for (let i = 0; i < 420; i++) {
-      const u = Math.random() * Math.PI * 2, v = Math.acos(lerp(0.95, -0.82, Math.random()));
-      const n = new THREE.Vector3(Math.sin(v) * Math.sin(u), Math.cos(v), Math.sin(v) * Math.cos(u));
-      const p = new THREE.Vector3(n.x * BR * BS.x, BY + n.y * BR * BS.y, n.z * BR * BS.z);
-      const half = lerp(VW, 0.07, clamp((VT - p.y) / (VT - VB), 0, 1)) + 0.03;
-      if (p.z > 0 && Math.abs(p.x) < half && p.y > VB - 0.05) continue;
-      furPts.push([p, n]);
-    }
-    const fur = new THREE.InstancedMesh(tuft, furMat, furPts.length), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), UPV = new THREE.Vector3(0, 1, 0);
-    furPts.forEach(([p, n], i) => {
-      const d = n.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.5, 0)).normalize();
-      _q.setFromUnitVectors(UPV, d); const sc = 0.8 + Math.random() * 0.6;
-      _m.compose(p, _q, new THREE.Vector3(sc, sc * (0.9 + Math.random() * 0.5), sc)); fur.setMatrixAt(i, _m);
-    });
-    body.add(fur);
-    // fur collar rolls along both front edges
     [-1, 1].forEach((s) => {
-      for (let i = 0; i <= 10; i++) { const y = lerp(VT + 0.02, VB, i / 10), w = lerp(VW, 0.07, i / 10) + 0.035; const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), furMat); b.position.copy(surf(s * w, y, 0.02)); body.add(b); }
+      const rows = [];
+      for (let i = 0; i <= N; i++) {
+        const y = lerp(VT + 0.02, VB - 0.03, i / N), w = lerp(VW, 0.005, i / N), lw = lerp(0.12, 0.05, i / N) * (Math.abs(i - 3) < 1 ? 0.55 : 1);
+        const inner = surf(s * w, y, 0.012), outer = surf(s * (w + lw), y - 0.012, 0.012);
+        rows.push(s < 0 ? [outer, inner] : [inner, outer]);
+      }
+      body.add(meshFrom(rows, C2.satin));
+      const pts = []; for (let i = 0; i <= N; i++) { const y = lerp(VT + 0.02, VB - 0.03, i / N); pts.push(surf(s * (lerp(VW, 0.005, i / N) + 0.004), y, 0.016)); }
+      body.add(tube(pts, 0.004, basic(0x3a3640), 24));
+      // pocket flaps
+      body.add(tube([surf(s * 0.15, 0.37, 0.008), surf(s * 0.22, 0.375, 0.008), surf(s * 0.29, 0.37, 0.008)], 0.006, basic(0x2c2930), 8));
+      // gold buttons, two rows
+      [0.52, 0.4].forEach((y) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 10), M.gold); b.scale.z = 0.55; b.position.copy(surf(s * 0.11, y, 0.012)); body.add(b); });
     });
-    // bare neck with a silver chain
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.22, 18), M.skin); neck.position.y = 0.95; body.add(neck);
-    body.add(tube([new THREE.Vector3(-0.115, 0.95, 0.02), new THREE.Vector3(-0.1, 0.9, 0.11), surf(-0.06, 0.8, 0.02), surf(0, 0.76, 0.024), surf(0.06, 0.8, 0.02), new THREE.Vector3(0.1, 0.9, 0.11), new THREE.Vector3(0.115, 0.95, 0.02)], 0.007, M.silver, 40));
+    // front closing line of the coat
+    body.add(tube([surf(0.02, 0.6, 0.008), surf(0.025, 0.45, 0.008), surf(0.02, 0.24, 0.008)], 0.004, basic(0x2c2930), 8));
+
+    // turtleneck collar (no skin at the neck)
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.2, 18), C2.velvet); neck.position.y = 0.93; body.add(neck);
+    const roll = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.035, 8, 24), C2.velvet); roll.rotation.x = Math.PI / 2; roll.position.y = 0.99; body.add(roll);
     const chestHolder = new THREE.Group(); chestHolder.position.set(0, 0.56, 0.36); body.add(chestHolder);
 
-    // Arms — fur sleeves, extra-fluffy cuffs
+    // Arms — coat sleeves ending in fluffy fur cuffs
+    const furMat = toon(0x1c1a20);
     const mkArm = (s) => {
-      const sh = new THREE.Group(); sh.position.set(s * 0.36, 0.8, 0); body.add(sh);
-      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), C2.blazer); pad.scale.set(1.1, 0.8, 1); sh.add(pad);
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve);
-      const tufts = new THREE.InstancedMesh(tuft, furMat, 60);
-      for (let i = 0; i < 60; i++) { const a = Math.random() * Math.PI * 2, y = -Math.random() * 0.36, r = 0.12 + (-y) * 0.04; const d = new THREE.Vector3(Math.cos(a), -0.6, Math.sin(a)).normalize(); _q.setFromUnitVectors(UPV, d); _m.compose(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), _q, new THREE.Vector3(0.8, 0.9, 0.8)); tufts.setMatrixAt(i, _m); }
-      sh.add(tufts);
-      const cuff = new THREE.Group(); cuff.position.y = -0.36; sh.add(cuff);
-      for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, b = new THREE.Mesh(new THREE.SphereGeometry(0.055 + (i % 3) * 0.01, 8, 6), furMat); b.position.set(Math.cos(a) * 0.12, ((i % 2) - 0.5) * 0.05, Math.sin(a) * 0.12); cuff.add(b); }
+      const sh = new THREE.Group(); sh.position.set(s * 0.31, 0.8, 0); body.add(sh);
+      const pad = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), C2.blazer); pad.scale.set(1, 0.8, 1); sh.add(pad);
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.33, 14), C2.blazer); sleeve.position.y = -0.165; sh.add(sleeve); outline(sleeve, 1.08, 0x2a0a10);
+      const fur = new THREE.Group(); fur.position.y = -0.35; sh.add(fur);
+      for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2, b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (i % 3) * 0.008, 8, 6), furMat); b.position.set(Math.cos(a) * 0.1, ((i % 2) - 0.5) * 0.04, Math.sin(a) * 0.1); fur.add(b); }
       const hand = new THREE.Group(); hand.position.y = -0.44; sh.add(hand);
       const palm = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), M.skin); palm.scale.set(1, 1.1, 0.85); hand.add(palm);
       // fingers for hand signs: V (scissors / peace) and a pointed index; hidden unless a move needs them
@@ -958,24 +955,20 @@
     const armR = mkArm(-1), armL = mkArm(1);
 
     // Head — oversized for a Korean-chibi proportion
-    const head = new THREE.Group(); head.position.y = 1.24; head.scale.setScalar(1.02); body.add(head);
-    // squarer lower face: taper the cheeks a little and flatten the chin so it reads as a jaw, not a round baby face
-    const skullGeo = new THREE.SphereGeometry(0.52, 40, 30), sp = skullGeo.attributes.position;
-    for (let i = 0; i < sp.count; i++) {
-      const y = sp.getY(i); if (y >= -0.05) continue;
-      const t = (-y - 0.05) / 0.47;
-      sp.setX(i, sp.getX(i) * (1 - 0.13 * t * t)); sp.setZ(i, sp.getZ(i) * (1 - 0.04 * t));
-      if (y < -0.38) sp.setY(i, -0.38 + (y + 0.38) * 0.45);
-    }
-    skullGeo.computeVertexNormals();
-    const skull = new THREE.Mesh(skullGeo, C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a1a16);
+    const head = new THREE.Group(); head.position.y = 1.25; head.scale.setScalar(1.07); body.add(head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 30), C2.skinFace); skull.scale.set(1.06, 0.95, 1); head.add(skull); outline(skull, 1.03, 0x3a1a16);
     [-1, 1].forEach((s) => {
       const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), M.skin); ear.scale.set(0.55, 1, 0.8); ear.position.set(s * 0.555, -0.07, -0.02); head.add(ear);
       const inner = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), toon(0xe8a58c)); inner.scale.set(0.4, 1, 0.6); inner.position.set(s * 0.6, -0.07, 0.0); head.add(inner);
-      // silver hoop with a dangling spike on both ears, as in the photos
+      // his right ear (viewer's left): hoop with a spike; his left ear: two small hoops and a dangling cross
       const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.008, 8, 20), M.silver); hoop.position.set(s * 0.585, -0.17, 0.0); hoop.rotation.y = Math.PI / 2; head.add(hoop);
       const spike = new THREE.Group(); spike.position.set(s * 0.585, -0.205, 0.0); head.add(spike);
-      const c = new THREE.Mesh(new THREE.ConeGeometry(0.017, 0.1, 8), M.silver); c.rotation.x = Math.PI; c.position.y = -0.05; spike.add(c);
+      if (s < 0) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), M.silver); c.rotation.x = Math.PI; c.position.y = -0.045; spike.add(c); }
+      else {
+        const h2 = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 8, 18), M.silver); h2.position.set(s * 0.58, -0.12, 0.06); h2.rotation.y = Math.PI / 2; head.add(h2);
+        const v = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.1, 0.014), M.silver); v.position.y = -0.06; spike.add(v);
+        const hb = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.014), M.silver); hb.position.y = -0.04; spike.add(hb);
+      }
       head.userData["ear" + s] = { hoop, spike };
     });
 
@@ -999,14 +992,14 @@
       g.userData = { open, happy, closed, squeeze, dot, heart, star, lid };
       return g;
     });
-    // straight, thick, flat brows sitting low over the eyes, inner ends a touch lower (a calm, serious look)
+    // thick, softly arched brows
     const brows = [-1, 1].map((s) => {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.036, 0.03), M.hair);
-      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.08, 0.485); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
-      b.rotation.z = s * 0.2; b.position.set(0, -0.03, 0); piv.add(b);
+      const b = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 16, 0.75), M.hair); b.scale.set(1, 1, 0.8);
+      const piv = new THREE.Group(); piv.position.set(s * 0.2, 0.1, 0.49); piv.rotation.set(-0.1, s * 0.36, 0); head.add(piv);
+      b.rotation.z = Math.PI / 2 - 0.375; b.position.set(0, -0.19, 0); piv.add(b);
       return piv;
     });
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), toon(0xd89a78)); nose.scale.set(0.8, 1.7, 0.7); nose.position.set(0, -0.12, 0.49); head.add(nose);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), toon(0xe6a184)); nose.position.set(0, -0.13, 0.5); head.add(nose);
     // mouths
     const mouths = new THREE.Group(); mouths.position.set(0, -0.23, 0.468); mouths.rotation.x = -0.25; head.add(mouths);
     const smile = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.01, 6, 16, Math.PI), M.mouth); smile.rotation.z = Math.PI; mouths.add(smile);
@@ -1024,8 +1017,8 @@
     const fang = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.025, 4), C2.white); fang.rotation.z = Math.PI; fang.position.set(0.02, -0.01, 0.01); frown.add(fang);
     const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.009, 6, 14, Math.PI * 0.62), M.mouth); smirk.rotation.z = Math.PI + 0.5; smirk.position.set(0.012, 0.012, 0); mouths.add(smirk);
     const mouthSet = { smile, frown, flat, mouthO, grin, wobble, smirk };
-    // cheeks stay clear (cool look); a faint blush only shows when shy
-    const blushMat = basic(0xff8a9c, { transparent: true, opacity: 0, depthWrite: false });
+    // cheeks stay clear (the reference's blush is left out on purpose)
+    const blushMat = basic(0xff8a9c, { transparent: true, opacity: 0, depthWrite: false }); // no blush, by request
     const blushes = [-1, 1].map((s) => {
       const p = new THREE.Vector3(s * 0.31, -0.17, 0.42);
       const b = decal(new THREE.CircleGeometry(0.075, 24), blushMat, p); b.scale.set(1.3, 0.8, 1); head.add(b); return b;
@@ -1044,38 +1037,59 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — like his photos: a shaggy, voluminous top, a heavy messy fringe down to the brows,
-    // short faded sides and nape so the ears and earrings stay in view
+    // Hair — soft, messy Korean cut: volume on top, curtain fringe parted just off centre,
+    // wavy locks that flick outward over the temples and at the nape; ears stay visible
     const hair = new THREE.Group(); head.add(hair);
-    const lockMat = toon(0x26222b, { side: THREE.DoubleSide }); // a shade lighter than the cap so strands read
-    const rnd = (i, k = 1) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.08, 1.02, 1.06); cap.position.set(0, 0.06, -0.01); cap.rotation.x = -0.24; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
-    // the fade: a close, slightly lighter shell over the sides and back
-    const fade = new THREE.Mesh(new THREE.SphereGeometry(0.532, 36, 14, Math.PI * 1.5 - 2.25, 4.5, Math.PI * 0.26, Math.PI * 0.5), toon(0x2b2830));
-    fade.scale.set(1.06, 0.95, 1); hair.add(fade);
-    const H = (ctrl, w0, th = 0.06, w1 = 0.012) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    // heavy fringe: locks pour forward off the crown and stop at the brows, jagged and slightly parted
-    for (let i = 0; i < 12; i++) {
-      const u = i / 11, az = lerp(-0.85, 0.8, u), tipEl = 0.19 + rnd(i) * 0.13 + Math.abs(az) * 0.1, sweep = -0.2 - rnd(i, 3) * 0.12;
-      H([[az * 0.3 + 0.12, 1.32, 0.6], [az * 0.62 + 0.04, 1.0, 0.8], [az * 0.92 + sweep * 0.4, 0.58 + rnd(i, 2) * 0.06, 0.68], [az + sweep, tipEl, 0.572]], 0.17, 0.075, 0.008);
+    const lockMat = M.hair.clone(); lockMat.side = THREE.DoubleSide;
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.57, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
+    cap.scale.set(1.1, 1.04, 1.06); cap.position.set(0, 0.06, -0.02); cap.rotation.x = -0.32; hair.add(cap); outline(cap, 1.03, 0x3a1a16);
+    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.46), M.hair);
+    nape.scale.set(1.075, 0.97, 1.045); hair.add(nape);
+    const H = (ctrl, w0, th = 0.05, w1 = 0.006) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
+    const PA = -0.14, jit = (i, a) => Math.sin(i * 12.9898) * a;
+    // crown volume: broad, soft locks swept forward and to the sides; they stop above the forehead
+    for (let i = 0; i < 8; i++) {
+      const u = i / 7, az = lerp(-1.25, 1.25, u);
+      H([[PA + az * 0.25, 1.48, 0.56], [az * 0.62, 1.2 + jit(i, 0.06), 0.88], [az * 0.95, 0.86, 0.8], [az * 1.1, 0.6, 0.67]], 0.24, 0.09, 0.03);
     }
-    // shaggy top: locks fanning out over the crown with tips lifting away
-    for (let i = 0; i < 26; i++) {
-      const az = (i / 26) * Math.PI * 2 + rnd(i, 4) * 0.25, el = 0.62 + rnd(i, 5) * 0.45;
-      H([[az * 0.15, 1.5, 0.56], [az, (1.5 + el) / 2 + 0.08, 0.76 + rnd(i, 6) * 0.05], [az + (rnd(i, 7) - 0.5) * 0.3, el, 0.74 + rnd(i, 8) * 0.07]], 0.2, 0.08, 0.02);
+    // curtain fringe — his right side (viewer's left): sweeps from the part down to the temple
+    for (let i = 0; i < 4; i++) {
+      const ea = -0.42 - i * 0.2, ee = 0.42 - i * 0.05 + jit(i + 3, 0.03);
+      H([[PA, 1.22, 0.6], [PA - 0.1 - i * 0.06, 0.92, 0.72], [ea + 0.12, ee + 0.17, 0.67], [ea, ee, 0.605], [ea - 0.08, ee + 0.01, 0.64]], 0.2, 0.06, 0.03);
     }
-    // two flyaways on top
-    H([[0.1, 1.45, 0.58], [0.2, 1.62, 0.72], [0.45, 1.56, 0.8]], 0.05, 0.03, 0.004);
-    H([[-0.3, 1.45, 0.58], [-0.42, 1.6, 0.7], [-0.62, 1.52, 0.77]], 0.045, 0.03, 0.004);
-    // sides above the ears: short, tight locks that end well above the ear
+    // curtain fringe — his left side (viewer's right), longer sweep
+    for (let i = 0; i < 5; i++) {
+      const ea = 0.3 + i * 0.18, ee = 0.46 - i * 0.05 + jit(i + 7, 0.03);
+      H([[PA + 0.03, 1.22, 0.6], [PA + 0.12 + i * 0.07, 0.94, 0.73], [ea - 0.12, ee + 0.17, 0.675], [ea, ee, 0.605], [ea + 0.09, ee + 0.02, 0.645]], 0.2, 0.06, 0.03);
+    }
+    // two loose strands falling over the forehead, just off the part
+    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.68], [-0.2, 0.48, 0.62], [-0.16, 0.3, 0.575]], 0.08, 0.045);
+    H([[PA + 0.04, 1.2, 0.6], [PA + 0.1, 0.86, 0.68], [0.12, 0.52, 0.62], [0.2, 0.38, 0.58]], 0.07, 0.04);
+    // flyaway strands on the crown
+    H([[0.15, 1.42, 0.58], [0.22, 1.6, 0.74], [0.5, 1.56, 0.84]], 0.05, 0.03, 0.004);
+    H([[-0.35, 1.42, 0.58], [-0.42, 1.58, 0.72], [-0.7, 1.52, 0.8]], 0.045, 0.028, 0.004);
+    // sides: wavy locks over the temples that flick outward above the ears
     [-1, 1].forEach((s) => {
-      for (let i = 0; i < 6; i++) { const az = s * (0.95 + i * 0.2); H([[az - s * 0.1, 0.95, 0.7], [az, 0.62, 0.64], [az + s * 0.04, 0.42 + rnd(i, 9) * 0.06, 0.6]], 0.13, 0.05); }
+      for (let i = 0; i < 5; i++) {
+        const az = s * (1.0 + i * 0.2), endEl = lerp(0.14, 0.24, i / 4);
+        H([[az - s * 0.15, 1.05, 0.66], [az, 0.62, 0.69], [az + s * 0.04, endEl + 0.14, 0.62], [az + s * 0.1, endEl + 0.03, 0.665]], 0.17, 0.055, 0.025);
+      }
     });
-    // back: layered, tapering to a short nape
-    for (let i = 0; i < 10; i++) {
-      const az = Math.PI + (i - 4.5) * 0.25;
-      H([[az * 0.4, 1.4, 0.6], [az, 0.85, 0.68], [az + (rnd(i, 10) - 0.5) * 0.1, 0.3, 0.62], [az, 0.05, 0.575]], 0.22, 0.06);
+    // messy tufts that break the silhouette, flicking up and out like the drawing
+    for (let i = 0; i < 12; i++) {
+      const az = lerp(-1.7, 1.7, i / 11) + jit(i + 20, 0.1), el = 0.92 + Math.abs(Math.sin(i * 2.3)) * 0.3;
+      H([[az * 0.9, el + 0.3, 0.8], [az, el + 0.1, 0.86], [az * 1.04 + jit(i, 0.08), el - 0.02, 0.9]], 0.24, 0.06, 0.05);
+    }
+    // glossy highlight streaks on the crown, as drawn in the reference
+    const shineMat = basic(0x8d8794);
+    [[-0.55, 1.12, 0.12], [-0.2, 1.22, -0.2], [0.3, 1.16, 0.25], [0.7, 1.0, 0.4], [-0.9, 0.9, -0.35]].forEach(([az, el, rz]) => {
+      const sh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 6), shineMat); sh.scale.set(1.7, 0.45, 0.2);
+      sh.position.copy(headPt(az, el, 0.87)); sh.lookAt(sh.position.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
+    });
+    // back: layered locks down to the nape, tips flicking out
+    for (let i = 0; i < 12; i++) {
+      const az = Math.PI + (i - 5.5) * 0.22;
+      H([[az * 0.5 + PA * 0.2, 1.4, 0.6], [az, 0.95, 0.66], [az + jit(i, 0.05), 0.35, 0.615], [az, -0.2, 0.575], [az + (i - 5.5) * 0.04, -0.34, 0.62]], 0.22, 0.05, 0.03);
     }
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
@@ -1488,19 +1502,21 @@
   }
 
   const SAYINGS = {
-    0: ["Chào bạn, mình là PAT!", "Muốn là làm thôi ♪", "Bấm Đi tiếp đi nè", "Mic check 1, 2 ♫"],
-    1: ["Ảnh mình nè, vuốt thử đi!", "Thái độ trước, trình độ sau", "Cố gắng, không hối tiếc", "Đi đến cùng nha ★"],
-    2: ["Mở khoá sao kế tiếp đi!", "Mở đủ là có quà đó", "Nghe highlight trước nha ♪", "Mỗi bài là một vì sao"],
-    3: ["souL phối cả EP này đó", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe full trên smart link nha"],
-    4: ["Xem MV Đừng Như Thế đi!", "MV mình tâm đắc nhất đó", "Đăng ký kênh giúp mình nha", "Like video nữa nhé ♥"],
-    5: ["Bấm phát video đi!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
-    6: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Theo dõi mình nha ♪"],
-    7: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
+    hero: ["Chào bạn, mình là PAT!", "Muốn là làm thôi ♪", "Bấm Đi tiếp đi nè", "Mic check 1, 2 ♫"],
+    about: ["Ảnh mình nè, vuốt thử đi!", "Thái độ trước, trình độ sau", "Cố gắng, không hối tiếc", "Đi đến cùng nha ★"],
+    track: ["Nghe highlight trước nha ♪", "Mỗi bài là một vì sao", "Muốn nghe trọn thì bấm smart link", "Đi tiếp để mở sao kế tiếp"],
+    gift: ["Có quà cho bạn đó!", "Đủ năm sao là mở được", "Xem mình breakdance nha", "Windmill nè!"],
+    ep: ["souL phối cả EP này đó", "075 có bảy câu chuyện", "Từ tối sang sáng ♫", "Nghe full trên smart link nha"],
+    mv: ["Xem MV Đừng Như Thế đi!", "MV mình tâm đắc nhất đó", "Đăng ký kênh giúp mình nha", "Like video nữa nhé ♥"],
+    ad: ["ON AIR rồi nè!", "Hook dính lắm đó ♪", "Vài giây để được nhớ", "Thương hiệu tiếp theo là bạn?"],
+    studio: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Theo dõi mình nha ♪"],
+    finale: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
   };
+  const sayings = (i) => { const st = STATIONS[i] || STATIONS[0]; return SAYINGS[st.track != null ? "track" : st.ad != null ? "ad" : st.key] || SAYINGS.hero; };
 
   const ACTS = ["jump", "spin", "wave", "heart", "wink", "dance", "star", "cute"];
   const EMOTES = [
-    { id: "happy", name: "Vui vẻ", icon: "😎", say: ["Ổn áp.", "Yeah ♪", "Nghe được đó."] },
+    { id: "happy", name: "Vui vẻ", icon: "😄", say: ["Hihi vui quá trời!", "Yeahhh ♪", "Hôm nay đẹp trời ghê~"] },
     { id: "angry", name: "Tức giận", icon: "💢", say: ["Hứ! Giận rồi đó!", "Đừng chọc nữa mà!", "Grrr..."] },
     { id: "shy", name: "Ngại ngùng", icon: "😳", say: ["Ơ... ngại quá à...", "Đừng nhìn mình vậy mà~", "Hihi... thôi mà"] },
     { id: "awkward", name: "Sượng trân", icon: "😶", say: ["...", "Ờm... ờ...", "Sượng trân luôn á"] },
@@ -1517,7 +1533,7 @@
     const wp = new THREE.Vector3(); PAT.head.getWorldPosition(wp);
     if (PAT.acting === "heart") burst(wp.clone().add(new THREE.Vector3(0, 0.5, 0)), 12, { tex: TEX.heart, speed: 1.6, size: 0.3, life: 1.6, up: 1.5 });
     if (PAT.acting === "star" || PAT.acting === "spin") burst(wp, 16, { tex: TEX.star, speed: 2.4, size: 0.22, life: 1.2 });
-    say(pick(SAYINGS[state.station] || SAYINGS[0]));
+    say(pick(sayings(state.station)));
     Audio.chime((Math.random() * 8) | 0);
   }
   function emote(id) {
@@ -1578,7 +1594,7 @@
     }
 
     // face defaults: calm, cool, a hint of a smile
-    let eyeMode = "open", mouthMode = "smirk", blushTarget = 0, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.12, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
+    let eyeMode = "open", mouthMode = "grin", blushTarget = 0, winkR = 1, eyeScale = 1, browY = 0, browRz = -0.07, faceTo = FACE_BASE, faceK = 0, tearK = 0, lookX = 0;
     const fxOn = { anger: false, sweat: false, gloom: false, zzz: false };
     if (P.acting) {
       P.actT += dt;
@@ -1601,11 +1617,10 @@
       mouth = 0;
       switch (P.emo) {
         case "happy":
-          // cool version of happy: a slow nod, smirk, one fist up
-          eyeMode = Math.floor(k * 2) % 5 === 4 ? "closed" : "open"; mouthMode = "smirk";
-          bodyY += Math.abs(Math.sin(k * 4)) * 0.08 * env;
-          aRx = lerp(aRx, -2.6, env); aRz = lerp(aRz, -0.2, env); aLx = lerp(aLx, -0.5, env); aLz = lerp(aLz, 0.35, env);
-          hx += Math.sin(k * 8) * 0.1 * env; hz += 0.1 * env; break;
+          eyeMode = "happy"; mouthMode = "grin";
+          bodyY += Math.abs(Math.sin(k * 7)) * 0.22 * env; squash = 1 + Math.sin(k * 14) * 0.05 * env;
+          aLx = lerp(aLx, -2.7 + Math.sin(k * 7) * 0.2, env); aRx = lerp(aRx, -2.7 - Math.sin(k * 7) * 0.2, env); aLz = lerp(aLz, 0.5, env); aRz = lerp(aRz, -0.5, env);
+          hz += Math.sin(k * 7) * 0.14 * env; break;
         case "angry":
           eyeMode = "open"; mouthMode = "frown"; browY = -0.03; browRz = -0.45; blushTarget = 0; faceTo = FACE_RED; faceK = 0.55 * env; fxOn.anger = true;
           aLx = lerp(aLx, -0.25, env); aRx = lerp(aRx, -0.25, env); aLz = lerp(aLz, 0.12, env); aRz = lerp(aRz, -0.12, env);
@@ -1743,7 +1758,7 @@
     });
     P.brows.forEach((b, i) => {
       const sd = i ? 1 : -1;
-      b.position.y += (0.08 + browY - b.position.y) * s;
+      b.position.y += (0.1 + browY - b.position.y) * s;
       b.rotation.z += (sd * browRz - b.rotation.z) * s;
     });
     // mouth
@@ -1756,7 +1771,7 @@
     if (mm === "cry") { MS.wobble.visible = false; MS.mouthO.visible = true; MS.mouthO.scale.set(1.2, 0.5 + Math.abs(Math.sin(t * 12)) * 0.4, 0.4); }
     else MS.mouthO.scale.x = 0.9;
     if (mm === "grin") MS.grin.scale.y = 0.9 + Math.sin(t * 8) * 0.1;
-    P.blushMat.opacity += (blushTarget - P.blushMat.opacity) * s;
+    P.blushMat.opacity = 0; void blushTarget;
     P.faceMat.color.copy(FACE_BASE).lerp(faceTo, faceK);
     P.tearMat.opacity += (tearK * 0.85 - P.tearMat.opacity) * s;
     P.tears.forEach((tr) => (tr.scale.y = 0.6 + Math.sin(t * 6) * 0.15 + tearK * 0.4));
@@ -1774,16 +1789,36 @@
   /* ======================================================================
      8. STATIONS, PATH, PROPS
      ====================================================================== */
-  const STATIONS = [
-    { key: "hero", label: "Khởi hành", short: "Khởi hành", inst: "mic", tint: 0x8a0a1c, fx: "dolly" },
-    { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "ink" },
-    { key: "tracks", label: "Chòm sao Track", short: "Track", inst: "electric", tint: 0x9c0d22, fx: "glitch" },
-    { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "tear" },
-    { key: "mv", label: "Music Video", short: "MV", inst: "mic", tint: 0x7a0614, fx: "matchcut" },
-    { key: "ads", label: "Nhạc quảng cáo", short: "Quảng cáo", inst: "bass", tint: 0xa3101f, fx: "rgb" },
-    { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip" },
-    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly" },
+  // the journey: every single is its own stop, then the gift, the EP, the MVs, one stop per ad, the studio and the finale
+  const TRACK_LOOK = [
+    { inst: "electric", tint: 0x9c0d22, fx: "glitch", ride: "guitar" },
+    { inst: "acoustic", tint: 0x5a0812, fx: "ink", ride: "run" },
+    { inst: "keytar", tint: 0xa3101f, fx: "whip", ride: "wings" },
+    { inst: "bass", tint: 0x6e0a18, fx: "tear", ride: "staff" },
+    { inst: "electric", tint: 0x8a0a1c, fx: "rgb", ride: "run" },
   ];
+  const STATIONS = [
+    { key: "hero", label: "Khởi hành", short: "Khởi hành", inst: "mic", tint: 0x8a0a1c, fx: "dolly", ride: "run" },
+    { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "ink", ride: "run",
+      tease: "Bức chân dung của một chàng trai từng không tin vào chính mình." },
+    ...SINGLES.map((ti, k) => Object.assign({ key: "t" + k, track: ti, k, label: "Track " + pad2(k + 1) + " · " + C.tracks[ti].title, short: "Track " + pad2(k + 1),
+      tease: ["Ngôi sao đầu tiên: khoảnh khắc chàng trai ấy thức tỉnh.", "Ngôi sao thứ hai không có màu. Vì sao vậy?", "Ngôi sao thứ ba là một vết thương được mang lên sàn nhảy.", "Ngôi sao thứ tư bắt đầu trôi, nhẹ như không.", "Ngôi sao thứ năm đeo một lớp mặt nạ."][k] || "Một ngôi sao nữa đang chờ." }, TRACK_LOOK[k % TRACK_LOOK.length])),
+    { key: "gift", label: "Quà tặng", short: "Quà tặng", inst: "mic", tint: 0xb3142a, fx: "dolly", ride: "rocket",
+      tease: "Một hộp quà. Bên trong có gì, phải đi đủ năm ngôi sao mới biết." },
+    { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "tear", ride: "wings",
+      tease: "Bảy cánh cửa, một con số: 075." },
+    { key: "mv", label: "Music Video", short: "MV", inst: "mic", tint: 0x7a0614, fx: "matchcut", ride: "rocket",
+      tease: "Những câu chuyện bắt đầu chuyển động. Có một MV được ghim." },
+    ...C.ads.map((a, k) => ({ key: "ad" + k, ad: k, label: "On Air · " + (a.brand || a.title), short: "On Air " + pad2(k + 1), inst: "bass", tint: k % 2 ? 0x8a0a1c : 0xa3101f, fx: k ? "whip" : "rgb", ride: k % 2 ? "staff" : "run",
+      tease: k ? "Đèn ON AIR thứ " + (k + 1) + " sắp bật." : "Đèn ON AIR sắp bật. Âm nhạc lên sóng cho thương hiệu." })),
+    { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip", ride: "run",
+      tease: "Một căn phòng đầy nhạc cụ đang chờ bạn chạm vào." },
+    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly", ride: "finale",
+      tease: "Ngôi sao cuối cùng. Và một lời cảm ơn." },
+  ];
+  const SI = {}; STATIONS.forEach((st, i) => (SI[st.key] = i));
+  const trackSt = (k) => SI["t" + k];
+  const chapter = (i) => "Chương " + pad2(i + 1);
   const INTRO = { x: 0, y: 0, z: 64 };
   let curve, stationT = [], vinyls = [];
 
@@ -1925,21 +1960,34 @@
       g.rotateY(u.flip * Math.PI * 2);
     }));
 
-    // 2 — electric guitar + track constellation
-    const s2 = STATIONS[2].pos;
-    const ge = floatProp(INST.electric(), spot(2, 4, 4, 1.4), { spin: 0.12 }); ge.scale.setScalar(4.6); ge.rotation.z = -0.5;
-    clickable(ge, () => { ge.userData.wob = 1; [330, 392, 440, 523, 659].forEach((f, k) => setTimeout(() => Audio.pluck(f), k * 60)); act("dance"); });
-    buildConstellation(s2);
+    // track stops — each single gets its own floating instrument; its star hangs above the stop
+    STATIONS.forEach((st, i) => {
+      if (st.track == null) return;
+      const mk = INST[st.inst] || INST.electric, ins = floatProp(mk(), spot(i, 4, 4, 1.4), { spin: 0.12 }); ins.scale.setScalar(4.4); ins.rotation.z = st.k % 2 ? 0.45 : -0.5;
+      clickable(ins, () => { ins.userData.wob = 1; [330, 392, 440, 523, 659].forEach((f, k) => setTimeout(() => Audio.pluck(f * (1 + st.k * 0.06)), k * 60)); act("dance"); });
+    });
+    buildConstellation();
 
-    // 3 — piano keys arc (playable)
-    const s3 = STATIONS[3].pos;
+    // gift — a big ribboned box that bounces until the five stars are lit
+    {
+      const gb = new THREE.Group(), red = toon(0xe0102c), bone = M.white;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.3, 1.6), red); gb.add(box);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.32, 1.78), red); lid.position.y = 0.8; gb.add(lid);
+      [0, 1].forEach((k) => { const r1 = new THREE.Mesh(new THREE.BoxGeometry(k ? 0.24 : 1.82, 1.66, k ? 1.82 : 0.24), bone); r1.position.y = 0.16; gb.add(r1); });
+      [-1, 1].forEach((k) => { const bow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.08, 8, 20), bone); bow.position.set(k * 0.26, 1.15, 0); bow.rotation.set(0, Math.PI / 2, k * 0.6); gb.add(bow); });
+      const q = textSprite("?", { size: 90, scale: 0.9, font: "'Big Shoulders Display', Arial", weight: 900 }); q.position.y = 2.1; gb.add(q);
+      floatProp(gb, spot(SI.gift, 4.5, 3.2, 1.6), { spin: 0.3, amp: 0.35 });
+      clickable(gb, () => { gb.userData.wob = 1; Audio.pop(); if (state.station !== SI.gift) return; Tracks.allOpen ? (Gift.opened ? Gift.dance() : Gift.show()) : toast("Còn " + (SINGLES.length - Tracks.unlocked) + " ngôi sao nữa mới mở được hộp quà"); });
+      updaters.push((t) => { q.visible = !Gift.opened; gb.scale.setScalar(1 + (Tracks.allOpen && !Gift.opened ? Math.abs(Math.sin(t * 5)) * 0.08 : 0)); });
+    }
+
+    // EP — piano keys arc (playable)
     const scale = [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880];
-    const keys = new THREE.Group(); keys.position.copy(spot(3, 1.2, 0.6, 0.2)); keys.rotation.y = stationYaw(3); scene.add(keys);
+    const keys = new THREE.Group(); keys.position.copy(spot(SI.ep, 1.2, 0.6, 0.2)); keys.rotation.y = stationYaw(SI.ep); scene.add(keys);
     scale.forEach((f, i) => {
       const a = -1.1 + (i / (scale.length - 1)) * 2.2;
       const k = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 1.6), i % 3 === 1 ? toon(0xe0102c) : M.white);
       k.position.set(Math.sin(a) * 5, 1.4 + Math.cos(a * 2) * 0.3, -Math.cos(a) * 3.5);
-      k.position.z += 0;
       k.rotation.y = a; k.rotation.x = -0.25; keys.add(k);
       k.userData.press = 0; k.userData.baseY = k.position.y;
       k.userData.onClick = () => { k.userData.press = 1; Audio.piano(f); burst(k.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.4, 0)), 6, { tex: TEX.notes[i % 4], speed: 1.4, size: 0.35, life: 1.2, up: 1.5 }); };
@@ -1949,36 +1997,50 @@
     });
     updaters.push((t) => keys.children.forEach((k, i) => { k.userData.press *= 0.88; k.position.y = k.userData.baseY - k.userData.press * 0.25 + Math.sin(t * 1.5 + i * 0.5) * 0.08; }));
 
-    // 4 — bass
-    // 4 — music videos: a floating cinema screen for the pinned MV, film strips drifting around it
-    const mvScr = new THREE.Group(); mvScr.rotation.y = stationYaw(4);
+    // music videos: a floating cinema screen for the pinned MV, film strips drifting around it
+    const mvScr = new THREE.Group(); mvScr.rotation.y = stationYaw(SI.mv);
     const scrM = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 2.7), basic(0xffffff, { map: mvTex(), side: THREE.DoubleSide })); mvScr.add(scrM);
     const rim = new THREE.Mesh(new THREE.PlaneGeometry(5.1, 3.0), basic(0xe0102c, { transparent: true, opacity: 0.85, side: THREE.DoubleSide })); rim.position.z = -0.02; mvScr.add(rim);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 })); halo.scale.set(9, 6, 1); halo.position.z = -0.1; mvScr.add(halo);
-    floatProp(mvScr, spot(4, 5.5, 1.2, 3.4), { spin: 0, amp: 0.45 });
-    clickable(scrM, () => { mvScr.userData.wob = 1; Audio.pop(); if (state.station === 4) { const b = $('.panel[data-st="4"] .mv-feat .play-cover'); if (b) b.click(); } });
+    floatProp(mvScr, spot(SI.mv, 5.5, 1.2, 3.4), { spin: 0, amp: 0.45 });
+    clickable(scrM, () => { mvScr.userData.wob = 1; Audio.pop(); if (state.station === SI.mv) { const b = $('.panel[data-st="' + SI.mv + '"] .mv-feat .play-cover'); if (b) b.click(); } });
     for (let i = 0; i < 4; i++) {
       const strip = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.5), basic(0xffffff, { map: filmTex(), transparent: true, side: THREE.DoubleSide }));
-      const a = (i / 4) * Math.PI * 2, c = spot(4, 5.5, 1.2, 3.4);
+      const a = (i / 4) * Math.PI * 2, c = spot(SI.mv, 5.5, 1.2, 3.4);
       strip.position.copy(c); scene.add(strip);
       updaters.push((t) => { const k = a + t * 0.25; strip.position.set(c.x + Math.cos(k) * 4.2, c.y + Math.sin(k * 2) * 0.8, c.z + Math.sin(k) * 2.2); strip.rotation.set(0.2, -k, Math.sin(t + i) * 0.3); });
     }
 
-    const s4 = STATIONS[5].pos;
-    const gb = floatProp(INST.bass(), spot(5, 4, 3.8, 1.6), { spin: 0.1 }); gb.scale.setScalar(4.4); gb.rotation.z = 0.6;
-    clickable(gb, () => { gb.userData.wob = 1; [55, 73.4, 82.4, 110].forEach((f, k) => setTimeout(() => Audio.tone(f, { type: "sawtooth", dur: 0.8, vol: 0.08 }), k * 120)); act("dance"); });
-    // floating billboards (ad screens)
-    for (let i = 0; i < 3; i++) {
-      const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.35), basic(0xffffff, { map: adTex(i), side: THREE.DoubleSide }));
-      floatProp(scr, spot(5, 5 + i, -1.5 + i * 2.2, 3 + (i % 2) * 1.1), { spin: 0, amp: 0.3 }); scr.rotation.y = stationYaw(5);
-      clickable(scr, () => { scr.userData.wob = 1; Audio.pop(); });
-    }
+    // ad stops — an ON AIR broadcast screen showing the ad's own poster, a blinking lamp, the bass and a couple of billboards
+    STATIONS.forEach((st, i) => {
+      if (st.ad == null) return;
+      const a = C.ads[st.ad], tall = a.shape === "tall";
+      const scr = new THREE.Group(); scr.rotation.y = stationYaw(i);
+      const W = tall ? 2.0 : 4.6, Hh = tall ? 3.55 : 2.6;
+      const tex = new THREE.TextureLoader().load(a.poster || ""); tex.encoding = THREE.sRGBEncoding;
+      const img = new THREE.Mesh(new THREE.PlaneGeometry(W, Hh), basic(0xffffff, { map: tex, side: THREE.DoubleSide })); scr.add(img);
+      const bezel = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.3, Hh + 0.3), basic(0x111014, { side: THREE.DoubleSide })); bezel.position.z = -0.02; scr.add(bezel);
+      const lamp = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.42), basic(0xffffff, { map: onAirTex(), transparent: true, side: THREE.DoubleSide })); lamp.position.set(0, Hh / 2 + 0.5, 0.02); scr.add(lamp);
+      const lg = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); lg.scale.set(3.4, 1.6, 1); lg.position.set(0, Hh / 2 + 0.5, 0.05); scr.add(lg);
+      floatProp(scr, spot(i, 5.2, tall ? 1.6 : 0.8, tall ? 3.6 : 3.2), { spin: 0, amp: 0.3 });
+      clickable(scr, () => { scr.userData.wob = 1; Audio.pop(); if (state.station !== i) return; const v = $('.panel[data-st="' + i + '"] video'); if (v) v.play().catch(() => {}); });
+      updaters.push((t) => { const on = Math.sin(t * 5 + i) > -0.2; lamp.material.opacity = on ? 1 : 0.35; lg.material.opacity = on ? 0.9 : 0.15; });
+      if (st.ad === 0) {
+        const gb = floatProp(INST.bass(), spot(i, 4, 4.2, 1.6), { spin: 0.1 }); gb.scale.setScalar(4.4); gb.rotation.z = 0.6;
+        clickable(gb, () => { gb.userData.wob = 1; [55, 73.4, 82.4, 110].forEach((f, k) => setTimeout(() => Audio.tone(f, { type: "sawtooth", dur: 0.8, vol: 0.08 }), k * 120)); act("dance"); });
+      }
+      for (let b = 0; b < 2; b++) {
+        const bb = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 1.12), basic(0xffffff, { map: adTex(st.ad + b), side: THREE.DoubleSide }));
+        floatProp(bb, spot(i, 7 + b, -3.4 + b * 7.6, 4.6 + b * 0.6), { spin: 0, amp: 0.3 }); bb.rotation.y = stationYaw(i);
+        clickable(bb, () => { bb.userData.wob = 1; Audio.pop(); });
+      }
+    });
 
     // 5 — full band on a stage
     buildBand();
 
     // 6 — finale star
-    buildFinaleStar(spot(7, 3, -3, 2.6));
+    buildFinaleStar(spot(SI.finale, 3, -3, 2.6));
   }
   /* ---------- full band: 3D stage at the studio + pads in the panel ---------- */
   const DRUM = {
@@ -2036,7 +2098,7 @@
       Audio.init(); b.play(); if (!fromJam) BG.ping();
       const p = this.parts[id]; if (p) { p.userData.hitT = 1; const wp = new THREE.Vector3(); p.getWorldPosition(wp); burst(wp.add(new THREE.Vector3(0, 0.6, 0)), 5, { tex: pick(TEX.notes), speed: 1.4, size: 0.35, life: 1, up: 1.2 }); }
       const pad = $('[data-pad="' + id + '"]'); if (pad) { pad.classList.remove("hit"); void pad.offsetWidth; pad.classList.add("hit"); }
-      if (!fromJam && b.inst && state.station === 6) { setInstrument(b.inst); act(pick(["dance", "jump", "wave"])); }
+      if (!fromJam && b.inst && state.station === SI.studio) { setInstrument(b.inst); act(pick(["dance", "jump", "wave"])); }
     },
     // 16-step groove at 96 BPM in A minor (Am, F, C, G) so the jam sits with the catalogue
     toggleJam() {
@@ -2046,7 +2108,7 @@
       const stepMs = 60000 / 96 / 4; let step = 0;
       const roots = [55, 43.65, 65.41, 49], chords = [[220, 261.6, 329.6], [174.6, 220, 261.6], [196, 261.6, 329.6], [196, 246.9, 293.7]];
       BG.duck("jam", true); if (btn) btn.textContent = "■ Dừng jam";
-      if (state.station === 6) { setInstrument("studio"); act("dance"); }
+      if (state.station === SI.studio) { setInstrument("studio"); act("dance"); }
       this.jam = { iv: setInterval(() => {
         const s = step % 16, bar = Math.floor(step / 16) % 4;
         if (s === 0 || s === 6 || s === 10) this.hit("kick", true);
@@ -2067,13 +2129,13 @@
       $$("[data-pad]").forEach((el) => el.addEventListener("pointerdown", (e) => { e.preventDefault(); this.hit(el.dataset.pad); }));
       const j = $("#btnJam"); if (j) j.addEventListener("click", () => this.toggleJam());
       window.addEventListener("keydown", (e) => {
-        if (state.station !== 6 || state.modal || state.phase !== "live" || e.repeat || e.metaKey || e.ctrlKey) return;
+        if (state.station !== SI.studio || state.modal || state.phase !== "live" || e.repeat || e.metaKey || e.ctrlKey) return;
         const b = BAND.find((x) => x.key === e.key.toLowerCase()); if (b) this.hit(b.id);
       });
     },
   };
   function buildBand() {
-    const stage = new THREE.Group(); stage.position.copy(spot(6, 3.6, 2.2, 0)); stage.rotation.y = stationYaw(6); scene.add(stage);
+    const stage = new THREE.Group(); stage.position.copy(spot(SI.studio, 3.6, 2.2, 0)); stage.rotation.y = stationYaw(SI.studio); scene.add(stage);
     const riser = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.6, 0.35, 48, 1, false, -Math.PI * 0.62, Math.PI * 1.24), toon(0x141217));
     riser.position.y = -0.1; riser.position.z = -0.6; stage.add(riser);
     const rEdge = new THREE.Mesh(new THREE.TorusGeometry(4.45, 0.03, 6, 80, Math.PI * 1.24), basic(0xff2a40)); rEdge.rotation.set(Math.PI / 2, 0, Math.PI * 0.5 - Math.PI * 0.62 + Math.PI); rEdge.position.set(0, 0.08, -0.6); stage.add(rEdge);
@@ -2184,6 +2246,14 @@
       for (let k = 0; k < 4; k++) { const gr = g.createLinearGradient(0, 22, 0, h - 22); gr.addColorStop(0, "#e0102c"); gr.addColorStop(1, "#2a0208"); g.fillStyle = gr; g.fillRect(12 + k * 107, 24, 96, h - 48); }
     });
   }
+  function onAirTex() {
+    return canvasTex(300, 84, (g, w, h) => {
+      g.fillStyle = "#e0102c"; g.beginPath(); g.roundRect ? g.roundRect(4, 4, w - 8, h - 8, 14) : g.rect(4, 4, w - 8, h - 8); g.fill();
+      g.strokeStyle = "#f5f0ea"; g.lineWidth = 4; g.stroke();
+      g.fillStyle = "#f5f0ea"; g.beginPath(); g.arc(44, h / 2, 13, 0, 7); g.fill();
+      g.font = "900 46px 'Big Shoulders Display', Arial"; g.textBaseline = "middle"; g.fillText("ON AIR", 72, h / 2 + 2);
+    });
+  }
   function adTex(i) {
     return canvasTex(480, 270, (g, w, h) => {
       const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, i % 2 ? "#f5f0ea" : "#e0102c"); gr.addColorStop(1, "#08070a");
@@ -2195,19 +2265,16 @@
     });
   }
 
-  function constelPos(s2, i, n) {
-    const f = n > 1 ? i / (n - 1) : 0.5;
-    return spot(2, 4.5 + Math.sin(f * Math.PI) * 2, -3.6 + f * 8.4, 3.2 + (i % 2) * 1.3 + Math.sin(f * Math.PI) * 0.8);
-  }
+  function constelPos(i) { return spot(trackSt(i), 4.8, -2.8, 4.4); }
   let constelLine, keyAsset;
-  function buildConstellation(s2) {
-    const n = Math.max(1, SINGLES.length);
+  function buildConstellation() {
     for (let i = 0; i < SINGLES.length; i++) {
-      const g = new THREE.Group(); g.position.copy(constelPos(s2, i, n)); scene.add(g);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0x8a8590 })); sp.scale.set(0.9, 0.9, 1); g.add(sp);
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(3, 3, 1); g.add(halo);
+      const g = new THREE.Group(); g.position.copy(constelPos(i)); scene.add(g);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0x8a8590 })); sp.scale.set(1.6, 1.6, 1); g.add(sp);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.redGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(5, 5, 1); g.add(halo);
       const hit = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6), basic(0xffffff, { visible: false })); g.add(hit);
       hit.userData.onClick = () => Tracks.tryOpen(i);
+      const nm = textSprite(C.tracks[SINGLES[i]].title, { size: 40, scale: 0.5 }); nm.position.y = 1.5; g.add(nm);
       interactive.push(hit);
       const lab = textSprite(pad2(i + 1), { size: 40, scale: 0.4, font: "'Big Shoulders Display', Arial", weight: 900 }); lab.position.y = -0.85; g.add(lab);
       g.userData = { sp, halo, lab, glow: 0 };
@@ -2231,7 +2298,7 @@
         const u = g.userData, open = i < Tracks.unlocked, next = i === Tracks.unlocked;
         u.glow = lerp(u.glow, open ? 1 : next ? 0.5 + 0.5 * Math.sin(t * 4) : 0, 0.08);
         u.sp.material.color.setRGB(lerp(0.54, 1, u.glow), lerp(0.52, 0.95, u.glow), lerp(0.56, 0.95, u.glow));
-        const s = 0.8 + u.glow * 0.9 + (open ? Math.sin(t * 2 + i) * 0.1 : 0); u.sp.scale.set(s, s, 1);
+        const s = 1.4 + u.glow * 1.6 + (open ? Math.sin(t * 2 + i) * 0.2 : 0); u.sp.scale.set(s, s, 1);
         u.sp.material.rotation = t * (open ? 0.5 : 0.1);
         u.halo.material.opacity = u.glow * 0.7;
       });
@@ -2268,7 +2335,7 @@
     finaleStar.userData = { star, g1, g2, home: finaleStar.position.clone() };
     finaleStar.scale.setScalar(0.6);
     updaters.push((t, dt) => {
-      const u = finaleStar.userData, c = STATIONS[7].pos;
+      const u = finaleStar.userData, c = STATIONS[SI.finale].pos;
       // the star show runs on wall-clock time so slow frames don't stall it
       const now = performance.now(), fdt = Math.min((now - (finale.last || now)) / 1000, 0.5); finale.last = now;
       star.rotation.y += dt * 1.4; g2.material.rotation = t * 0.4;
@@ -2290,7 +2357,7 @@
         const s = 6 + Math.sin(t * 2.5) * 1.5; g1.scale.set(s, s, 1);
         finale.top = starTop();
         finaleStar.position.copy(finale.top); finaleStar.position.y += Math.sin(t * 1.2) * 0.2;
-      } else if (state.station === 7 && state.phase === "live") {
+      } else if (state.station === SI.finale && state.phase === "live") {
         // waiting at the last stop: park in the empty upper-right of the scene, clear of chibi and panel
         finaleStar.position.copy(starTop()); finaleStar.position.y += Math.sin(t * 1.3) * 0.15;
       } else {
@@ -2389,7 +2456,7 @@
       '<div class="pc-sub">' + esc([e.date, items.length + " bài"].filter(Boolean).join(" · ")) + "</div>" +
       (e.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(e.story) + "</p>" : "") +
       (e.producerStory ? '<div class="prod-card"><span class="pc-k">Music Producer</span><b>' + esc(e.producer || "") + '</b><p>' + esc(e.producerStory) + "</p></div>" : "") +
-      '<div class="ep-gate" data-ep-gate><span><b>' + SINGLES.length + '</b> ngôi sao ở chương 03 là chìa khoá. Mở đủ, hộp quà sẽ xuất hiện và EP 075 thuộc về bạn.</span><button class="chip-btn chip-hot" data-go="2">Về Chòm sao Track</button></div>' +
+      '<div class="ep-gate" data-ep-gate><span><b>' + SINGLES.length + '</b> ngôi sao là chìa khoá. Đi đủ năm ngôi sao, mở hộp quà, rồi EP 075 thuộc về bạn.</span><button class="chip-btn chip-hot" data-go="' + SI.gift + '">Đến hộp quà</button></div>' +
       '<ol class="ep-list" data-ep-open>' + items.map(([t, i]) => '<li><button data-ep-track="' + i + '"><span class="no">' + pad2(t.epNo || 0) + '</span><span class="tt">' + esc(t.title) + '</span><span class="td">' + (t.highlight ? "Highlight " + (t.highlight[1] - t.highlight[0]) + "s" : esc(t.dur || "")) + "</span></button></li>").join("") + "</ol>" +
       '<div class="pc-row">' + (e.smartLink ? '<a class="ext-btn sl-main" href="' + esc(e.smartLink) + '" target="_blank" rel="noopener">Nghe trọn EP trên smart link ↗</a>' : "") + "</div>" +
       "</div></article>"
@@ -2429,12 +2496,50 @@
   const pubLine = () => (C.publisher ? '<div class="pub rv">' + esc(C.publisher.label) + ' · <a href="' + esc(C.publisher.url) + '" target="_blank" rel="noopener">' + esc(C.publisher.name) + "</a></div>" : "");
   const zaloHref = () => "https://zalo.me/" + String((C.contact || {}).zalo || (C.contact || {}).phone || "").replace(/[^\d]/g, "");
 
+  // a curiosity hook at the end of every stop: the next stop is named only by its chapter and a hint
+  function teaser(i) {
+    const n = STATIONS[i + 1]; if (!n) return "";
+    return '<button class="tease rv" data-next><span class="te-k">Chặng ' + pad2(i + 2) + ' · ' + (Visited.has(i + 1) ? esc(n.label) : "Bí mật") + '</span><span class="te-t">' + esc(n.tease || "") + '</span><i aria-hidden="true">→</i></button>';
+  }
+  // ON AIR frame: broadcast screen with the video, a running timecode, key frames as stills, and the brief
+  function onAirCard(o, i) {
+    const tall = o.shape === "tall";
+    return (
+      '<article class="onair rv' + (tall ? " tall" : "") + '" data-oa="' + i + '">' +
+      '<div class="oa-top"><span class="oa-lamp"><i></i>ON AIR</span><span class="oa-ch">CH ' + pad2(i + 1) + " · " + esc(o.brand || "") + '</span><span class="oa-tc">00:00:00:00</span></div>' +
+      '<div class="oa-screen"><b class="oa-c tl"></b><b class="oa-c tr"></b><b class="oa-c bl"></b><b class="oa-c br"></b>' +
+      '<video src="' + esc(o.video) + '"' + (o.poster ? ' poster="' + esc(o.poster) + '"' : "") + ' controls playsinline preload="none" data-ad="' + i + '"></video><span class="oa-scan"></span><span class="oa-rec">● REC</span></div>' +
+      ((o.stills || []).length ? '<div class="oa-strip">' + o.stills.map((x, n) => '<button style="--n:' + n + '" data-seek="' + (x.t || 0) + '"><img src="' + esc(x.src) + '" alt="' + esc((o.brand || "") + " · khung hình " + (n + 1)) + '" loading="lazy"><span>' + esc(x.cap || "") + "</span></button>").join("") + "</div>" : "") +
+      '<div class="pc-body"><h3 class="pc-title" data-tx>' + esc(o.title || o.brand) + "</h3>" +
+      '<div class="pc-sub">' + esc(o.kind || "") + "</div>" +
+      (o.story ? '<p class="body-t" style="margin:4px 0 0">' + esc(o.story) + "</p>" : "") +
+      '<dl class="oa-brief"><dt>Thương hiệu</dt><dd>' + esc(o.brand || "") + "</dd><dt>Định dạng</dt><dd>" + esc(tall ? "Video dọc 9:16" : "Video ngang 16:9") + "</dd>" + (o.credits && o.credits.length ? "<dt>Ê-kíp</dt><dd>" + o.credits.map(esc).join("<br>") + "</dd>" : "") + "</dl>" +
+      "</div></article>"
+    );
+  }
+  const OnAir = {
+    bind() {
+      $$(".onair").forEach((card) => {
+        const v = $("video", card), tc = $(".oa-tc", card);
+        $$("[data-seek]", card).forEach((b) => b.addEventListener("click", () => { try { v.currentTime = +b.dataset.seek; } catch (e) {} v.play().catch(() => {}); Audio.tick(); }));
+        v.addEventListener("timeupdate", () => { const t = v.currentTime, f = Math.floor((t % 1) * 25); tc.textContent = "00:" + pad2(Math.floor(t / 60)) + ":" + pad2(Math.floor(t % 60)) + ":" + pad2(f); });
+        v.addEventListener("play", () => card.classList.add("live")); ["pause", "ended"].forEach((ev) => v.addEventListener(ev, () => card.classList.remove("live")));
+      });
+    },
+  };
+  // stops the viewer has reached; the map and teasers keep the rest a secret
+  const Visited = {
+    set: new Set([0]),
+    has(i) { return this.set.has(i); },
+    add(i) { if (this.set.has(i)) return; this.set.add(i); store.set("visited", [...this.set]); MiniMap.label(); },
+  };
+
   function buildPanels() {
     const A = C.artist;
     const html = [];
     // 0 hero
     html.push(
-      '<section class="panel" data-st="0" aria-label="Khởi hành">' +
+      '<section class="panel" data-st="' + SI.hero + '" aria-label="Khởi hành">' +
       '<div class="eyebrow rv">' + esc((A.roles || []).join(" · ")) + "</div>" +
       '<h1 class="lockup hero-lockup rv" aria-label="' + esc(A.stageName || "Phương Anh Tú") + '"><span class="lk-1" aria-hidden="true">Phương</span><span class="lk-2" data-t="Anh Tú" aria-hidden="true">Anh Tú</span><span class="lk-pat" aria-hidden="true">' + esc(A.rapName || "PAT") + "</span></h1>" +
       (A.mission ? '<p class="mission rv" data-tx>' + esc(A.mission) + "</p>" : "") +
@@ -2442,79 +2547,114 @@
       '<p class="body-t rv">' + esc(A.intro || "") + "</p>" +
       '<ul class="roles rv"><li>Tên thật · ' + esc(A.realName || "") + "</li>" + (A.roles || []).map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" +
       '<div class="socials rv">' + socialHTML() + "</div>" +
+      teaser(SI.hero) +
       "</section>"
     );
-    // 1 about
+    // about: photo cards and text, no words written over the photos
     html.push(
-      '<section class="panel" data-st="1" aria-label="Chân dung">' +
-      '<div class="eyebrow rv">Chương 02 · Chân dung</div>' +
+      '<section class="panel" data-st="' + SI.about + '" aria-label="Chân dung">' +
+      '<div class="eyebrow rv">' + chapter(SI.about) + ' · Chân dung</div>' +
       '<h2 class="p-title rv" data-tx>Muốn là <em>làm</em>, làm là đến cùng</h2>' +
       '<div class="gal rv" id="gal"></div><div class="gal-ui rv"><div class="gal-dots" id="galDots"></div><span class="gal-hint">Vuốt trái · phải</span></div>' +
       (A.about || []).map((p) => '<p class="body-t rv" data-tx>' + esc(p) + "</p>").join("") +
       (A.quote ? '<blockquote class="quote rv" data-tx>' + esc(A.quote) + "</blockquote>" : "") +
+      '<figure class="chibi-card rv"><img class="cc-2d" src="photos/pat-chibi.png" alt="Chibi PAT, hình mẫu 2D"><figcaption><b>Chibi PAT</b><span>Nhân vật đại diện của PAT, dựng 3D từ chính hình mẫu này. Kéo nhân vật trên sân khấu để xoay 360°.</span></figcaption>' +
+      '<img class="cc-angles" src="photos/pat-chibi-angles.jpg" alt="Chibi PAT ở nhiều góc nhìn: chính diện, nghiêng, phía sau" loading="lazy"></figure>' +
+      teaser(SI.about) +
       "</section>"
     );
-    // 2 tracks
+    // one stop per single
+    STATIONS.forEach((st, si) => {
+      if (st.track == null) return;
+      const t = C.tracks[st.track], k = st.k, hl = Array.isArray(t.highlight) ? t.highlight[1] - t.highlight[0] : 0;
+      html.push(
+        '<section class="panel trk" data-st="' + si + '" data-track="' + k + '" aria-label="' + esc(t.title) + '">' +
+        '<div class="eyebrow rv">' + chapter(si) + " · Ngôi sao " + pad2(k + 1) + " / " + pad2(SINGLES.length) + "</div>" +
+        '<h2 class="p-title rv" data-tx>' + esc(trackTitle(t, st.track)) + "</h2>" +
+        '<div class="trk-chips rv">' + [t.date, t.genre, t.producer ? "Music Producer: " + t.producer : "", t.artists].filter(Boolean).map((x) => "<span>" + esc(x) + "</span>").join("") + "</div>" +
+        '<div class="trk-lock rv"><b>Ngôi sao này còn khoá.</b><span>Các ngôi sao sáng lên theo đúng thứ tự phát hành. Hãy ghé ngôi sao trước đó đã nhé.</span><button class="chip-btn chip-hot" data-go-locked>Đến ngôi sao đang chờ</button></div>' +
+        '<div class="trk-body">' +
+        '<p class="trk-story rv">' + esc(t.story || "") + "</p>" +
+        (t.journey ? '<h4 class="trk-h rv">Tiến trình ra đời</h4><p class="body-t rv">' + esc(t.journey) + "</p>" : "") +
+        '<div class="trk-acts rv">' + (t.audio ? '<button class="chip-btn chip-hot" data-hl="' + k + '">▶ Nghe highlight' + (hl ? " " + hl + " giây" : "") + "</button>" : "") +
+        (t.smartLink ? '<a class="ext-btn sl-main" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Nghe trọn bài trên smart link ↗</a>' : "") + "</div>" +
+        "</div>" +
+        teaser(si) +
+        "</section>"
+      );
+    });
+    // the gift: breakdance once every star is lit
     html.push(
-      '<section class="panel" data-st="2" aria-label="Chòm sao Track">' +
-      '<div class="eyebrow rv">Chương 03 · Track</div>' +
-      '<h2 class="p-title rv" data-tx>Chòm sao <em>Track</em></h2>' +
-      '<p class="body-t rv">' + SINGLES.length + ' single, ' + SINGLES.length + ' ngôi sao, xếp đúng thứ tự phát hành từ Thức Tỉnh (2024). Mỗi ngôi sao là một chặng đời của Tú: mở ra để nghe đoạn highlight, đọc câu chuyện phía sau nó, rồi mang theo smart link đến nền tảng bạn yêu thích. Mở đủ ' + SINGLES.length + ' ngôi sao, một hộp quà sẽ chờ bạn.</p>' +
-      '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span>" + "</div>" +
-      '<ol class="tlist rv" id="tlist"></ol>' +
+      '<section class="panel" data-st="' + SI.gift + '" aria-label="Quà tặng">' +
+      '<div class="eyebrow rv">' + chapter(SI.gift) + ' · Quà tặng</div>' +
+      '<h2 class="p-title rv" data-tx>Hộp quà <em>hiphop</em></h2>' +
+      '<p class="body-t rv">Năm ngôi sao, năm chặng đời. Ai đi đủ năm ngôi sao sẽ được PAT tặng một màn breakdance 30 giây ngay trên đĩa than này. Nhảy xong, cánh cửa EP 075 sẽ mở.</p>' +
+      '<ul class="moves rv">' + ["Toprock", "Windmill", "Headspin", "1990", "Airflare", "Halo", "Freeze"].map((m, n) => '<li style="--n:' + n + '">' + m + "</li>").join("") + "</ul>" +
+      '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span></div>" +
+      '<ol class="gift-stars rv" id="giftStars"></ol>' +
+      '<button class="chip-btn chip-hot gift-go rv" id="btnGift">Mở hộp quà</button>' +
+      teaser(SI.gift) +
       "</section>"
     );
-    // 3 EP
+    // EP
     html.push(
-      '<section class="panel" data-st="3" aria-label="EP">' +
-      '<div class="eyebrow rv">Chương 04 · EP</div>' +
+      '<section class="panel" data-st="' + SI.ep + '" aria-label="EP">' +
+      '<div class="eyebrow rv">' + chapter(SI.ep) + ' · EP</div>' +
       '<h2 class="p-title rv" data-tx>EP đầu tay <em>075</em></h2>' +
       '<p class="body-t rv">Bảy bài hát, một câu chuyện đi từ tối sang sáng. Trong lúc nghe, chạm vào dãy phím đàn trôi bên cạnh để tự chơi vài nốt.</p>' +
       C.eps.map((e, i) => epCard(e, i)).join("") +
+      teaser(SI.ep) +
       "</section>"
     );
-    // 4 music videos
+    // music videos
     const MV = C.musicVideos || { list: [] };
     const ytThumb = (id) => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
     const mvFrame = (v, cls) => '<div class="mv-frame' + (cls ? " " + cls : "") + '" style="background-image:url(' + esc(ytThumb(v.youtubeId)) + ')"><button class="play-cover" data-yt="' + esc(v.youtubeId) + '" aria-label="Xem MV ' + esc(v.title) + '">' + ytThumbCover + "</button></div>";
     const mvLink = (v) => '<a class="mv-link" data-mvlink href="' + esc(v.url) + '" target="_blank" rel="noopener">Xem trên kênh YouTube ↗</a>';
     html.push(
-      '<section class="panel" data-st="4" aria-label="Music Video">' +
-      '<div class="eyebrow rv">Chương 05 · Music Video</div>' +
+      '<section class="panel" data-st="' + SI.mv + '" aria-label="Music Video">' +
+      '<div class="eyebrow rv">' + chapter(SI.mv) + ' · Music Video</div>' +
       '<h2 class="p-title rv" data-tx>Câu chuyện <em>thành hình</em></h2>' +
       '<p class="body-t rv">Có những câu chuyện phải được nhìn thấy. Đây là các MV của PAT, xem và nghe ngay tại đây, theo đúng thứ tự chúng ra đời.</p>' +
       (MV.featured ? '<article class="mv-feat rv"><span class="mv-pin">📌 Ghim · MV tâm đắc nhất</span><div class="mv-float">' + mvFrame(MV.featured, "big") + '</div>' +
         '<div class="mv-meta"><h3 class="pc-title" data-tx>' + esc(MV.featured.title) + '</h3><div class="pc-sub">' + esc(MV.featured.kind || "") + '</div><p class="body-t">' + esc(MV.featured.story || "") + "</p>" + mvLink(MV.featured) + "</div></article>" : "") +
       '<ol class="mv-list">' + (MV.list || []).map((v, i) => '<li class="mv-item rv">' + mvFrame(v, v.tall ? "tall" : "") + '<div class="mv-cap"><span class="no">' + pad2(i + 1) + '</span><b>' + esc(v.title) + '</b><span class="pc-sub">' + esc(v.kind || "") + "</span>" + mvLink(v) + "</div></li>").join("") + "</ol>" +
+      teaser(SI.mv) +
       "</section>"
     );
-    // 5 ads
-    html.push(
-      '<section class="panel" data-st="5" aria-label="Nhạc quảng cáo">' +
-      '<div class="eyebrow rv">Chương 06 · Quảng cáo</div>' +
-      '<h2 class="p-title rv" data-tx>Âm nhạc cho <em>thương hiệu</em></h2>' +
-      '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đây là những thương hiệu đã tin giao vài giây đó cho PAT. Bấm phát để xem ngay tại đây.</p>' +
-      C.ads.map((a, i) => adCard(a, i)).join("") +
-      '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Mọi cách liên hệ đang chờ bạn ở ngôi sao cuối hành trình.</p>' +
-      "</section>"
-    );
+    // one ON AIR stop per ad
+    STATIONS.forEach((st, si) => {
+      if (st.ad == null) return;
+      const a = C.ads[st.ad];
+      html.push(
+        '<section class="panel" data-st="' + si + '" aria-label="' + esc(st.label) + '">' +
+        '<div class="eyebrow rv">' + chapter(si) + " · Nhạc quảng cáo " + pad2(st.ad + 1) + " / " + pad2(C.ads.length) + "</div>" +
+        '<h2 class="p-title rv" data-tx>' + (st.ad ? "Lên sóng <em>lần nữa</em>" : "Âm nhạc cho <em>thương hiệu</em>") + "</h2>" +
+        (st.ad ? "" : '<p class="body-t rv">Một giai điệu quảng cáo chỉ có vài giây để được nhớ. Đèn ON AIR đã bật: đây là những thương hiệu đã tin giao vài giây đó cho PAT.</p>') +
+        onAirCard(a, st.ad) +
+        (st.ad === C.ads.length - 1 ? '<p class="body-t rv">Thương hiệu của bạn cần một hook, một topline hay một giọng hát? Mọi cách liên hệ đang chờ bạn ở ngôi sao cuối hành trình.</p>' : "") +
+        teaser(si) +
+        "</section>"
+      );
+    });
     // 5 studio + band
     const tools = (C.tools || []).map((t, i) => '<div class="tool rv"><canvas data-tool="' + i + '"></canvas><b>' + esc(t.name) + "</b><span>" + esc(t.note || "") + "</span></div>").join("");
     html.push(
-      '<section class="panel" data-st="6" aria-label="Phòng thu và ban nhạc">' +
-      '<div class="eyebrow rv">Chương 07 · Phòng thu</div>' +
+      '<section class="panel" data-st="' + SI.studio + '" aria-label="Phòng thu và ban nhạc">' +
+      '<div class="eyebrow rv">' + chapter(SI.studio) + ' · Phòng thu</div>' +
       '<h2 class="p-title rv" data-tx>Phòng thu &amp; <em>ban nhạc</em></h2>' +
       '<div class="tools">' + tools + "</div>" +
       '<div class="band rv"><div class="band-head"><h3>Ban nhạc của PAT</h3><button class="chip-btn" id="btnJam">▶ Jam cùng PAT</button></div>' +
       '<p class="stats-note">Chạm vào từng nhạc cụ trên sân khấu 3D hoặc các nút dưới đây để tự chơi cùng PAT. Bàn phím: A S D F G H J K L ; \'</p>' +
       '<div class="pads" id="pads">' + Band.padsHTML() + "</div></div>" +
       followCard() +
+      teaser(SI.studio) +
       "</section>"
     );
     // 6 finale
     html.push(
-      '<section class="panel" data-st="7" aria-label="Lời cảm ơn">' +
-      '<div class="eyebrow rv">Chương 08 · Ngôi sao</div>' +
+      '<section class="panel" data-st="' + SI.finale + '" aria-label="Lời cảm ơn">' +
+      '<div class="eyebrow rv">' + chapter(SI.finale) + ' · Ngôi sao</div>' +
       '<h2 class="p-title rv" data-tx>Cảm ơn <em>bạn</em></h2>' +
       '<p class="thanks rv" data-tx>' + esc(C.thanks || "") + "</p>" +
       (C.artist.mission ? '<p class="mission rv">' + esc(C.artist.mission) + "</p>" : "") +
@@ -2533,6 +2673,11 @@
     $$("[data-ep-track]").forEach((b) => b.addEventListener("click", () => Tracks.openEP(+b.dataset.epTrack)));
     $("#starCta").addEventListener("click", openContact);
     $$("[data-go]").forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
+    $$("[data-next]").forEach((b) => b.addEventListener("click", () => next()));
+    $$("[data-go-locked]").forEach((b) => b.addEventListener("click", () => goTo(trackSt(Math.min(Tracks.unlocked, SINGLES.length - 1)))));
+    $$("[data-hl]").forEach((b) => b.addEventListener("click", () => Tracks.tryOpen(+b.dataset.hl)));
+    $("#btnGift").addEventListener("click", () => { if (!Tracks.allOpen) goTo(trackSt(Tracks.unlocked)); else if (!Gift.opened) Gift.show(); else Gift.dance(); });
+    OnAir.bind();
     $$("video[data-ad]").forEach((v) => {
       const key = "ad-" + v.dataset.ad;
       v.addEventListener("play", () => { $$("video[data-ad]").forEach((o) => o !== v && o.pause()); BG.duck(key, true); });
@@ -2625,7 +2770,7 @@
     build() {
       const g = $("#gal"); if (!g) return;
       if (!C.photos.length) { g.remove(); return; }
-      g.innerHTML = C.photos.map((p, i) => '<figure class="gal-card" data-i="' + i + '"><img src="' + esc(p.src) + '" alt="' + esc((C.artist.stageName || "") + " · " + (p.caption || "ảnh " + (i + 1))) + '" draggable="false"><figcaption>' + esc(p.caption || "") + "</figcaption></figure>").join("");
+      g.innerHTML = C.photos.map((p, i) => '<figure class="gal-card" data-i="' + i + '"><img src="' + esc(p.src) + '" alt="' + esc((C.artist.stageName || "") + " · " + (p.caption || "ảnh " + (i + 1))) + '" draggable="false"></figure>').join("");
       $("#galDots").innerHTML = C.photos.map((_, i) => '<button aria-label="Ảnh ' + (i + 1) + '"></button>').join("");
       $$("#galDots button").forEach((b, i) => b.addEventListener("click", () => this.go(i)));
       this.cards = $$(".gal-card", g);
@@ -2696,7 +2841,7 @@
     open() {
       const box = $("#giftOpen"); if (box.classList.contains("open")) return;
       Audio.init(); box.classList.add("open"); Audio.unlock(); flash(0.5);
-      this.opened = true; store.set("giftOpened", true); syncEPGate();
+      this.opened = true; store.set("giftOpened", true); syncEPGate(); Tracks.renderList();
       setTimeout(() => {
         $("#gift").classList.remove("on"); $("#gift").setAttribute("aria-hidden", "true"); state.modal = false; box.classList.remove("open");
         this.dance();
@@ -2726,7 +2871,7 @@
       if (stay) return;
       setInstrument(STATIONS[state.station].inst);
       emote("happy");
-      setTimeout(() => goTo(3, { force: true }), 1200);
+      setTimeout(() => goTo(SI.ep, { force: true }), 1200);
     },
   };
 
@@ -2734,44 +2879,39 @@
   const Tracks = {
     unlocked: 0,
     renderList() {
-      const ol = $("#tlist"); if (!ol) return;
-      ol.innerHTML = SINGLES.map((ti, i) => {
-        const t = C.tracks[ti];
-        const open = i < this.unlocked, next = i === this.unlocked;
-        const cls = open ? "open" : next ? "next locked" : "locked";
-        const title = open ? trackTitle(t, ti) : "★ ★ ★ ★ ★";
-        const date = open ? [t.date || PENDING, t.genre, t.producer ? "Prod. " + t.producer : ""].filter(Boolean).join(" · ") : next ? "Sẵn sàng mở khoá" : "Đang khoá";
-        return '<li><button class="titem ' + cls + '" data-i="' + i + '"' + (open || next ? "" : ' aria-disabled="true"') + ">" +
-          '<canvas class="fx" data-fx="' + esc(t.fx) + '"></canvas>' +
-          '<span class="no">' + pad2(i + 1) + '</span><span class="tt">' + esc(title) + '<span class="td">' + esc(date) + "</span></span>" +
-          '<span class="lk">' + (open ? "Nghe highlight" : next ? "Mở khoá" : "Khoá") + "</span></button>" +
-          (open && t.smartLink ? '<a class="tsl" href="' + esc(t.smartLink) + '" target="_blank" rel="noopener">Smart link ↗</a>' : "") + "</li>";
-      }).join("");
-      $$(".titem", ol).forEach((b) => b.addEventListener("click", () => this.tryOpen(+b.dataset.i)));
+      $$(".panel.trk").forEach((p) => p.classList.toggle("locked", +p.dataset.track > this.unlocked));
+      const gs = $("#giftStars");
+      if (gs) {
+        gs.innerHTML = SINGLES.map((ti, k) => '<li class="' + (k < this.unlocked ? "on" : "") + '"><button data-go="' + trackSt(k) + '"><i>★</i>' + esc(k < this.unlocked ? C.tracks[ti].title : "Ngôi sao " + pad2(k + 1)) + "</button></li>").join("");
+        $$("[data-go]", gs).forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
+      }
+      const bg = $("#btnGift");
+      if (bg) bg.textContent = !this.allOpen ? "Còn " + (SINGLES.length - this.unlocked) + " ngôi sao · đi mở tiếp" : Gift.opened ? "▶ Xem PAT breakdance lại" : "🎁 Mở hộp quà";
       const uc = $("#unCount"); if (uc) uc.textContent = this.unlocked;
       if (constelLine) constelLine.geometry.setDrawRange(0, this.unlocked);
-      fxCanvases.refresh();
+    },
+    // arriving at a track's stop lights its star (in release order)
+    visit(k) {
+      if (k > this.unlocked) { toast("Ngôi sao " + pad2(this.unlocked + 1) + " vẫn đang chờ bạn, các ngôi sao sáng theo thứ tự"); emote("shy"); return; }
+      if (k < this.unlocked) return;
+      this.unlocked++; store.set("unlockedSingles", this.unlocked);
+      const g = constel[k];
+      if (g) burst(g.position.clone(), 36, { tex: TEX.star, speed: 4, size: 0.34, life: 1.4 });
+      Audio.unlock(); flash(0.3); act("jump");
+      toast(this.allOpen ? "Đủ " + SINGLES.length + " ngôi sao! Hộp quà đang chờ ở chặng kế tiếp 🎁" : "Ngôi sao " + pad2(k + 1) + " đã sáng ★");
+      this.renderList();
     },
     get allOpen() { return this.unlocked >= SINGLES.length; },
     // k = position in the constellation (singles only)
     tryOpen(k) {
       if (k == null || k >= SINGLES.length) return;
-      if (k > this.unlocked) { toast("Hãy mở khoá ngôi sao số " + pad2(this.unlocked + 1) + " trước nhé"); emote("shy"); return; }
-      if (k === this.unlocked) {
-        this.unlocked++; store.set("unlockedSingles", this.unlocked);
-        const g = constel[k];
-        if (g) { burst(g.position.clone(), 36, { tex: TEX.star, speed: 4, size: 0.3, life: 1.4 }); keyAsset && burst(keyAsset.position.clone(), 12, { tex: TEX.glow, speed: 2, size: 0.3, life: 1 }); }
-        Audio.unlock(); flash(0.35); act("jump");
-        this.renderList();
-        if (this.allOpen && !Gift.opened) Gift.pending = true;
-        setTimeout(() => Ticket.open(SINGLES[k], true), 650);
-        return;
-      }
+      if (k > this.unlocked) { toast("Hãy ghé ngôi sao số " + pad2(this.unlocked + 1) + " trước nhé"); emote("shy"); return; }
+      if (k === this.unlocked) this.visit(k);
       Ticket.open(SINGLES[k], false);
     },
     // EP tracks open freely once the gift has been opened
     openEP(ti) {
-      if (!Gift.opened) { toast("Mở khoá đủ " + SINGLES.length + " ngôi sao ở chương 03 để nhận EP 075"); emote("shy"); return; }
+      if (!Gift.opened) { toast("Đi đủ " + SINGLES.length + " ngôi sao và mở hộp quà để nhận EP 075"); emote("shy"); return; }
       Ticket.open(ti, false);
     },
   };
@@ -2839,7 +2979,7 @@
     },
     setIcon() { $("#tkIcon").innerHTML = this.playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4l13 8-13 8z"/>'; },
     stop() { if (this.player) { this.player.destroy(); this.player = null; } this.playing = false; this.setIcon(); BG.duck("ticket", false); $("#tkCur").textContent = "0:00"; },
-    close() { this.stop(); $("#ticketModal").classList.remove("on"); state.modal = false; $$(".tk-row p").forEach((p) => clearInterval(p._iv)); if (Gift.pending) setTimeout(() => Gift.show(), 500); },
+    close() { this.stop(); $("#ticketModal").classList.remove("on"); state.modal = false; $$(".tk-row p").forEach((p) => clearInterval(p._iv)); },
     draw(t) {
       const cv = $("#tkWave"); if (!$("#ticketModal").classList.contains("on")) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight;
@@ -2935,7 +3075,7 @@
 
   /* ---------- contact / finale ---------- */
   function openContact() {
-    if (state.station !== 7) return;
+    if (state.station !== SI.finale) return;
     const ct = C.contact || {};
     const rows = [];
     if (ct.email) rows.push({ k: "Gmail", v: ct.email, href: mailHref(ct.email), act: "Gửi mail" });
@@ -2976,9 +3116,13 @@
       const d = all.map((p, i) => (i ? "L" : "M") + this.proj(p).map((v) => v.toFixed(1)).join(" ")).join("");
       this.all = all;
       svg.innerHTML = '<path class="m-path" d="' + d + '"/><path class="m-done" id="mDone" d=""/>' +
-        STATIONS.map((s, i) => { const [x, y] = this.proj(s.pos); return '<g class="m-node" data-i="' + i + '" tabindex="0" role="button" aria-label="' + esc(s.label) + '"><circle cx="' + x + '" cy="' + y + '" r="4.5"/><text x="' + x + '" y="' + (y + (i % 2 ? 15 : -9)) + '" text-anchor="middle">' + esc(s.short) + "</text></g>"; }).join("") +
+        STATIONS.map((s, i) => { const [x, y] = this.proj(s.pos); return '<g class="m-node" data-i="' + i + '" tabindex="0" role="button" aria-label="' + esc(s.label) + '"><circle cx="' + x + '" cy="' + y + '" r="4.5"/><text x="' + x + '" y="' + (y + (i % 2 ? 15 : -9)) + '" text-anchor="middle"></text></g>'; }).join("") +
         '<circle class="m-halo" id="mHalo" r="5" cx="0" cy="0"/><circle class="m-me" id="mMe" r="3" cx="0" cy="0"/>';
+      this.label();
       $$(".m-node", svg).forEach((n) => { const go = () => goTo(+n.dataset.i); n.addEventListener("click", go); n.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); }); });
+    },
+    label() {
+      $$("#map .m-node").forEach((g, i) => { const seen = Visited.has(i); g.classList.toggle("seen", seen); $("text", g).textContent = seen ? STATIONS[i].short : "?"; g.setAttribute("aria-label", seen ? STATIONS[i].label : "Chặng " + pad2(i + 1) + " · bí mật"); });
     },
     update(u) {
       const [x, y] = this.proj(PAT.root.position);
@@ -3047,9 +3191,12 @@
     $("#btnPrev").disabled = i === 0;
     $("#nextLabel").textContent = i === STATIONS.length - 1 ? "Xuất phát điểm" : "Đi tiếp";
     U.tint.value.set(STATIONS[i].tint);
-    if (i === 7 && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
-    if (i === 2 && Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === 2 && !state.modal && Gift.show(), 1800);
-    setTimeout(() => state.station === i && say(pick(SAYINGS[i])), 1200);
+    if (i === SI.finale && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
+    if (i === SI.gift) { Tracks.renderList(); if (Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === i && !state.modal && Gift.show(), 1800); }
+    const st = STATIONS[i];
+    if (st.track != null) setTimeout(() => state.station === i && Tracks.visit(st.k), 900);
+    Visited.add(i);
+    setTimeout(() => state.station === i && say(pick(sayings(i))), 1200);
   }
 
   async function goTo(j, opts = {}) {
@@ -3057,7 +3204,7 @@
     if (state.moving || state.phase !== "live" || (j === state.station && !opts.force)) return;
     const i = state.station;
     state.moving = true;
-    if (Band.jam && j !== 6) Band.toggleJam();
+    if (Band.jam && j !== SI.studio) Band.toggleJam();
     $$("video[data-ad]").forEach((v) => v.pause());
     if (Gift.dancing) Gift.end(true);
     PAT.idol = 0;
@@ -3116,7 +3263,7 @@
       burst(PAT.root.position.clone().add(new THREE.Vector3(0, 0.3, 0)), 30, { tex: TEX.notes[1], speed: 3, size: 0.4, life: 1.4, up: 1 });
       setTimeout(() => { emote("love"); say("Cảm ơn bạn đã đi cùng mình!"); }, 300);
       // then the thank-you on electric guitar
-      setTimeout(() => { if (state.station !== 7) return; setInstrument("acoustic"); PAT.idol = performance.now(); Audio.strum(); say("Bản guitar mộc này mình tặng bạn ♥"); }, 3900);
+      setTimeout(() => { if (state.station !== SI.finale) return; setInstrument("acoustic"); PAT.idol = performance.now(); Audio.strum(); say("Bản guitar mộc này mình tặng bạn ♥"); }, 3900);
     } else if (mode !== "run") burst(PAT.root.position.clone(), 16, { tex: TEX.star, speed: 2.4, size: 0.26, life: 0.9 });
     // turn to face the viewer
     const faceY = cam.baseYaw - 0.25;
@@ -3128,7 +3275,7 @@
     showPanel(j);
   }
   /* ---------- how PAT travels between stations (one ride per stretch of road) ---------- */
-  const TRAVEL = ["run", "run", "guitar", "wings", "rocket", "run", "staff", "finale"];
+  const TRAVEL = STATIONS.map((st) => st.ride || "run");
   const TRAVEL_SAY = {
     run: "Chạy nào ♪", guitar: "Lướt guitar nè!", wings: "Bay lên thôi~", rocket: "3, 2, 1... phóng!", staff: "Trượt theo khuông nhạc ♫", finale: "Hạ cánh cùng lời cảm ơn",
   };
@@ -3456,6 +3603,7 @@
     await loadImages();
     if (window.PAT_PEAKS) C.tracks.forEach((t) => { if (t.peaks && typeof t.peaks === "string") t.peaks = window.PAT_PEAKS[t.peaks] || null; });
     Tracks.unlocked = clamp(store.get("unlockedSingles", 0), 0, SINGLES.length);
+    (store.get("visited", []) || []).forEach((n) => n < STATIONS.length && Visited.set.add(n));
     Gift.opened = !!store.get("giftOpened", false) && Tracks.allOpen;
     progress(0.42, "Dựng ngân hà");
     await frame();
@@ -3474,7 +3622,7 @@
     gradTex.minFilter = gradTex.magFilter = THREE.NearestFilter; gradTex.generateMipmaps = false; gradTex.needsUpdate = true;
     M = {
       skin: toon(0xf2c4a0), hair: toon(0x16151b), black: toon(0x0e0d11), white: toon(0xf6f3ee),
-      silver: toon(0xd5d9e0), gold: toon(0xd9a441), eye: basic(0x120f14), mouth: basic(0x4e2224),
+      silver: toon(0xd5d9e0), gold: toon(0xd9a441), eye: basic(0x120f14), mouth: basic(0x7a1224),
       lens: new THREE.MeshBasicMaterial({ color: 0xffb21f, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }),
     };
     scene.add(new THREE.HemisphereLight(0xfff1ec, 0x2a0610, 0.75));

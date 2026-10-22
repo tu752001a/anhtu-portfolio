@@ -26,11 +26,17 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 ## Thông điệp chính
 `artist.mission` là câu "Chỉ cần bản thân muốn, mọi thứ đều có thể thực hiện…". Câu này hiện ở phần mở đầu và chương cuối.
 
-## Hành trình 20 chặng
-Khởi hành → Chân dung → Dòng thời gian → 5 chặng Track (mỗi single một chặng) → **Đoán bài 5 giây** → **Quà tặng: nhảy hiphop** → Tủ đồ của PAT → EP 075 → Người đứng sau beat → Music Video → Nhạc quảng cáo 01 → Beat Lab → Nhạc quảng cáo 02 → Phòng thu → **Lời cảm ơn** → **Quà bất ngờ cuối cùng: Vé fan**.
+## Hành trình 23 chặng
+Khởi hành → Chân dung → Dòng thời gian → 5 chặng Track → Đoán bài 5 giây → Quà tặng: nhảy hiphop → Tủ đồ → EP 075 → Người đứng sau beat → Music Video → Phòng thu & Ban nhạc → Nhạc quảng cáo 01 → Beat Lab → Nhạc quảng cáo 02 → **Tri ân 01: Biển ánh sáng** → **Tri ân 02: Lá thư gửi bạn** → **Tri ân 03: Thả lời chúc** → Lời cảm ơn → Quà bất ngờ cuối cùng: Vé fan.
 
+- **Biển ánh sáng:** mỗi lần bấm "Giơ lightstick" thắp thêm 4 trong 40 cây lightstick quanh sân khấu; đủ 40 thì cả khán đài tạo sóng ánh sáng.
+- **Lá thư gửi bạn:** bấm phong bì để mở, thư hiện ra từng chữ. Muốn sửa lời thư, thêm vào `content.js` một mảng `fanLetter: ["Gửi bạn,", "đoạn 1", "đoạn 2", "Thương bạn,", "PAT"]`.
+- **Thả lời chúc:** người xem viết lời chúc, nó hoá thành đèn lồng bay quanh chặng (lưu trên máy người xem), kèm nút gửi qua Zalo.
+- **Cách di chuyển:** mỗi chặng PAT tới bằng một cách riêng và cầm một nhạc cụ riêng: chạy, trượt khuông nhạc, lướt guitar, bơi, teleport, lướt đĩa than, nhảy theo nhịp, glitch, chui vào súng bắn, lộn mèo, bay bằng cánh, moonwalk, tên lửa, lốc xoáy, đu dây, độn thổ, bóng bay, sao băng, máy bay giấy, bong bóng, lướt sóng âm, cưỡi mây. Đổi trong `RIDE_BY_KEY` và `INST_BY_KEY` ở `app.js`. Nhạc cụ: mic, guitar mộc, guitar điện, bass, keytar, bàn DJ, violin, saxophone, trống snare, trumpet.
+- **15 món đồ âm nhạc** trôi quanh không gian, bấm vào đều có hoạt cảnh và âm thanh: jukebox, piano, bộ trống, máy hát gramophone, băng cassette, boombox, metronome, đĩa than, đàn hạc, mic cổ, loa, âm thoa, cột EQ, maracas, nốt nhạc khổng lồ.
+- **Tóc chibi** kiểu Hàn (comma hair) và tự ép gọn khi đội mũ, đeo tai nghe hay băng đô.
 - **Đoán bài:** mỗi lần vào chặng là một đề mới: 5 single theo thứ tự ngẫu nhiên, mỗi bài phát 5 giây ở một điểm ngẫu nhiên trong đoạn highlight, 3 lựa chọn. Đúng cả 5/5 thì hộp quà hiện ra; bấm vào sẽ hiện thông báo phần thưởng (PAT nhảy breakdance, mở khoá EP 075, ghi "5/5" lên vé fan), bấm "Nhận quà" là bay sang chặng Quà tặng và chibi nhảy ngay. Nhảy xong tự sang Tủ đồ, rồi EP. Sai câu nào thì có nút "Chơi lại với đề mới".
-- **Chuyển chặng:** 20 chặng là 20 kiểu chuyển cảnh khác nhau, không lặp lại (đường hầm, mực loang, cuộn phim, mặt nạ, rèm sáo, đĩa than, cột EQ, lia nhanh, TV tắt, ngôi sao, lá sách tủ đồ, giấy xé, chém chéo, match cut, nhiễu RGB, khảm pixel, sóng âm, glitch, rèm sân khấu, dolly zoom). Đổi trong `FX_BY_KEY` ở `app.js`.
+- **Chuyển chặng:** 23 chặng là 23 kiểu chuyển cảnh khác nhau, không lặp lại (đèn spotlight, trái tim, bừng sáng, đường hầm, mực loang, cuộn phim, mặt nạ, rèm sáo, đĩa than, cột EQ, lia nhanh, TV tắt, ngôi sao, lá sách tủ đồ, giấy xé, chém chéo, match cut, nhiễu RGB, khảm pixel, sóng âm, glitch, rèm sân khấu, dolly zoom). Đổi trong `FX_BY_KEY` ở `app.js`.
 - **Lăn chuột** để phóng to, thu nhỏ; đi chặng bằng nút "Đi tiếp", phím mũi tên hoặc vuốt.
 
 ## Chibi

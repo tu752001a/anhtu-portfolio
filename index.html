@@ -750,6 +750,47 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 #fx2.split.out .f-a{animation:splA .7s cubic-bezier(.6,0,.3,1) both}#fx2.split.out .f-b{animation:splB .7s cubic-bezier(.6,0,.3,1) both}
 @keyframes splA{to{transform:translate(-70%,-70%)}}@keyframes splB{to{transform:translate(70%,70%)}}
 @media (prefers-reduced-motion:reduce){#fx2 *{animation-duration:.01s!important;transition-duration:.01s!important}}
+
+/* round 8: thank-you stops */
+.ls{margin:16px 0 6px;padding:16px;border-radius:14px;border:1px solid rgba(255,74,92,.4);background:rgba(8,7,10,.5)}
+.ls-meter{height:8px;border-radius:4px;background:rgba(255,255,255,.1);margin:14px 0 8px;overflow:hidden}
+.ls-meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blood),#ffd36b);box-shadow:0 0 12px var(--blood);transition:width .6s var(--ease)}
+.ls-n{margin:0;font-size:13px;color:var(--ash)}.ls-n b{color:var(--bone);font-size:18px}
+.ls-msg{margin:6px 0 0;min-height:1.3em;font-size:14px;color:var(--ember)}
+.env{position:relative;margin:18px 0 8px;min-height:190px}
+.env-front{position:relative;display:block;width:100%;max-width:380px;aspect-ratio:1.6;border:0;border-radius:10px;background:linear-gradient(160deg,#f2e6cc,#dccaa8);cursor:pointer;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform .6s var(--ease),opacity .6s}
+.env-front:hover{transform:translateY(-4px) rotate(-1deg)}
+.env-flap{position:absolute;left:0;right:0;top:0;height:62%;background:linear-gradient(180deg,#e7d6b6,#d6c19c);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .7s var(--ease)}
+.env-seal{position:absolute;left:50%;top:62%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 35%,#ff4a5c,#a30d22);color:#fff;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.4);animation:sealPulse 1.6s ease-in-out infinite}
+.env-to{position:absolute;right:18px;bottom:14px;font-family:var(--f-display);font-style:italic;font-size:20px;color:#5a3a26}
+@keyframes sealPulse{50%{transform:scale(1.08)}}
+.env.open .env-front{transform:translateY(20px) scale(.92);opacity:0;pointer-events:none;position:absolute;inset:0 auto auto 0}
+.env.open .env-flap{transform:rotateX(180deg)}
+.env-paper{display:none;padding:22px 22px 18px;border-radius:8px;background:#f7f1e6;color:#2a1a12;font-family:var(--f-display);font-size:16px;line-height:1.6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.env.open .env-paper{display:block;animation:paperUp .8s var(--ease) both}
+.env-paper p{margin:0 0 10px;min-height:1em}.env-paper .lt-hi{font-style:italic;font-size:20px;color:#b3142a}.env-paper .lt-sign{text-align:right;font-style:italic;margin:0}
+@keyframes paperUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.wish-list{list-style:none;margin:12px 0 4px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.wish-list li{padding:6px 10px;border-radius:999px;background:rgba(255,122,69,.14);border:1px solid rgba(255,122,69,.4);font-size:13px;animation:rwIn .5s var(--ease) both}
+.wish-note a{color:var(--ember)}
+/* spotlight: the house lights go down to one circle */
+#fx2.spotlight .f-a{inset:auto;left:50%;top:50%;width:300vmax;height:300vmax;margin:-150vmax 0 0 -150vmax;background:radial-gradient(circle,transparent 0 9vmax,rgba(255,236,214,.25) 9vmax 9.6vmax,#050406 11vmax);opacity:0}
+#fx2.spotlight.in .f-a{animation:spotIn .64s cubic-bezier(.6,0,.3,1) both}#fx2.spotlight.out .f-a{animation:spotOut .85s cubic-bezier(.6,0,.4,1) both}
+@keyframes spotIn{0%{opacity:0;transform:translate(-28vw,-18vh) scale(1.5)}35%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes spotOut{from{transform:none}to{transform:scale(9)}}
+/* heart: a heart opens over everything */
+#fx2.heart .f-a,#fx2.heart .f-b{inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;margin:-50vmax 0 0 -50vmax;clip-path:polygon(50% 92%,12% 55%,4% 38%,6% 22%,16% 10%,30% 7%,42% 12%,50% 22%,58% 12%,70% 7%,84% 10%,94% 22%,96% 38%,88% 55%);transform:scale(0)}
+#fx2.heart .f-a{background:var(--blood);z-index:1}#fx2.heart .f-b{background:#ffb3c0}
+#fx2.heart.in .f-b{animation:hrtIn .5s cubic-bezier(.7,0,.3,1) both}#fx2.heart.in .f-a{animation:hrtIn .6s cubic-bezier(.7,0,.3,1) .08s both}
+#fx2.heart.out .f-a{animation:hrtOut .7s cubic-bezier(.6,0,.3,1) both}#fx2.heart.out .f-b{opacity:0}
+@keyframes hrtIn{from{transform:scale(0) rotate(-12deg)}70%{transform:scale(6.4) rotate(4deg)}to{transform:scale(6) rotate(0)}}@keyframes hrtOut{from{transform:scale(6)}to{transform:scale(0) rotate(14deg)}}
+/* whiteout: a bloom of light */
+#fx2.whiteout .f-a{inset:auto;left:50%;top:50%;width:120vmax;height:120vmax;margin:-60vmax 0 0 -60vmax;border-radius:50%;background:radial-gradient(circle,#fff 0 30%,#ffe3e8 55%,rgba(255,255,255,0) 70%);transform:scale(0)}
+#fx2.whiteout .f-b{background:#fff8f2;opacity:0}
+#fx2.whiteout.in .f-a{animation:wInA .56s cubic-bezier(.5,0,.3,1) both}#fx2.whiteout.in .f-b{animation:fadeI .3s .3s both}
+#fx2.whiteout.out .f-a,#fx2.whiteout.out .f-b{animation:fadeO .9s both}
+@keyframes wInA{to{transform:scale(3)}}
+#fx2.whiteout .f-label{color:#5a0412}
 </style>
 
 <canvas id="stage" aria-label="Không gian 3D tương tác của Phương Anh Tú"></canvas>

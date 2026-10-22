@@ -703,6 +703,56 @@
       return g;
     },
   };
+  // four more instruments so every stop can hand PAT something new
+  Object.assign(INST, {
+    violin() {
+      const g = new THREE.Group(), wood = toon(0x9a3b12), dark = toon(0x1a0f0b);
+      const bodyA = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 14), wood); bodyA.scale.set(1, 0.9, 0.28); bodyA.position.y = -0.1; g.add(bodyA);
+      const bodyB = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), wood); bodyB.scale.set(1, 0.85, 0.28); bodyB.position.y = 0.07; g.add(bodyB);
+      const waist = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), wood); waist.scale.set(1, 1, 0.3); waist.position.y = -0.02; g.add(waist);
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.36, 0.02), dark); board.position.set(0, 0.17, 0.035); g.add(board);
+      const scroll = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.011, 8, 14), dark); scroll.position.set(0, 0.38, 0.02); scroll.rotation.y = Math.PI / 2; g.add(scroll);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.015), dark); tail.position.set(0, -0.17, 0.035); g.add(tail);
+      [-1, 1].forEach((sx) => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.07, 0.01), dark); f.position.set(sx * 0.05, -0.03, 0.035); f.rotation.z = sx * 0.2; g.add(f); });
+      g.add(strings(4, 0.025, -0.16, 0.34, 0.048));
+      return g;
+    },
+    bow() {
+      const g = new THREE.Group();
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.62, 6), toon(0x3a1a0c)); stick.position.y = 0.28; g.add(stick);
+      const hairB = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.58, 0.012), toon(0xf2ead8)); hairB.position.set(0.018, 0.29, 0); g.add(hairB);
+      const frog = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.025), M.black); frog.position.y = 0.0; g.add(frog);
+      return g;
+    },
+    sax() {
+      const g = new THREE.Group(), brass = toon(0xe0b04a), key = toon(0xf5e3b0);
+      const path = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.42, 0), new THREE.Vector3(0.01, 0.2, 0.02), new THREE.Vector3(0, -0.08, 0), new THREE.Vector3(0.02, -0.24, 0.04), new THREE.Vector3(0.1, -0.3, 0.06), new THREE.Vector3(0.17, -0.18, 0.06)]);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 40, 0.045, 12), brass));
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.05, 0.16, 20, 1, true), brass); bell.material.side = THREE.DoubleSide; bell.position.set(0.18, -0.08, 0.06); g.add(bell);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.18, 10), brass); neck.position.set(-0.05, 0.5, 0); neck.rotation.z = 0.9; g.add(neck);
+      const mp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.06, 10), M.black); mp.position.set(-0.14, 0.56, 0); mp.rotation.z = 1.2; g.add(mp);
+      for (let i = 0; i < 6; i++) { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 12), key); k.rotation.x = Math.PI / 2; k.position.set(0.0, 0.32 - i * 0.075, 0.05); g.add(k); }
+      return g;
+    },
+    drums() {
+      const g = new THREE.Group();
+      const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.16, 28), toon(0xe0102c)); g.add(shell);
+      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.215, 0.005, 28), M.white); head.position.y = 0.082; g.add(head);
+      [0.08, -0.08].forEach((y) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.222, 0.012, 8, 32), M.silver); r.rotation.x = Math.PI / 2; r.position.y = y; g.add(r); });
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, l = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.15, 0.012), M.silver); l.position.set(Math.sin(a) * 0.225, 0, Math.cos(a) * 0.225); g.add(l); }
+      return g;
+    },
+    stick() { const g = new THREE.Group(); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.016, 0.4, 8), toon(0xe8cf9a)); st.position.y = 0.18; g.add(st); const tip = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), toon(0xe8cf9a)); tip.position.y = 0.38; g.add(tip); return g; },
+    trumpet() {
+      const g = new THREE.Group(), brass = toon(0xe0b04a);
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.42, 10), brass); pipe.rotation.x = Math.PI / 2; pipe.position.z = 0.16; g.add(pipe);
+      const pipe2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.3, 10), brass); pipe2.rotation.x = Math.PI / 2; pipe2.position.set(0, -0.07, 0.12); g.add(pipe2);
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.022, 0.18, 20, 1, true), brass); bell.material.side = THREE.DoubleSide; bell.rotation.x = Math.PI / 2; bell.position.z = 0.44; g.add(bell);
+      for (let i = 0; i < 3; i++) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.12, 10), brass); v.position.set(0, -0.02, 0.08 + i * 0.05); g.add(v); const c = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 10), toon(0xf5e3b0)); c.position.set(0, 0.05, 0.08 + i * 0.05); g.add(c); }
+      const mp = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.012, 0.06, 10), M.silver); mp.rotation.x = Math.PI / 2; mp.position.z = -0.07; g.add(mp);
+      return g;
+    },
+  });
   function strings(n, spread, y0, y1, z) {
     const pts = [];
     for (let i = 0; i < n; i++) { const x = -spread / 2 + (spread / (n - 1)) * i; pts.push(x, y0, z, x * 0.7, y1, z); }
@@ -1037,41 +1087,45 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — matched to the 2D reference but kept neat: a full, rounded volume a little wider than the face,
-    // a smooth swoop from a part just off centre down over his right brow (viewer's left), the forehead open
-    // on the other side, tidy ends tucked toward the ears and glossy grey highlights
+    // Hair — Korean "comma" cut: a soft rounded volume, a full fringe swept to his right (viewer's left) that
+    // stops just above the brows and curls into a comma at the temple, short tidy two-block sides that show
+    // the ears, a tapered nape, one small cowlick and a glossy "angel ring" of highlights.
+    // Everything lives in one group so it can tuck under a hat (see fitHair).
     const hair = new THREE.Group(); head.add(hair);
     const lockMat = toon(0x1b181f, { side: THREE.DoubleSide });
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.07, 1.0, 1.05); cap.position.set(0, 0.05, -0.03); cap.rotation.x = -0.5; hair.add(cap);
-    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.46), M.hair);
-    nape.scale.set(1.07, 0.97, 1.045); hair.add(nape);
+    cap.scale.set(1.06, 1.0, 1.05); cap.position.set(0, 0.05, -0.03); cap.rotation.x = -0.5; hair.add(cap);
+    const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.42), M.hair);
+    nape.scale.set(1.06, 0.97, 1.04); hair.add(nape);
     const H = (ctrl, w0, th = 0.08, w1 = 0.02) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    const PA = 0.06;
-    // the volume: evenly spaced clumps from the crown, rounded over the skull, ends turned in
-    for (let i = 0; i < 20; i++) {
-      const az = -Math.PI + ((i + 0.5) / 20) * Math.PI * 2;
-      if (Math.abs(az) < 0.7) continue; // the front belongs to the fringe
-      const s = Math.sign(az), back = Math.abs(az) > 2.1;
-      if (back) H([[az * 0.3, 1.45, 0.6], [az, 1.0, 0.8], [az, 0.35, 0.72], [az, -0.12, 0.62], [az + s * 0.03, -0.3, 0.64]], 0.34, 0.09, 0.05);
-      else H([[az * 0.3, 1.45, 0.6], [az, 1.05, 0.83], [az + s * 0.03, 0.55, 0.81], [az + s * 0.06, 0.25, 0.78], [az + s * 0.08, 0.12, 0.8]], 0.32, 0.09, 0.05);
+    // rounded volume: the sides are cut short above the ears, the back tapers into the nape
+    for (let i = 0; i < 18; i++) {
+      const az = -Math.PI + ((i + 0.5) / 18) * Math.PI * 2;
+      if (Math.abs(az) < 0.8) continue; // the front belongs to the fringe
+      const s = Math.sign(az), back = Math.abs(az) > 2.2;
+      if (back) H([[az * 0.3, 1.45, 0.6], [az, 1.05, 0.74], [az, 0.45, 0.72], [az, 0.0, 0.64], [az, -0.2 - (Math.abs(az) - 2.2) * 0.12, 0.59]], 0.36, 0.08, 0.16);
+      else H([[az * 0.3, 1.45, 0.6], [az, 1.08, 0.75], [az + s * 0.02, 0.7, 0.73], [az + s * 0.03, 0.44, 0.67], [az + s * 0.03, 0.32, 0.63]], 0.34, 0.075, 0.2);
     }
-    // smooth swoop from the part over his right brow (viewer's left)
-    for (let i = 0; i < 5; i++) {
-      H([[PA, 1.32, 0.6], [PA - 0.08 - i * 0.06, 1.02, 0.78], [-0.22 - i * 0.12, 0.62 - i * 0.03, 0.72], [-0.42 - i * 0.14, 0.28 + i * 0.015, 0.61], [-0.56 - i * 0.15, 0.14 + i * 0.04, 0.62]], 0.3, 0.09, 0.05);
+    // the fringe: full and soft, swept toward the viewer's left, ending just above the brows
+    for (let i = 0; i < 9; i++) {
+      const a = -0.86 + i * 0.215, sw = 0.15 - a * 0.04;
+      const endEl = 0.38 + Math.max(0, a - 0.3) * 0.35;
+      H([[a * 0.2, 1.42, 0.6], [a, 1.06, 0.75], [a - sw * 0.5, 0.72, 0.71], [a - sw, endEl + 0.1, 0.64], [a - sw - 0.04, endEl + 0.02 * Math.cos(i * 2.1), 0.615]], 0.26, 0.08, 0.17);
     }
-    // the other side of the part arcs neatly to the temple and leaves the forehead open
-    for (let i = 0; i < 3; i++) {
-      H([[PA + 0.05, 1.32, 0.6], [0.3 + i * 0.1, 1.02, 0.78], [0.62 + i * 0.12, 0.68, 0.74], [0.86 + i * 0.12, 0.46, 0.69], [1.0 + i * 0.12, 0.38, 0.72]], 0.24, 0.075, 0.045);
-    }
-    // one soft strand on the forehead, like the drawing
-    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.69], [-0.02, 0.52, 0.61], [0.02, 0.4, 0.58]], 0.07, 0.04, 0.01);
-    // glossy grey highlights like the drawing
-    const shineMat = basic(0x7f7988);
-    [[-0.45, 0.95, 0.3], [-0.05, 1.12, -0.1], [0.5, 1.0, 0.25], [0.95, 0.75, 0.5], [-1.1, 0.8, -0.4], [2.6, 0.9, 0.2], [-2.7, 0.85, -0.2]].forEach(([az, el, rz]) => {
-      const sh = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 6), shineMat); sh.scale.set(1.7, 0.42, 0.2);
-      const p = headPt(az, el, 0.885); sh.position.copy(p); sh.lookAt(p.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
+    // the "comma": the outer lock of the fringe curls back in at the temple (viewer's left)
+    H([[-0.5, 1.2, 0.7], [-0.82, 0.85, 0.73], [-1.0, 0.5, 0.69], [-1.04, 0.28, 0.645], [-0.93, 0.19, 0.63], [-0.83, 0.28, 0.635]], 0.2, 0.075, 0.08);
+    // a soft see-through piece on the other side so a little forehead shows
+    H([[0.4, 1.2, 0.7], [0.72, 0.9, 0.73], [0.9, 0.62, 0.68], [0.98, 0.46, 0.645]], 0.16, 0.06, 0.06);
+    // one small cowlick for the cute side
+    const cowlick = hairLock([[0.1, 1.45, 0.6], [0.14, 1.62, 0.74], [0.3, 1.7, 0.86], [0.44, 1.62, 0.9]], 0.06, 0.01, 0.04, lockMat);
+    hair.add(cowlick);
+    // the glossy "angel ring": two soft arcs of highlight across the crown
+    const shineMat = basic(0x8c8697, { side: THREE.DoubleSide });
+    [[-1.25, -0.35], [0.05, 0.85]].forEach(([a0, a1]) => {
+      const ctrl = Array.from({ length: 5 }, (_, k) => { const az = lerp(a0, a1, k / 4); return [az, 0.98 + Math.sin((k / 4) * Math.PI) * 0.03, 0.825]; });
+      hair.add(hairLock(ctrl, 0.035, 0.012, 0.004, shineMat));
     });
+    hair.userData.cowlick = cowlick;
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
     const headphones = new THREE.Group(); head.add(headphones);
@@ -1092,8 +1146,15 @@
     const el = INST.electric(); el.position.set(0.0, -0.06, 0.04); el.rotation.set(0.1, 0, -1.0); el.scale.setScalar(0.95); chestHolder.add(el); P.inst.electric = el;
     const kt = INST.keytar(); kt.position.set(0.02, -0.02, 0.06); kt.rotation.set(0.25, 0, -0.18); kt.scale.setScalar(0.85); chestHolder.add(kt); P.inst.keytar = kt;
     const bs = INST.bass(); bs.position.set(0.0, -0.1, 0.04); bs.rotation.set(0.1, 0, -1.08); bs.scale.setScalar(0.95); chestHolder.add(bs); P.inst.bass = bs;
+    // violin under the chin with a bow in the right hand; sax across the body; a marching snare with sticks; a trumpet at the lips
+    const vn = INST.violin(); vn.position.set(0.24, 0.3, 0.02); vn.rotation.set(-0.5, 0.35, 1.3); vn.scale.setScalar(1.3); chestHolder.add(vn); P.inst.violin = vn;
+    const bw = INST.bow(); bw.position.set(0, -0.04, 0.03); bw.rotation.set(Math.PI * 0.55, 0, 0.6); armR.hand.add(bw); vn.userData.extra = [bw];
+    const sx = INST.sax(); sx.position.set(0.04, -0.12, 0.12); sx.rotation.set(0.2, 0, 0.35); chestHolder.add(sx); P.inst.sax = sx;
+    const dr = INST.drums(); dr.position.set(0, -0.2, 0.3); dr.rotation.x = 0.4; chestHolder.add(dr); P.inst.drums = dr;
+    const sL = INST.stick(), sR = INST.stick(); [sL, sR].forEach((k) => { k.position.set(0, -0.03, 0.02); k.rotation.set(Math.PI * 0.62, 0, 0); }); armL.hand.add(sL); armR.hand.add(sR); dr.userData.extra = [sL, sR];
+    const tp = INST.trumpet(); tp.position.set(0, -0.2, 0.5); tp.scale.setScalar(0.9); head.add(tp); P.inst.trumpet = tp;
     const st = INST.studio(); st.position.set(0, -0.12, 0.2); st.scale.setScalar(0.85); chestHolder.add(st); P.inst.studio = st;
-    Object.values(P.inst).forEach((o) => { o.visible = false; o.userData.s = o.scale.x; });
+    Object.values(P.inst).forEach((o) => { o.visible = false; o.userData.s = o.scale.x; (o.userData.extra || []).forEach((x) => (x.visible = false)); });
     P.inst.mic.visible = true;
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), basic(0x000000, { transparent: true, opacity: 0.45, depthWrite: false }));
     shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.005; root.add(shadow); P.shadow = shadow;
@@ -1452,9 +1513,18 @@
     Object.values(s).forEach((id) => equip(id, true));
   }
   // hats replace the studio headphones; a hand prop is tucked away while both hands play
+  // hair tucks in under whatever sits on the head: flat under hats, hugged by bands and headphones
+  const HAIR_FIT = { beanie: "hat", snapback: "hat", bucket: "hat", fedora: "hat", phones: "band", headband: "band", crown: "band", catears: "band", horns: "band" };
+  function fitHair() {
+    const h = PAT.hair, on = PAT.slots.head ? HAIR_FIT[PAT.slots.head] : PAT.headphones.visible ? "band" : null;
+    const g = on === "hat" ? [0.86, 0.72, 0.86, -0.03] : on === "band" ? [0.96, 0.92, 0.96, -0.01] : [1, 1, 1, 0];
+    h.userData.cowlick.visible = !on;
+    h.userData.fit = g;
+  }
   function syncAccVisibility() {
     if (!PAT) return;
     PAT.headphones.visible = PAT.cur === "studio" && !PAT.slots.head;
+    fitHair();
     const h = PAT.slots.hand && PAT.acc[PAT.slots.hand];
     if (h) h.visible = (PAT.cur === "mic" || PAT.cur === "none") && !(RIDE && RIDE.midi.visible);
     const back = PAT.slots.back && PAT.acc[PAT.slots.back];
@@ -1462,6 +1532,8 @@
     Wardrobe.sync();
   }
   function tickAccessories(t, dt) {
+    const h = PAT.hair, g = h.userData.fit;
+    if (g) { const k = 1 - Math.exp(-dt * 12); h.scale.set(lerp(h.scale.x, g[0], k), lerp(h.scale.y, g[1], k), lerp(h.scale.z, g[2], k)); h.position.y = lerp(h.position.y, g[3], k); }
     Object.values(PAT.slots).forEach((id) => { const o = PAT.acc[id]; if (o && o.userData.tick) o.userData.tick(t, dt); });
   }
 
@@ -1470,6 +1542,8 @@
     const prev = PAT.cur; PAT.cur = name;
     syncAccVisibility();
     const outO = PAT.inst[prev], inO = PAT.inst[name];
+    if (outO) (outO.userData.extra || []).forEach((x) => (x.visible = false));
+    if (inO) (inO.userData.extra || []).forEach((x) => (x.visible = true));
     if (instant) { if (outO) outO.visible = false; if (inO) { inO.visible = true; inO.scale.setScalar(inO.userData.s); } return; }
     if (outO) tween(350, (p) => outO.scale.setScalar(outO.userData.s * (1 - ease.in(p))), () => (outO.visible = false));
     if (inO) {
@@ -1495,6 +1569,9 @@
     wardrobe: ["Chọn đồ cho mình đi~", "Đội mũ nào đẹp?", "Thử kính vàng nha", "Mình đổi cảm xúc được đó"],
     producers: ["Karrot đánh beat cho mình", "souL phối cả EP 075", "Beat là nửa bài hát", "Cảm ơn hai anh ♪"],
     beatlab: ["Bấm ô để thêm nhịp!", "Thử kick ở phách 1 nè", "Bạn có tố chất producer đó", "Bật Play đi!"],
+    lights: ["Giơ lightstick lên nào!", "Mỗi ngọn đèn là một người nghe", "Khán đài sáng dần rồi kìa", "Cảm ơn bạn đã ở đây ♥"],
+    letter: ["Có thư cho bạn nè", "Mở ra đọc đi~", "Mình viết thật lòng đó", "Thương bạn nhiều ♥"],
+    wishes: ["Viết gì cho mình đi!", "Thả lên trời nha", "Mình sẽ đọc hết", "Lời chúc của bạn đẹp quá"],
     ticket: ["Ghi tên bạn vào nha", "Lưu vé về máy nhé", "Bạn là fan số 1!", "Sắp tới đích rồi"],
     studio: ["Chạm vào trống thử đi!", "Bấm Jam cùng mình nha", "FL Studio là nhà mình", "Theo dõi mình nha ♪"],
     finale: ["Cảm ơn bạn thật nhiều!", "Nhắn Zalo cho mình nha", "Bản guitar này tặng bạn", "Bạn là ngôi sao của mình"],
@@ -1561,6 +1638,10 @@
       case "electric": aLx = -0.95; aLz = 0.78; aRx = -0.6 + Math.sin(t * 13) * 0.22; aRz = 0.55; hx = 0.08 + Math.abs(Math.sin(t * 4.2)) * 0.18; bodyRz = Math.sin(t * 2.1) * 0.06; break;
       case "keytar": aLx = -1.05 + Math.max(0, Math.sin(t * 6)) * 0.14; aLz = 0.28; aRx = -1.05 + Math.max(0, Math.sin(t * 6 + 1.6)) * 0.14; aRz = -0.28; hy = Math.sin(t * 1.2) * 0.2; hz = Math.sin(t * 2.4) * 0.07; break;
       case "bass": aLx = -0.95; aLz = 0.82; aRx = -0.55 + Math.sin(t * 5) * 0.12; aRz = 0.5; bodyRy = Math.sin(t * 2.5) * 0.18; bodyY = Math.abs(Math.sin(t * 2.5)) * 0.03; break;
+      case "violin": aLx = -1.55; aLz = 0.95; aRx = -1.2 + Math.sin(t * 2.6) * 0.18; aRz = -0.2 + Math.sin(t * 2.6) * 0.35; hz = 0.22 + Math.sin(t * 1.3) * 0.05; hx = 0.08; break;
+      case "sax": aLx = -1.25; aLz = 0.35; aRx = -0.95 + Math.sin(t * 6) * 0.05; aRz = -0.3; hx = 0.18 + Math.sin(t * 2) * 0.06; bodyRz = Math.sin(t * 1.8) * 0.08; mouth = 0.4; break;
+      case "drums": aLx = -1.05 + Math.max(0, Math.sin(t * 11)) * 0.45; aLz = 0.35; aRx = -1.05 + Math.max(0, Math.sin(t * 11 + Math.PI)) * 0.45; aRz = -0.35; bodyY = Math.abs(Math.sin(t * 5.5)) * 0.03; hx = 0.1; break;
+      case "trumpet": aLx = -1.6; aLz = 0.42; aRx = -1.6 + Math.sin(t * 8) * 0.04; aRz = -0.42; hx = -0.12 + Math.sin(t * 2) * 0.05; mouth = 0.3; break;
       case "studio": aLx = -1.2 + Math.sin(t * 15) * 0.05; aLz = 0.25; aRx = -1.2 + Math.sin(t * 15 + 2) * 0.05; aRz = -0.25; hx = 0.18 + Math.sin(t * 4.2) * 0.1; break;
       default: aLx = -2.6 + Math.sin(t * 6) * 0.2; aLz = 0.3; aRx = -2.6 + Math.sin(t * 6 + 3) * 0.2; aRz = -0.3; bodyY = Math.abs(Math.sin(t * 3)) * 0.06; break;
     }
@@ -1578,6 +1659,15 @@
       case "rocket": aRx = -3.0; aRz = -0.15; aLx = 0.5; aLz = 0.25; P.legs[0].rotation.x = 0.5; P.legs[1].rotation.x = 0.5; break;
       case "staff": aLx = 0; aRx = 0; aLz = 1.1 + Math.sin(t * 4) * 0.25; aRz = -1.1 + Math.sin(t * 4) * 0.25; hz += Math.sin(t * 4) * 0.1; break;
       case "finale": aRx = -1.95; aRz = -0.62; aLx = -1.1; aLz = 0.35; mouth = 0.5 + 0.5 * Math.sin(t * 7.5); break;
+      case "swim": aLx = -2.4 + Math.sin(t * 5) * 0.8; aLz = 0.7 + Math.cos(t * 5) * 0.5; aRx = -2.4 + Math.sin(t * 5) * 0.8; aRz = -0.7 - Math.cos(t * 5) * 0.5; P.legs[0].rotation.x = Math.sin(t * 10) * 0.5; P.legs[1].rotation.x = -Math.sin(t * 10) * 0.5; break;
+      case "swing": aRx = -3.0; aRz = -0.15; aLx = -2.7; aLz = 0.35; P.legs[0].rotation.x = 0.5; P.legs[1].rotation.x = -0.2; mouth = 0.8; break;
+      case "flip": case "burrow": aLx = -2.9; aRx = -2.9; aLz = 0.25; aRz = -0.25; P.legs[0].rotation.x = -0.9; P.legs[1].rotation.x = -0.9; break;
+      case "cannon": case "comet": aLx = -3.0; aRx = -3.0; aLz = 0.15; aRz = -0.15; P.legs[0].rotation.x = 0.25; P.legs[1].rotation.x = 0.25; break;
+      case "tornado": case "plane": aLx = -0.1; aRx = -0.1; aLz = 1.35; aRz = -1.35; P.legs[0].rotation.x = 0.2; P.legs[1].rotation.x = -0.2; break;
+      case "vinyl": case "cloud": aLx = -0.3; aLz = 1.15 + Math.sin(t * 3) * 0.1; aRx = 0.2; aRz = -1.0; P.legs[0].rotation.x = -0.3; P.legs[1].rotation.x = 0.3; break;
+      case "balloon": aRx = -2.95; aRz = -0.2; aLx = 0.2 + Math.sin(t * 2) * 0.2; aLz = 0.5; P.legs[0].rotation.x = Math.sin(t * 2) * 0.4; P.legs[1].rotation.x = -Math.sin(t * 2) * 0.4; break;
+      case "bubble": aLx = -1.7; aLz = 0.95; aRx = -1.7; aRz = -0.95; P.legs[0].rotation.x = -0.4; P.legs[1].rotation.x = -0.2; break;
+      case "teleport": case "bounce": aLx = -2.8 + Math.sin(t * 6) * 0.2; aRx = -2.8 - Math.sin(t * 6) * 0.2; aLz = 0.55; aRz = -0.55; break;
     }
 
     // face defaults: calm, cool, a hint of a smile
@@ -1799,6 +1889,12 @@
       tease: "Hai cái tên đứng sau mọi bản beat. Họ là ai?" },
     beatlab: { key: "beatlab", label: "Beat Lab", short: "Beat Lab", inst: "studio", tint: 0x8a0a1c, fx: "glitch", ride: "rocket",
       tease: "Đến lượt bạn làm producer." },
+    lights: { key: "lights", label: "Tri ân · Biển ánh sáng", short: "Ánh sáng", inst: "acoustic", tint: 0x9c0d22,
+      tease: "Một khán đài tối om đang chờ từng ngọn đèn. Một trong số đó là của bạn." },
+    letter: { key: "letter", label: "Tri ân · Lá thư gửi bạn", short: "Lá thư", inst: "violin", tint: 0x6a0816,
+      tease: "Một phong bì niêm phong bằng sáp đỏ. Người nhận: bạn." },
+    wishes: { key: "wishes", label: "Tri ân · Thả lời chúc", short: "Lời chúc", inst: "keytar", tint: 0x8a0a1c,
+      tease: "Đến lượt bạn nói. Bầu trời phía trước đang chờ một lời chúc." },
     ticket: { key: "ticket", label: "Quà bất ngờ · Vé fan", short: "Vé fan", inst: "mic", tint: 0xa3101f, fx: "tear", ride: "wings",
       tease: "Món quà bất ngờ cuối cùng, mang tên bạn." },
   };
@@ -1817,16 +1913,23 @@
     EXTRA.producers,
     { key: "mv", label: "Music Video", short: "MV", inst: "mic", tint: 0x7a0614, fx: "matchcut", ride: "rocket",
       tease: "Những câu chuyện bắt đầu chuyển động. Có một MV được ghim." },
-    ...C.ads.flatMap((_, k) => (k === 0 && C.ads.length > 1 ? [AD_STOP(0), EXTRA.beatlab] : [AD_STOP(k)])),
     { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip", ride: "run",
       tease: "Một căn phòng đầy nhạc cụ đang chờ bạn chạm vào." },
+    ...C.ads.flatMap((_, k) => (k === 0 && C.ads.length > 1 ? [AD_STOP(0), EXTRA.beatlab] : [AD_STOP(k)])),
+    EXTRA.lights, EXTRA.letter, EXTRA.wishes,
     { key: "finale", label: "Lời cảm ơn", short: "Cảm ơn", inst: "acoustic", tint: 0xb3142a, fx: "dolly", ride: "finale",
-      tease: "Một lời cảm ơn, và một ngôi sao dành riêng cho bạn." },
+      tease: "Sau tất cả, một lời cảm ơn." },
     EXTRA.ticket,
   ];
   // every stop arrives with its own transition, none used twice
   const FX_BY_KEY = { hero: "tunnel", about: "ink", timeline: "film", t0: "mask", t1: "shutter", t2: "vinyl", t3: "eq", t4: "whip", quiz: "crt", gift: "star", wardrobe: "blinds",
-    ep: "tear", producers: "split", mv: "matchcut", ad0: "rgb", beatlab: "pixel", ad1: "ripple", studio: "glitch", finale: "curtain", ticket: "dolly" };
+    ep: "tear", producers: "split", mv: "matchcut", studio: "glitch", ad0: "rgb", beatlab: "pixel", ad1: "ripple", lights: "spotlight", letter: "heart", wishes: "whiteout", finale: "curtain", ticket: "dolly" };
+  // how PAT travels INTO each stop, and what he plays there: no two alike
+  const RIDE_BY_KEY = { hero: "run", about: "run", timeline: "staff", t0: "guitar", t1: "swim", t2: "teleport", t3: "vinyl", t4: "bounce", quiz: "glitch", gift: "cannon", wardrobe: "flip",
+    ep: "wings", producers: "moonwalk", mv: "rocket", studio: "tornado", ad0: "swing", beatlab: "burrow", ad1: "balloon", lights: "comet", letter: "plane", wishes: "bubble", finale: "finale", ticket: "cloud" };
+  const INST_BY_KEY = { hero: "mic", about: "acoustic", timeline: "violin", t0: "electric", t1: "sax", t2: "keytar", t3: "bass", t4: "drums", quiz: "mic", gift: "trumpet", wardrobe: "mic",
+    ep: "keytar", producers: "studio", mv: "electric", studio: "bass", ad0: "sax", beatlab: "drums", ad1: "trumpet", lights: "acoustic", letter: "violin", wishes: "keytar", finale: "acoustic", ticket: "electric" };
+  STATIONS.forEach((st) => { if (RIDE_BY_KEY[st.key]) st.ride = RIDE_BY_KEY[st.key]; if (INST_BY_KEY[st.key]) st.inst = INST_BY_KEY[st.key]; });
   const FX_SPARE = ["shutter", "eq", "vinyl", "pixel", "blinds", "ripple"];
   STATIONS.forEach((st, n) => (st.fx = FX_BY_KEY[st.key] || FX_SPARE[n % FX_SPARE.length]));
   const SI = {}; STATIONS.forEach((st, i) => (SI[st.key] = i));
@@ -2663,6 +2766,234 @@
       }
     },
   };
+  // tri ân 01: every tap raises lightsticks around the stage until the whole crowd glows
+  const LIGHTS_N = 40;
+  const LightSea = {
+    n: 0, sticks: [],
+    bind() { this.n = clamp(store.get("lights", 0), 0, LIGHTS_N); $("#lsBtn").addEventListener("click", () => this.raise()); this.sync(true); },
+    raise() {
+      Audio.init();
+      if (this.n >= LIGHTS_N) { this.wave(); return; }
+      const before = this.n; this.n = Math.min(LIGHTS_N, this.n + 4); store.set("lights", this.n);
+      for (let k = before; k < this.n; k++) setTimeout(() => Audio.chime(k % 8), (k - before) * 70);
+      act(pick(["wave", "heart"])); this.sync();
+      if (this.n >= LIGHTS_N) setTimeout(() => this.full(), 600);
+    },
+    full() { flash(0.35); emote("love"); say("Cả khán đài sáng rồi! Cảm ơn bạn ♥"); Audio.unlock(); this.wave(); },
+    wave() { this.waveT = performance.now(); Audio.strum(); },
+    sync(quiet) {
+      $("#lsN").textContent = this.n; $("#lsBar").style.width = (this.n / LIGHTS_N) * 100 + "%";
+      $("#lsBtn").textContent = this.n >= LIGHTS_N ? "〰 Tạo sóng ánh sáng" : "✦ Giơ lightstick";
+      $("#lsMsg").textContent = this.n >= LIGHTS_N ? "Cả khán đài đã sáng. Cảm ơn bạn đã là một phần của ánh sáng đó." : this.n ? "Còn " + (LIGHTS_N - this.n) + " ngọn nữa thôi." : "";
+      this.sticks.forEach((st, k) => { const on = k < this.n; st.userData.tip.material.color.setHex(on ? 0xff2a40 : 0x3a3640); st.userData.glow.visible = on; if (on && !quiet && !st.userData.was) { st.userData.pop = 1; } st.userData.was = on; });
+    },
+  };
+  // tri ân 02: an envelope that opens into a handwritten-style letter
+  const LETTER = C.fanLetter || ["Gửi bạn,", "Cảm ơn bạn đã bấm nghe một cái tên còn lạ. Cảm ơn những lần bạn để nhạc của mình chạy trong tai nghe, lúc vui cũng như lúc mệt.", "Con đường này chưa bao giờ dễ. Nhưng mỗi lượt nghe, mỗi dòng bình luận, mỗi lần bạn chia sẻ một bài hát là thêm một lý do để mình viết tiếp.", "Mình không hứa sẽ luôn làm tốt. Mình chỉ hứa sẽ luôn thật lòng với từng bài hát, vì bạn xứng đáng được nghe điều thật nhất.", "Thương bạn,", "PAT"];
+  const Letter = {
+    opened: false, prop: null,
+    bind() { $("#envOpen").addEventListener("click", () => this.open()); },
+    hint() { if (!this.opened) say("Có thư cho bạn, mở ra đi!"); },
+    open() {
+      if (this.opened) return; this.opened = true; Audio.init(); Audio.pop();
+      $("#env").classList.add("open"); if (this.prop) this.prop.userData.open = performance.now();
+      const paper = $("#envPaper"); paper.innerHTML = LETTER.map((l, k) => '<p class="' + (k === 0 ? "lt-hi" : k >= LETTER.length - 2 ? "lt-sign" : "") + '"></p>').join("");
+      const ps = $$("p", paper); let li = 0, ci = 0;
+      const step = () => {
+        if (li >= LETTER.length) { emote("love"); say("Thương bạn nhiều ♥"); return; }
+        ps[li].textContent = LETTER[li].slice(0, ++ci);
+        if (ci >= LETTER[li].length) { li++; ci = 0; setTimeout(step, 260); } else setTimeout(step, reduced ? 0 : 22);
+      };
+      setTimeout(step, 700);
+    },
+  };
+  // tri ân 03: each wish becomes a paper lantern floating over the road
+  const Wishes = {
+    list: [], lanterns: [],
+    bind() {
+      this.list = (store.get("wishes", []) || []).slice(-8);
+      $("#wishGo").addEventListener("click", () => this.send());
+      $("#wishIn").addEventListener("keydown", (e) => { if (e.key === "Enter") this.send(); });
+      this.render();
+    },
+    send() {
+      const v = $("#wishIn").value.trim(); if (!v) { toast("Viết một lời chúc trước đã nhé"); return; }
+      Audio.init(); this.list.push(v); this.list = this.list.slice(-8); store.set("wishes", this.list); $("#wishIn").value = "";
+      this.render(); this.lantern(v, true); act("heart"); say(pick(["Mình nhận được rồi ♥", "Đẹp quá trời!", "Cảm ơn bạn nhiều lắm"])); Audio.unlock();
+    },
+    render() { $("#wishList").innerHTML = this.list.slice().reverse().map((w) => "<li>🏮 " + esc(w) + "</li>").join(""); },
+    lantern(text, fresh) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.46, 16, 1, true), basic(0xff7a45, { transparent: true, opacity: 0.92, side: THREE.DoubleSide })); g.add(body);
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.26, 0.06, 16), basic(0xb3142a)); top.position.y = 0.25; g.add(top);
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0xffa060, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); glow.scale.set(1.6, 1.6, 1); g.add(glow);
+      const tx = textSprite(text.length > 26 ? text.slice(0, 25) + "…" : text, { size: 30, scale: 0.34, color: "#ffe9d6" }); tx.position.y = -0.48; g.add(tx);
+      const home = spot(SI.wishes, rand(1.5, 6), rand(-4, 5), rand(2.4, 5.2));
+      const from = fresh ? PAT.root.position.clone().add(new THREE.Vector3(0, 1.4, 0)) : home.clone();
+      g.position.copy(from); scene.add(g);
+      const ph = rand(0, 6), t0 = performance.now();
+      updaters.push((t) => {
+        const k = fresh ? Math.min(1, (performance.now() - t0) / 4000) : 1, e = ease.io(k);
+        g.position.lerpVectors(from, home, e); g.position.y += Math.sin(t * 0.9 + ph) * 0.25;
+        g.rotation.y = Math.sin(t * 0.5 + ph) * 0.4; glow.material.opacity = 0.7 + Math.sin(t * 3 + ph) * 0.2;
+      });
+      this.lanterns.push(g);
+    },
+  };
+  // 15 music props scattered around the galaxy: every one reacts to a click
+  const MUSIC_ASSETS = [];
+  function buildMusicAssets() {
+    const at = (key, back, right, up) => (SI[key] != null ? spot(SI[key], back, right, up) : null);
+    const add = (key, pos, obj, onClick, opts = {}) => {
+      if (!pos) return;
+      floatProp(obj, pos, Object.assign({ amp: 0.25, spin: 0.05 }, opts)); MUSIC_ASSETS.push(obj);
+      obj.userData.anim = 0;
+      clickable(obj, () => { Audio.init(); obj.userData.wob = 1; obj.userData.anim = 1; obj.userData.t0 = performance.now(); onClick(obj); const w = new THREE.Vector3(); obj.getWorldPosition(w); burst(w.add(new THREE.Vector3(0, 0.8, 0)), 6, { tex: pick(TEX.notes), speed: 1.4, size: 0.35, life: 1.1, up: 1 }); });
+      return obj;
+    };
+    const age = (o) => (performance.now() - (o.userData.t0 || 0)) / 1000;
+    const R_ = toon(0xe0102c), K_ = toon(0x16141a), W_ = M.white, G_ = toon(0xe0b04a), S_ = M.silver;
+    // 1 jukebox: lights chase, plays a riff
+    { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.6), R_); b.position.y = 0.8; g.add(b);
+      const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.6, 24, 1, false, -Math.PI / 2, Math.PI), R_); arch.rotation.x = Math.PI / 2; arch.position.y = 1.6; g.add(arch);
+      const bulbs = []; for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i / 8) * Math.PI, bl = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), basic(0xffd36b)); bl.position.set(Math.sin(a) * 0.52, 1.6 + Math.cos(a) * 0.52, 0.32); g.add(bl); bulbs.push(bl); }
+      const grill = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.02), K_); grill.position.set(0, 0.5, 0.31); g.add(grill);
+      add("about", at("about", 8.5, 4.9, 0.5), g, () => Audio.riff());
+      updaters.push((t) => { const on = g.userData.anim && age(g) < 4; bulbs.forEach((bl, i) => bl.material.color.setHex(on ? ((i + Math.floor(t * 12)) % 3 === 0 ? 0xffffff : 0xff2a40) : 0xffd36b)); }); }
+    // 2 grand piano: keys ripple, arpeggio
+    { const g = new THREE.Group(); const lid = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.25, 1.2), K_); lid.position.y = 0.9; g.add(lid);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.04, 1.1), K_); top.position.set(0, 1.3, -0.25); top.rotation.x = -0.6; g.add(top);
+      [-0.65, 0.65].forEach((x) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8), K_); l.position.set(x, 0.4, 0.3); g.add(l); });
+      const keys = []; for (let i = 0; i < 14; i++) { const k = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.3), W_); k.position.set(-0.66 + i * 0.102, 1.0, 0.72); g.add(k); keys.push(k); }
+      add("timeline", at("timeline", 8.5, 4.4, 0.7), g, () => [261.6, 329.6, 392, 523.3, 659.3, 784].forEach((f, k) => setTimeout(() => Audio.piano(f), k * 110)));
+      updaters.push(() => { const a = g.userData.anim ? age(g) : 9; keys.forEach((k, i) => (k.position.y = 1.0 - (Math.abs(a * 10 - i) < 1 ? 0.04 : 0))); }); }
+    // 3 drum kit: cymbal wobble, kick + snare + crash
+    { const g = new THREE.Group(); const kick = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 24), R_); kick.rotation.x = Math.PI / 2; kick.position.y = 0.5; g.add(kick);
+      const head = new THREE.Mesh(new THREE.CircleGeometry(0.46, 24), W_); head.position.set(0, 0.5, 0.21); g.add(head);
+      const sn = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.16, 20), S_); sn.position.set(0.55, 0.85, 0.1); g.add(sn);
+      const cym = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.02, 0.04, 24), G_); cym.position.set(-0.55, 1.45, 0); g.add(cym);
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.4, 6), S_); stand.position.set(-0.55, 0.75, 0); g.add(stand);
+      add("t1", at("t1", 8.5, 4.9, 0.5), g, () => { Band.hit("kick", true); setTimeout(() => Band.hit("snare", true), 180); setTimeout(() => Band.hit("crash", true), 360); });
+      updaters.push((t) => { const a = g.userData.anim ? age(g) : 9; cym.rotation.z = a < 2 ? Math.sin(a * 30) * 0.3 * (1 - a / 2) : 0; kick.scale.setScalar(a < 0.2 ? 1.08 : 1); }); }
+    // 4 gramophone: horn spins, a little music-box tune
+    { const g = new THREE.Group(); const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.8), toon(0x6e3518)); box.position.y = 0.2; g.add(box);
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 24), K_); plate.position.y = 0.42; g.add(plate);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.6, 8), G_); neck.position.set(0.25, 0.7, -0.2); neck.rotation.z = -0.4; g.add(neck);
+      const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.06, 0.8, 24, 1, true), G_); horn.material.side = THREE.DoubleSide; horn.position.set(0.1, 1.25, 0.05); horn.rotation.set(0.7, 0, 0.3); g.add(horn);
+      add("t3", at("t3", 8.5, 4.4, 0.9), g, () => [0, 4, 7, 4, 9, 7].forEach((n, k) => setTimeout(() => Audio.chime(n), k * 160)));
+      updaters.push(() => { if (g.userData.anim && age(g) < 3) { plate.rotation.y += 0.2; horn.rotation.y += 0.05; } }); }
+    // 5 cassette: reels spin
+    { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.18), K_); g.add(body);
+      const lab = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.4), R_); lab.position.set(0, 0.22, 0.1); g.add(lab);
+      const reels = [-0.36, 0.36].map((x) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.04, 6, 6), W_); r.position.set(x, -0.08, 0.1); g.add(r); return r; });
+      add("quiz", at("quiz", 8.5, 4.9, 2.3), g, () => { Audio.tick(); setTimeout(() => Audio.swoosh(0.8), 100); });
+      updaters.push(() => { const sp = g.userData.anim && age(g) < 2.5 ? 0.5 : 0.01; reels.forEach((r) => (r.rotation.z += sp)); }); }
+    // 6 boombox: speakers pump
+    { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.9, 0.45), toon(0x2a2730)); g.add(body);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 6, 20, Math.PI), S_); handle.position.y = 0.45; g.add(handle);
+      const cones = [-0.55, 0.55].map((x) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 20), R_); c.rotation.x = Math.PI / 2; c.position.set(x, -0.05, 0.24); g.add(c); return c; });
+      add("gift", at("gift", 8.5, 4.4, 2.1), g, () => [0, 1, 2, 3].forEach((k) => setTimeout(() => Band.hit(k % 2 ? "snare" : "kick", true), k * 300)));
+      updaters.push((t) => { const on = g.userData.anim && age(g) < 1.3; cones.forEach((c) => c.scale.set(1, on ? 1 + Math.abs(Math.sin(t * 20)) * 2 : 1, 1)); }); }
+    // 7 metronome: pendulum ticks
+    { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.5, 4), toon(0x6e3518)); body.rotation.y = Math.PI / 4; body.position.y = 0.75; g.add(body);
+      const arm = new THREE.Group(); arm.position.set(0, 0.25, 0.3); g.add(arm);
+      const rod = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.1, 0.03), S_); rod.position.y = 0.55; arm.add(rod);
+      const wt = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.06), R_); wt.position.y = 0.8; arm.add(wt);
+      add("wardrobe", at("wardrobe", 8.5, 4.9, 0.7), g, () => {});
+      let last = 0; updaters.push((t) => { const a = g.userData.anim ? age(g) : 99; if (a < 4.8) { arm.rotation.z = Math.sin(a * Math.PI * 1.67) * 0.5; const b = Math.floor(a * 1.67); if (b !== last) { last = b; Audio.tick(); } } else arm.rotation.z *= 0.9; }); }
+    // 8 floating vinyl: DJ scratch
+    { const g = new THREE.Group(); const d = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.04, 40), K_); d.rotation.x = Math.PI / 2 - 0.3; g.add(d);
+      const lab = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 24), R_); d.add(lab);
+      add("ep", at("ep", 8.5, 4.4, 2.5), g, () => { Audio.swoosh(1.2); setTimeout(() => Audio.swoosh(0.9), 220); });
+      updaters.push(() => { const a = g.userData.anim ? age(g) : 9; d.rotation.y += a < 1.2 ? Math.sin(a * 14) * 0.5 : 0.02; }); }
+    // 9 harp: strings glow, glissando
+    { const g = new THREE.Group(); const frame = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.07, 8, 30, Math.PI * 1.1), G_); frame.rotation.z = 0.2; frame.position.y = 1.0; g.add(frame);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.9, 10), G_); col.position.set(-0.75, 0.95, 0); g.add(col);
+      const strs = []; for (let i = 0; i < 9; i++) { const h = 0.5 + Math.sin((i / 8) * Math.PI) * 0.9, st = new THREE.Mesh(new THREE.BoxGeometry(0.012, h, 0.012), basic(0xf5f0ea)); st.position.set(-0.6 + i * 0.15, 0.25 + h / 2, 0); g.add(st); strs.push(st); }
+      add("producers", at("producers", 8.5, 4.9, 0.6), g, () => [392, 440, 493.9, 523.3, 587.3, 659.3, 784].forEach((f, k) => setTimeout(() => Audio.pluck(f), k * 70)));
+      updaters.push(() => { const a = g.userData.anim ? age(g) : 9; strs.forEach((st, i) => st.material.color.setHex(Math.abs(a * 14 - i) < 1.5 ? 0xff2a40 : 0xf5f0ea)); }); }
+    // 10 vintage mic stand: bounces, says mic check
+    { const g = new THREE.Group(); const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.06, 20), S_); g.add(base);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8), S_); pole.position.y = 0.9; g.add(pole);
+      const mic = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), S_); mic.scale.set(0.9, 1.4, 0.9); mic.position.y = 1.95; g.add(mic);
+      const grill = new THREE.Mesh(new THREE.SphereGeometry(0.205, 10, 8), basic(0x16141a, { wireframe: true })); grill.scale.copy(mic.scale); grill.position.copy(mic.position); g.add(grill);
+      add("mv", at("mv", 8.5, 4.4, 0.5), g, () => { say("Mic check 1, 2!"); Audio.pop(); });
+      updaters.push(() => { const a = g.userData.anim ? age(g) : 9; g.scale.set(1, a < 0.8 ? 1 + Math.sin(a * 20) * 0.08 * (1 - a / 0.8) : 1, 1); }); }
+    // 11 speaker stack: cones pump with a shockwave ring
+    { const g = new THREE.Group(); const cones = [];
+      [0.55, 1.6].forEach((y) => { const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 0.7), K_); box.position.y = y; g.add(box); const c = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 24), toon(0x3a3640)); c.rotation.x = Math.PI / 2; c.position.set(0, y, 0.36); g.add(c); cones.push(c); });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.5, 40), basic(0xff2a40, { transparent: true, opacity: 0, side: THREE.DoubleSide })); ring.position.set(0, 1.1, 0.4); g.add(ring);
+      add("studio", at("studio", 8.5, 4.9, 0.5), g, () => { Band.hit("kick", true); setTimeout(() => Band.hit("bass", true), 120); });
+      updaters.push((t) => { const a = g.userData.anim ? age(g) : 9; cones.forEach((c) => c.scale.set(1, a < 1 ? 1 + Math.abs(Math.sin(t * 25)) * 3 : 1, 1)); ring.scale.setScalar(1 + a * 5); ring.material.opacity = a < 1 ? 0.8 * (1 - a) : 0; }); }
+    // 12 tuning fork: vibrates, A 440
+    { const g = new THREE.Group(); const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), S_); stem.position.y = 0.45; g.add(stem);
+      const prongs = [-0.14, 0.14].map((x) => { const pr = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.2, 0.07), S_); pr.position.set(x, 1.5, 0); g.add(pr); return pr; });
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.08, 0.08), S_); base.position.y = 0.9; g.add(base);
+      add("ad0", at("ad0", 8.5, 4.4, 1.3), g, () => Audio.tone(440, { type: "sine", dur: 2.2, vol: 0.1 }));
+      updaters.push((t) => { const a = g.userData.anim ? age(g) : 9; const k = a < 2.2 ? Math.sin(t * 90) * 0.02 * (1 - a / 2.2) : 0; prongs[0].position.x = -0.14 - k; prongs[1].position.x = 0.14 + k; }); }
+    // 13 equaliser tower: bars dance
+    { const g = new THREE.Group(); const bars = []; for (let i = 0; i < 7; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1, 0.18), i % 2 ? W_ : R_); b.position.set(-0.6 + i * 0.2, 0, 0); g.add(b); bars.push(b); }
+      add("beatlab", at("beatlab", 8.5, 4.9, 1.1), g, () => Band.hit("synth", true));
+      updaters.push((t) => { const on = g.userData.anim && age(g) < 3; bars.forEach((b, i) => { const h = on ? 0.3 + Math.abs(Math.sin(t * 9 + i * 1.3)) * 1.6 : 0.4 + Math.sin(t * 1.5 + i) * 0.15; b.scale.y = h; b.position.y = h / 2; }); }); }
+    // 14 maracas: shake
+    { const g = new THREE.Group(); const ms = [-1, 1].map((sx) => { const m = new THREE.Group(); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), sx < 0 ? R_ : G_); hd.scale.y = 1.2; hd.position.y = 0.75; m.add(hd); const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.6, 8), toon(0x6e3518)); hl.position.y = 0.3; m.add(hl); m.position.x = sx * 0.35; m.rotation.z = -sx * 0.3; g.add(m); return m; });
+      add("ad1", at("ad1", 8.5, 4.4, 1.3), g, () => [0, 1, 2, 3, 4, 5].forEach((k) => setTimeout(() => Band.hit("hat", true), k * 120)));
+      updaters.push((t) => { const on = g.userData.anim && age(g) < 0.8; ms.forEach((m, i) => (m.rotation.x = on ? Math.sin(t * 40 + i) * 0.5 : 0)); }); }
+    // 15 giant ♫ sculpture: spins and sings
+    { const g = new THREE.Group(); const sp = textSprite("♫", { size: 120, scale: 2.4, color: "#ff2a40", font: "serif" }); sp.position.y = 1.1; g.add(sp);
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 0.4), basic(0xffffff, { visible: false })); hit.position.y = 1.1; g.add(hit);
+      add("letter", at("letter", 8.5, 4.9, 1.3), g, () => [0, 2, 4, 5, 7].forEach((n, k) => setTimeout(() => Audio.chime(n + 2), k * 120)), { spin: 0.3 });
+      updaters.push(() => { const a = g.userData.anim ? age(g) : 9; g.scale.setScalar(a < 1 ? 1 + Math.sin(a * Math.PI) * 0.4 : 1); }); }
+  }
+  // 3D for the thank-you stops: a ring of lightsticks, a giant envelope, lanterns
+  function buildGratitude() {
+    for (let k = 0; k < LIGHTS_N; k++) {
+      const a = -1.35 + (2.7 * k) / (LIGHTS_N - 1), row = k % 2;
+      const g = new THREE.Group();
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.6, 6), toon(0x16141a)); stick.position.y = 0.3; g.add(stick);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), basic(0x3a3640)); tip.position.y = 0.68; g.add(tip);
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0xff2a40, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); glow.scale.set(0.9, 0.9, 1); glow.position.y = 0.68; glow.visible = false; g.add(glow);
+      g.userData = { tip, glow, pop: 0 };
+      g.position.copy(spot(SI.lights, 1.6 + Math.cos(a) * (5 + row), Math.sin(a) * (6 + row), -0.4 + row * 0.5)); scene.add(g);
+      LightSea.sticks.push(g);
+      clickable(g, () => LightSea.raise());
+    }
+    updaters.push((t) => {
+      const w = LightSea.waveT ? (performance.now() - LightSea.waveT) / 1000 : 99;
+      LightSea.sticks.forEach((g, k) => {
+        if (!g.userData.glow.visible) { g.rotation.z = 0; return; }
+        g.userData.pop *= 0.9;
+        const wave = w < 4 ? Math.max(0, Math.sin(w * 6 - k * 0.35)) * 0.6 : 0;
+        g.rotation.z = Math.sin(t * 2.4 + k * 0.5) * 0.28; g.position.y += 0;
+        g.scale.setScalar(1 + g.userData.pop * 0.6 + wave * 0.5);
+        g.userData.glow.material.opacity = 0.6 + Math.sin(t * 4 + k) * 0.2 + wave * 0.4;
+      });
+    });
+    // the envelope
+    const env = new THREE.Group();
+    const paperTex = canvasTex(512, 320, (g, w, h) => { g.fillStyle = "#f7f1e6"; g.fillRect(0, 0, w, h); g.fillStyle = "#b3142a"; g.font = "italic 44px Georgia, serif"; g.fillText("Gửi bạn,", 40, 80); g.strokeStyle = "rgba(60,40,30,.35)"; g.lineWidth = 3; for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(40, 130 + i * 38); g.lineTo(w - 40 - (i === 4 ? 200 : 0), 130 + i * 38); g.stroke(); } });
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.2), basic(0xffffff, { map: paperTex })); paper.position.set(0, 0, 0.01); env.add(paper);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.4, 0.04), toon(0xe8dcc6)); back.position.z = -0.03; env.add(back);
+    const pocket = new THREE.Shape(); pocket.moveTo(-1.1, -0.7); pocket.lineTo(1.1, -0.7); pocket.lineTo(1.1, 0.25); pocket.lineTo(0, -0.2); pocket.lineTo(-1.1, 0.25); pocket.closePath();
+    const front = new THREE.Mesh(new THREE.ShapeGeometry(pocket), toon(0xf2e6cc, { side: THREE.DoubleSide })); front.position.z = 0.03; env.add(front);
+    const hinge = new THREE.Group(); hinge.position.set(0, 0.7, 0.035); env.add(hinge);
+    const flapS = new THREE.Shape(); flapS.moveTo(-1.1, 0); flapS.lineTo(1.1, 0); flapS.lineTo(0, -0.85); flapS.closePath();
+    const flap = new THREE.Mesh(new THREE.ShapeGeometry(flapS), toon(0xe2d2b6, { side: THREE.DoubleSide })); hinge.add(flap);
+    const seal = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.heart, transparent: true, depthWrite: false })); seal.scale.set(0.45, 0.45, 1); seal.position.set(0, -0.62, 0.03); hinge.add(seal);
+    floatProp(env, spot(SI.letter, 4.2, 3.8, 2.4), { amp: 0.3, spin: 0 });
+    env.rotation.y = 0;
+    Letter.prop = env;
+    clickable(env, () => Letter.open());
+    updaters.push((t) => {
+      const o = env.userData.open ? Math.min(1, (performance.now() - env.userData.open) / 1200) : 0;
+      hinge.rotation.x = -ease.out(Math.min(1, o * 1.6)) * 2.9; seal.visible = o < 0.3;
+      paper.position.y = ease.out(Math.max(0, o - 0.3) / 0.7) * 0.95; paper.position.z = o > 0.5 ? 0.05 : 0.01;
+      env.rotation.y = Math.sin(t * 0.5) * 0.25;
+    });
+    // lanterns already released on an earlier visit
+    Wishes.list = (store.get("wishes", []) || []).slice(-8);
+    Wishes.list.forEach((w) => Wishes.lantern(w, false));
+  }
   // the reward notice behind the quiz gift box
   const Reward = {
     show() {
@@ -2734,7 +3065,7 @@
   const Visited = {
     set: new Set([0]),
     has(i) { return this.set.has(i); },
-    add(i) { if (this.set.has(i)) return; this.set.add(i); store.set("visited7", [...this.set]); MiniMap.label(); },
+    add(i) { if (this.set.has(i)) return; this.set.add(i); store.set("visited8", [...this.set]); MiniMap.label(); },
   };
 
   function buildPanels() {
@@ -2916,6 +3247,36 @@
       '<div class="rv"><button class="chip-btn chip-hot" id="fanSave">Lưu vé về máy</button></div>' +
       teaser(SI.ticket) + "</section>"
     );
+    // tri ân 01 · a sea of lights
+    html.push(
+      '<section class="panel" data-st="' + SI.lights + '" aria-label="Biển ánh sáng">' +
+      '<div class="eyebrow rv">' + chapter(SI.lights) + ' · Tri ân 01</div>' +
+      '<h2 class="p-title rv" data-tx>Biển <em>ánh sáng</em></h2>' +
+      '<p class="body-t rv">Mỗi lượt nghe là một ngọn đèn. PAT đi được tới hôm nay là nhờ những ngọn đèn ấy, bật lên ở những nơi anh chưa từng đặt chân tới. Khán đài này đang tối. Giơ lightstick của bạn lên, cùng thắp sáng nó.</p>' +
+      '<div class="ls rv"><button class="chip-btn chip-hot ls-btn" id="lsBtn">✦ Giơ lightstick</button><div class="ls-meter"><i id="lsBar"></i></div><p class="ls-n"><b id="lsN">0</b> / ' + LIGHTS_N + ' ngọn đèn đã sáng</p><p class="ls-msg" id="lsMsg"></p></div>' +
+      teaser(SI.lights) + "</section>"
+    );
+    // tri ân 02 · a letter
+    html.push(
+      '<section class="panel" data-st="' + SI.letter + '" aria-label="Lá thư gửi bạn">' +
+      '<div class="eyebrow rv">' + chapter(SI.letter) + ' · Tri ân 02</div>' +
+      '<h2 class="p-title rv" data-tx>Lá thư <em>gửi bạn</em></h2>' +
+      '<div class="env rv" id="env"><button class="env-front" id="envOpen" aria-label="Mở thư"><span class="env-flap"></span><span class="env-seal">♥</span><span class="env-to">Gửi: Bạn</span></button>' +
+      '<div class="env-paper" id="envPaper" aria-live="polite"></div></div>' +
+      teaser(SI.letter) + "</section>"
+    );
+    // tri ân 03 · wishes released as lanterns
+    html.push(
+      '<section class="panel" data-st="' + SI.wishes + '" aria-label="Thả lời chúc">' +
+      '<div class="eyebrow rv">' + chapter(SI.wishes) + ' · Tri ân 03</div>' +
+      '<h2 class="p-title rv" data-tx>Thả <em>lời chúc</em></h2>' +
+      '<p class="body-t rv">Đến lượt bạn. Viết một lời chúc, một câu hỏi hay một điều bạn muốn nói với PAT, rồi thả nó lên bầu trời này. Lời chúc sẽ hoá thành đèn lồng, bay theo bạn suốt phần còn lại của hành trình.</p>' +
+      '<label class="fan-in rv"><span>Lời chúc của bạn</span><input id="wishIn" maxlength="80" placeholder="Chúc PAT…" autocomplete="off"></label>' +
+      '<div class="rv"><button class="chip-btn chip-hot" id="wishGo">🏮 Thả lên trời</button></div>' +
+      '<ul class="wish-list rv" id="wishList"></ul>' +
+      '<p class="body-t rv wish-note">Muốn PAT đọc được thật? <a href="' + esc(zaloHref()) + '" target="_blank" rel="noopener">Gửi lời chúc qua Zalo</a>.</p>' +
+      teaser(SI.wishes) + "</section>"
+    );
     // 6 finale
     html.push(
       '<section class="panel" data-st="' + SI.finale + '" aria-label="Lời cảm ơn">' +
@@ -2945,7 +3306,7 @@
     $$("[data-hl]").forEach((b) => b.addEventListener("click", () => Tracks.tryOpen(+b.dataset.hl)));
     $("#btnGift").addEventListener("click", () => { if (!Gift.opened) goTo(SI.quiz); else Gift.dance(); });
     OnAir.bind();
-    Quiz.bind(); BeatLab.bind(); FanTicket.bind();
+    Quiz.bind(); BeatLab.bind(); FanTicket.bind(); LightSea.bind(); Letter.bind(); Wishes.bind();
     $$("[data-qeq]").forEach((b) => b.addEventListener("click", () => { Audio.init(); equip(b.dataset.qeq); act("wink"); }));
     $$("[data-qemo]").forEach((b) => b.addEventListener("click", () => { Audio.init(); emote(b.dataset.qemo); }));
     $("#btnWdOpen").addEventListener("click", () => Wardrobe.open());
@@ -3437,7 +3798,7 @@
     await sleep(reduced ? 60 : TX_IN[kind] + 260);
     return () => { w.classList.remove("in"); w.classList.add("out"); if (kind === "rgb") glitch(); setTimeout(() => (w.className = "tx"), 800); };
   }
-  const FX2 = { tunnel: 620, film: 560, crt: 560, star: 600, blinds: 640, pixel: 660, ripple: 700, curtain: 640, split: 520 };
+  const FX2 = { tunnel: 620, film: 560, crt: 560, star: 600, blinds: 640, pixel: 660, ripple: 700, curtain: 640, split: 520, spotlight: 640, heart: 600, whiteout: 560 };
   async function fx2Cut(kind, label) {
     const w = $("#fx2"); w.className = "fx2 on " + kind; $(".f-label", w).textContent = label;
     const n = kind === "blinds" ? 10 : kind === "pixel" ? 96 : kind === "ripple" ? 5 : 0;
@@ -3475,6 +3836,7 @@
     if (i === SI.finale && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
     if (i === SI.gift) { Tracks.renderList(); if (Gift.pendingDance) { Gift.pendingDance = false; setTimeout(() => state.station === i && Gift.dance(), 700); } }
     if (i === SI.quiz) Quiz.reset();
+    if (i === SI.letter) setTimeout(() => state.station === i && Letter.hint(), 1600);
     if (i !== SI.quiz && Quiz.audio) Quiz.stopClip();
     const st = STATIONS[i];
     if (st.track != null) setTimeout(() => state.station === i && Tracks.visit(st.k), 900);
@@ -3513,8 +3875,8 @@
     let mode = TRAVEL[Math.max(i, j)];
     if (j < i && mode === "finale") mode = "wings";
     if (steps > 1) mode = "rocket";
-    rideShow(mode); say(TRAVEL_SAY[mode]);
-    PAT.walking = mode === "run";
+    rideShow(mode, { t0, t1 }); say(TRAVEL_SAY[mode]);
+    PAT.walking = mode === "run" || mode === "moonwalk";
     let swapped = false;
     if (reveal) reveal();
     const side = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
@@ -3528,7 +3890,7 @@
       side.crossVectors(tg, UP).normalize();
       const lift = rideFrame(mode, p, e, pos, side, performance.now() / 1000);
       const face = Math.atan2(tg.x, tg.z);
-      PAT.root.rotation.y = lerpAngle(PAT.root.rotation.y, face, 0.15);
+      PAT.root.rotation.y = mode === "tornado" ? face + (PAT.yawAdd || 0) : lerpAngle(PAT.root.rotation.y, face + (PAT.yawAdd || 0), 0.15);
       cam.tGoal.copy(PAT.root.position).add(new THREE.Vector3(0, 1.2 - lift * 0.35, 0));
       cam.baseYaw = y0 + dy * e;
       cam.uYaw = uy0 * (1 - e); cam.uPitch = up0 * (1 - e);
@@ -3542,6 +3904,7 @@
     });
     PAT.walking = false;
     PAT.root.position.copy(curve.getPoint(t1)); PAT.root.rotation.x = 0; PAT.root.rotation.z = 0;
+    PAT.root.scale.setScalar(1.15); PAT.root.visible = true; PAT.yawAdd = 0;
     rideShow(null);
     if (soundWave) soundWave.material.opacity = 0;
     cam.fovKick = 0; cam.dist = 7;
@@ -3565,6 +3928,9 @@
   const TRAVEL = STATIONS.map((st) => st.ride || "run");
   const TRAVEL_SAY = {
     run: "Chạy nào ♪", guitar: "Lướt guitar nè!", wings: "Bay lên thôi~", rocket: "3, 2, 1... phóng!", staff: "Trượt theo khuông nhạc ♫", finale: "Hạ cánh cùng lời cảm ơn",
+    teleport: "Dịch chuyển tức thời!", glitch: "L-l-lỗi... đi xuyên qua nè", swim: "Bơi qua dải ngân hà~", swing: "Đu dây nè!", flip: "Lộn mèo nha!", cannon: "Chui vào súng... bắn!",
+    tornado: "Hoá lốc xoáy!", burrow: "Độn thổ đây!", vinyl: "Lướt đĩa than ♪", balloon: "Bay theo bóng bay~", bubble: "Chui vào bong bóng", plane: "Máy bay giấy cất cánh!",
+    cloud: "Cưỡi mây đi nào", comet: "Hoá sao băng ✦", bounce: "Nhảy theo nhịp!", moonwalk: "Moonwalk nha~",
   };
   let RIDE = null;
   function buildRides() {
@@ -3592,12 +3958,47 @@
     for (let i = 0; i < 9; i++) { const k = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.02, 0.09), i % 4 === 1 ? toon(0xe0102c) : M.white); k.position.set(-0.19 + i * 0.047, 0.03, 0.04); midi.add(k); }
     for (let i = 0; i < 4; i++) { const pd = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, 0.05), basic(0xff2a40)); pd.position.set(-0.15 + i * 0.1, 0.03, -0.05); midi.add(pd); }
     midi.position.set(0.02, -0.06, 0.12); midi.rotation.set(0.9, 0, 0); PAT.armL.hand.add(midi); R.midi = midi;
+    PAT.root.rotation.order = "YXZ"; // pitch and roll in PAT's own frame, so flips turn about his body
+    // cannon left behind at the start of the stretch
+    const cannon = new THREE.Group();
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 2.0, 24), toon(0x1a1720)); barrel.rotation.x = Math.PI / 2 - 0.6; barrel.position.set(0, 1.0, 0); cannon.add(barrel);
+    [0.45, -0.3].forEach((y) => { const b = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 8, 24), toon(0xe0102c)); b.position.copy(barrel.position).add(new THREE.Vector3(0, Math.cos(0.97) * y, Math.sin(0.97) * y)); b.rotation.x = Math.PI / 2 - 0.6 + Math.PI / 2; cannon.add(b); });
+    [-0.65, 0.65].forEach((x) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.14, 20), toon(0xe0102c)); w.rotation.z = Math.PI / 2; w.position.set(x, 0.5, -0.2); cannon.add(w); });
+    scene.add(cannon); R.cannon = cannon;
+    const rope = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: 0xf5f0ea })); rope.frustumCulled = false; scene.add(rope); R.rope = rope;
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.04, 40), toon(0x111014)); const dl = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.045, 24), toon(0xe0102c)); disc.add(dl); disc.position.y = 0.03; PAT.root.add(disc); R.vinyl = disc;
+    const bal = new THREE.Group();
+    [[0.35, 2.55, 0], [0.0, 2.3, 0.1], [0.7, 2.35, -0.1]].forEach(([x, y, z], k) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), toon(k === 1 ? 0xf5f0ea : 0xe0102c)); b.scale.y = 1.15; b.position.set(x, y, z); bal.add(b); bal.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.42, 1.45, 0.15), new THREE.Vector3(x, y - 0.36, z)]), new THREE.LineBasicMaterial({ color: 0xf5f0ea }))); });
+    PAT.root.add(bal); R.balloon = bal;
+    const bub = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 20), new THREE.MeshBasicMaterial({ color: 0xffc8d4, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide })); bub.position.y = 0.9;
+    const bubShine = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), basic(0xffffff, { transparent: true, opacity: 0.7 })); bubShine.scale.set(1, 0.5, 0.3); bubShine.position.set(-0.5, 0.55, 0.75); bub.add(bubShine);
+    PAT.root.add(bub); R.bubble = bub;
+    const ps = new THREE.Shape(); ps.moveTo(0, 1.5); ps.lineTo(-1.15, -0.8); ps.lineTo(0, -0.45); ps.lineTo(1.15, -0.8); ps.closePath();
+    const plane = new THREE.Mesh(new THREE.ShapeGeometry(ps), toon(0xf5f0ea, { side: THREE.DoubleSide })); plane.rotation.x = -Math.PI / 2; plane.position.y = -0.02;
+    const keelS = new THREE.Shape(); keelS.moveTo(0, 1.5); keelS.lineTo(0, -0.45); keelS.lineTo(-0.35, -0.6); keelS.closePath();
+    const keel = new THREE.Mesh(new THREE.ShapeGeometry(keelS), toon(0xe0102c, { side: THREE.DoubleSide })); keel.rotation.set(-Math.PI / 2, Math.PI / 2, 0); keel.position.y = -0.03;
+    const pg = new THREE.Group(); pg.add(plane); pg.add(keel); PAT.root.add(pg); R.plane = pg;
+    const cloud = new THREE.Group(); [[0, 0, 0, 0.45], [0.45, 0.05, 0.1, 0.35], [-0.45, 0.02, -0.05, 0.38], [0.15, 0.12, -0.35, 0.33], [-0.2, 0.1, 0.35, 0.3], [0.7, -0.02, -0.2, 0.25]].forEach(([x, y, z, r]) => { const c = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), toon(0xf5f0ea)); c.scale.y = 0.6; c.position.set(x, y, z); cloud.add(c); }); PAT.root.add(cloud); R.cloud = cloud;
+    const comet = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.star, color: 0xffd6de, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); comet.scale.set(1.6, 1.6, 1); comet.position.y = 0.9; PAT.root.add(comet); R.comet = comet;
+    const torn = new THREE.Group(); for (let k = 0; k < 6; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.45 + k * 0.2, 0.025, 6, 40), basic(k % 2 ? 0xff2a40 : 0xf5f0ea, { transparent: true, opacity: 0.4 })); r.rotation.x = Math.PI / 2; r.position.y = k * 0.38; torn.add(r); } PAT.root.add(torn); R.tornado = torn;
+    const tring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.95, 48), basic(0xff2a40, { transparent: true, opacity: 0.85, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); tring.rotation.x = -Math.PI / 2; scene.add(tring); R.tring = tring;
+    const tring2 = tring.clone(); scene.add(tring2); R.tring2 = tring2;
     Object.values(R).forEach((o) => (o.visible = false));
     RIDE = R;
   }
-  function rideShow(mode) {
+  function rideShow(mode, ctx) {
     if (!RIDE) return;
     RIDE.guitar.visible = mode === "guitar"; RIDE.wings.visible = mode === "wings"; RIDE.rocket.visible = mode === "rocket"; RIDE.staff.visible = mode === "staff";
+    const own = { vinyl: "vinyl", balloon: "balloon", bubble: "bubble", plane: "plane", cloud: "cloud", comet: "comet", tornado: "tornado", cannon: "cannon", swing: "rope", teleport: "tring" };
+    ["vinyl", "balloon", "bubble", "plane", "cloud", "comet", "tornado", "cannon", "rope", "tring", "tring2"].forEach((k) => (RIDE[k].visible = own[mode] === k || (mode === "teleport" && k === "tring2")));
+    RIDE.fired = {};
+    if (ctx) {
+      const a = curve.getPoint(ctx.t0), b = curve.getPoint(ctx.t1);
+      if (mode === "cannon") { RIDE.cannon.position.copy(a); RIDE.cannon.lookAt(b.x, a.y, b.z); }
+      if (mode === "swing") RIDE.anchor = a.clone().lerp(b, 0.5).add(new THREE.Vector3(0, 7.5, 0));
+      if (mode === "teleport") { RIDE.tring.position.copy(a).add(new THREE.Vector3(0, 0.05, 0)); RIDE.tring2.position.copy(b).add(new THREE.Vector3(0, 0.05, 0)); }
+      if (mode === "glitch") glitch();
+    }
     RIDE.midi.visible = mode === "finale";
     PAT.travel = mode || null;
     syncAccVisibility();
@@ -3622,8 +4023,82 @@
       sway = Math.sin(p * Math.PI * 3) * 0.6 * (1 - e);
       if (Math.random() < 0.7) burst(pos.clone().add(new THREE.Vector3(0, lift + 0.2, 0)), 1, { tex: pick([TEX.star].concat(TEX.notes)), speed: 0.5, size: 0.3, life: 1.2 });
     }
-    PAT.root.position.copy(pos).addScaledVector(side, sway); PAT.root.position.y += lift;
+    // the sixteen newer rides
+    let scale = 1.15, vis = true, yawAdd = 0; const off = new THREE.Vector3(), F = RIDE.fired || (RIDE.fired = {});
+    const fwd = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), side).normalize();
+    const once = (k, fn) => { if (!F[k]) { F[k] = 1; fn(); } };
+    const up = (y) => pos.clone().add(new THREE.Vector3(0, y, 0));
+    switch (mode) {
+      case "teleport": { // dissolve into sparks, reappear on the far ring
+        const k = p < 0.22 ? 1 - smooth(0, 0.22, p) : p > 0.78 ? smooth(0.78, 1, p) : 0; scale = 1.15 * Math.max(0.001, k); vis = k > 0.02;
+        if (p > 0.05 && p < 0.9 && Math.random() < 0.5) burst(up(0.9), 1, { tex: TEX.star, speed: 1.2, size: 0.2, life: 0.5 });
+        once("a", () => { Audio.unlock(); burst(up(0.8), 20, { tex: TEX.star, speed: 2.5, size: 0.25, life: 0.8 }); });
+        if (p > 0.78) once("b", () => { flash(0.3); Audio.chime(7); burst(up(0.8), 24, { tex: TEX.star, speed: 2.5, size: 0.25, life: 0.9 }); });
+        RIDE.tring.rotation.z += 0.08; RIDE.tring2.rotation.z -= 0.08; RIDE.tring.scale.setScalar(1 + Math.sin(t * 8) * 0.1); RIDE.tring2.scale.setScalar(0.6 + p * 0.6);
+        break; }
+      case "glitch": { // jump-cuts through broken frames
+        lift = arc * 0.8 + (Math.random() < 0.2 ? rand(0, 0.6) : 0); sway = Math.random() < 0.3 ? rand(-0.8, 0.8) : 0; tiltZ = rand(-0.15, 0.15) * arc; vis = Math.random() > 0.18;
+        if (Math.random() < 0.03) glitch();
+        break; }
+      case "swim": { // breaststroke through the stars, trailing bubbles
+        const lean = smooth(0, 0.15, p) * (1 - smooth(0.85, 1, p)); tiltX = 1.35 * lean; lift = 1.1 * arc + Math.sin(t * 5) * 0.15 * arc; sway = Math.sin(t * 2.5) * 0.25 * arc;
+        off.addScaledVector(fwd, -0.9 * Math.sin(tiltX)); lift += 0.9 * (1 - Math.cos(tiltX));
+        if (Math.random() < 0.5) burst(up(lift + 0.6), 1, { tex: TEX.glow, speed: 0.3, size: 0.18, life: 1.2, up: 1 });
+        break; }
+      case "swing": { // Tarzan swing on a rope from the sky
+        lift = 1.2 * arc; tiltX = -Math.cos(p * Math.PI) * 0.45;
+        if (p > 0.45) once("yell", () => say("Ô ô ô ô~!"));
+        break; }
+      case "flip": { // somersaults in the air
+        const th = smooth(0.12, 0.88, p) * Math.PI * 4; lift = arc * 2.8; tiltX = th;
+        off.addScaledVector(fwd, -1.0 * Math.sin(th)); lift += 1.0 * (1 - Math.cos(th));
+        if (Math.random() < 0.3) burst(up(lift + 0.8), 1, { tex: TEX.star, speed: 0.6, size: 0.22, life: 0.6 });
+        break; }
+      case "cannon": { // climb into the cannon, BOOM, fly
+        if (p < 0.2) { const k = smooth(0, 0.2, p); scale = 1.15 * (1 - k * 0.75); lift = k * 1.3; }
+        else {
+          once("boom", () => { const m = new THREE.Vector3(); RIDE.cannon.getWorldPosition(m); m.y += 1.6; burst(m, 26, { tex: TEX.puff, speed: 3, size: 0.6, life: 1.1 }); flash(0.35); cam.shake = 0.5; Band.hit("kick", true); Band.hit("crash", true); Audio.swoosh(1.5); say("BÙM!"); });
+          const q = (p - 0.2) / 0.8; lift = 1.3 * (1 - q) + Math.sin(q * Math.PI) * 5.5; scale = 1.15 * (0.3 + 0.7 * smooth(0, 0.25, q)); tiltX = 1.2 * (1 - smooth(0.8, 1, q)); tiltZ = q * Math.PI * 4 * (1 - smooth(0.85, 1, q));
+          if (Math.random() < 0.6) burst(up(lift + 0.4), 1, { tex: TEX.star, speed: 0.4, size: 0.25, life: 0.7 });
+        }
+        break; }
+      case "tornado": { // spin into a whirlwind
+        lift = arc * 2.4; yawAdd = t * 28;
+        RIDE.tornado.scale.setScalar(0.3 + arc); RIDE.tornado.rotation.y -= 0.35;
+        const a = t * 12; burst(pos.clone().add(new THREE.Vector3(Math.cos(a) * 1.1, lift + 0.3 + Math.random() * 1.5, Math.sin(a) * 1.1)), 1, { tex: TEX.puff, speed: 0.4, size: 0.4, life: 0.5 });
+        break; }
+      case "burrow": { // dig down, tunnel under the road, pop back up
+        const d = smooth(0, 0.2, p) * (1 - smooth(0.82, 1, p)); lift = -2.2 * d; vis = d < 0.55; tiltX = d * 0.6;
+        if (d > 0.2 && Math.random() < 0.7) burst(up(0.15), 1, { tex: TEX.puff, speed: 0.9, size: 0.45, life: 0.7, up: 0.6 });
+        if (p > 0.85) once("pop", () => { burst(up(0.3), 22, { tex: TEX.puff, speed: 2.4, size: 0.5, life: 0.9, up: 1 }); Band.hit("tom", true); });
+        break; }
+      case "vinyl": { // surf on a spinning record
+        lift = 0.5 * arc + Math.sin(p * Math.PI * 3) * 0.3 * arc; sway = Math.sin(p * Math.PI * 2) * 1.0; tiltZ = -Math.cos(p * Math.PI * 2) * 0.35; RIDE.vinyl.rotation.y += 0.45;
+        if (Math.random() < 0.4) burst(up(lift + 0.1), 1, { tex: pick(TEX.notes), speed: 0.5, size: 0.3, life: 0.9 });
+        break; }
+      case "balloon": lift = arc * 3.2 + Math.sin(t * 2) * 0.15 * arc; sway = Math.sin(t * 1.5) * 0.3 * arc; tiltZ = Math.sin(t * 1.5) * 0.08; break;
+      case "bubble": {
+        lift = arc * 2.8; sway = Math.sin(t * 2) * 0.4 * arc; tiltZ = Math.sin(t * 2) * 0.1;
+        RIDE.bubble.scale.set(1 + Math.sin(t * 6) * 0.04, 1 - Math.sin(t * 6) * 0.04, 1);
+        if (p > 0.93) once("pop", () => { RIDE.bubble.visible = false; burst(up(1), 18, { tex: TEX.glow, speed: 2, size: 0.25, life: 0.6 }); Audio.pop(); });
+        break; }
+      case "plane": lift = arc * 3.6; tiltZ = Math.sin(p * Math.PI * 2) * 0.4; tiltX = -0.12 * arc; sway = Math.sin(p * Math.PI * 2) * 1.2; if (Math.random() < 0.4) burst(up(lift), 1, { tex: TEX.puff, speed: 0.2, size: 0.3, life: 0.8 }); break;
+      case "cloud": lift = arc * 2.6 + Math.sin(t * 3) * 0.1 * arc; sway = Math.sin(t * 1.2) * 0.3 * arc; if (Math.random() < 0.3) burst(up(lift - 0.1), 1, { tex: TEX.puff, speed: 0.2, size: 0.4, life: 0.9 }); break;
+      case "comet": { // become a shooting star
+        const k = smooth(0, 0.15, p) * (1 - smooth(0.85, 1, p)); scale = 1.15 * (1 - 0.85 * k); lift = arc * 4;
+        RIDE.comet.scale.setScalar(1.6 * (1 + k * 5)); RIDE.comet.material.rotation = t * 3;
+        burst(up(lift + 0.6), 2, { tex: TEX.star, speed: 0.3, size: 0.3, life: 0.9 });
+        break; }
+      case "bounce": { // hop across on giant beats
+        const hop = Math.abs(Math.sin(p * Math.PI * 4)); lift = hop * 2.1 * (0.55 + 0.45 * arc);
+        const land = Math.floor(p * 4); if (hop < 0.12) once("l" + land, () => { burst(up(0.1), 6, { tex: pick(TEX.notes), speed: 1.5, size: 0.35, life: 0.8, up: 0.8 }); Band.hit(land % 2 ? "snare" : "kick", true); });
+        break; }
+      case "moonwalk": yawAdd = Math.PI; tiltX = -0.08; if (Math.random() < 0.2) burst(up(0.05), 1, { tex: TEX.star, speed: 0.3, size: 0.18, life: 0.5 }); if (p > 0.5) once("hee", () => say("Hee-hee!")); break;
+    }
+    PAT.root.position.copy(pos).addScaledVector(side, sway).add(off); PAT.root.position.y += lift;
     PAT.root.rotation.x = tiltX; PAT.root.rotation.z = tiltZ;
+    PAT.root.scale.setScalar(scale); PAT.root.visible = vis; PAT.yawAdd = yawAdd;
+    if (mode === "swing" && RIDE.anchor) { const h = new THREE.Vector3(); PAT.armR.hand.getWorldPosition(h); RIDE.rope.geometry.setFromPoints([RIDE.anchor, h]); }
     return lift;
   }
   // a wave of light the finale glides along
@@ -3886,7 +4361,7 @@
     await loadImages();
     if (window.PAT_PEAKS) C.tracks.forEach((t) => { if (t.peaks && typeof t.peaks === "string") t.peaks = window.PAT_PEAKS[t.peaks] || null; });
     Tracks.unlocked = clamp(store.get("unlockedSingles", 0), 0, SINGLES.length);
-    (store.get("visited7", []) || []).forEach((n) => n < STATIONS.length && Visited.set.add(n));
+    (store.get("visited8", []) || []).forEach((n) => n < STATIONS.length && Visited.set.add(n));
     Gift.opened = !!store.get("giftOpened", false);
     progress(0.42, "Dựng ngân hà");
     await frame();
@@ -3937,6 +4412,8 @@
     progress(0.78, "Treo nhạc cụ");
     await frame();
     buildProps();
+    buildGratitude();
+    buildMusicAssets();
     buildNotes();
     buildRides();
     buildSoundWave();

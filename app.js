@@ -1037,45 +1037,40 @@
     };
     fx.sweat.scale.set(0.16, 0.22, 1);
 
-    // Hair — matched to the 2D reference: a big, messy volume wider than the face, a heavy swoop from a part
-    // just off centre down over his right brow (viewer's left), the forehead open on the other side,
-    // tufts flicking out above both ears, a cowlick on the crown and glossy grey highlights
+    // Hair — matched to the 2D reference but kept neat: a full, rounded volume a little wider than the face,
+    // a smooth swoop from a part just off centre down over his right brow (viewer's left), the forehead open
+    // on the other side, tidy ends tucked toward the ears and glossy grey highlights
     const hair = new THREE.Group(); head.add(hair);
     const lockMat = toon(0x1b181f, { side: THREE.DoubleSide });
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.56, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.5), M.hair);
-    cap.scale.set(1.1, 1.0, 1.06); cap.position.set(0, 0.05, -0.03); cap.rotation.x = -0.5; hair.add(cap);
+    cap.scale.set(1.07, 1.0, 1.05); cap.position.set(0, 0.05, -0.03); cap.rotation.x = -0.5; hair.add(cap);
     const nape = new THREE.Mesh(new THREE.SphereGeometry(0.565, 32, 16, Math.PI * 1.5 - 1.3, 2.6, Math.PI * 0.3, Math.PI * 0.46), M.hair);
-    nape.scale.set(1.075, 0.97, 1.045); hair.add(nape);
+    nape.scale.set(1.07, 0.97, 1.045); hair.add(nape);
     const H = (ctrl, w0, th = 0.08, w1 = 0.02) => hair.add(hairLock(ctrl, w0, w1, th, lockMat));
-    const PA = 0.06, jit = (i, a) => Math.sin(i * 12.9898 + 4.1) * a;
-    // the volume: big clumps radiating from the crown, bulging well past the face, ending in outward flicks
+    const PA = 0.06;
+    // the volume: evenly spaced clumps from the crown, rounded over the skull, ends turned in
     for (let i = 0; i < 20; i++) {
       const az = -Math.PI + ((i + 0.5) / 20) * Math.PI * 2;
       if (Math.abs(az) < 0.7) continue; // the front belongs to the fringe
       const s = Math.sign(az), back = Math.abs(az) > 2.1;
-      if (back) H([[az * 0.3, 1.45, 0.6], [az, 1.0, 0.84 + jit(i, 0.03)], [az + jit(i, 0.06), 0.35, 0.74], [az, -0.12, 0.62], [az + s * 0.06, -0.3, 0.68]], 0.34, 0.1, 0.03);
-      else H([[az * 0.3, 1.45, 0.6], [az, 1.05, 0.88 + jit(i, 0.04)], [az + s * 0.04, 0.5, 0.86], [az + s * 0.1, 0.22, 0.84], [az + s * 0.18, 0.1 + jit(i + 3, 0.06), 0.97 + jit(i + 5, 0.05)]], 0.32, 0.1, 0.02);
+      if (back) H([[az * 0.3, 1.45, 0.6], [az, 1.0, 0.8], [az, 0.35, 0.72], [az, -0.12, 0.62], [az + s * 0.03, -0.3, 0.64]], 0.34, 0.09, 0.05);
+      else H([[az * 0.3, 1.45, 0.6], [az, 1.05, 0.83], [az + s * 0.03, 0.55, 0.81], [az + s * 0.06, 0.25, 0.78], [az + s * 0.08, 0.12, 0.8]], 0.32, 0.09, 0.05);
     }
-    // heavy swoop from the part over his right brow (viewer's left)
+    // smooth swoop from the part over his right brow (viewer's left)
     for (let i = 0; i < 5; i++) {
-      H([[PA, 1.32, 0.6], [PA - 0.08 - i * 0.06, 1.02, 0.8], [-0.22 - i * 0.12, 0.6 - i * 0.03, 0.74], [-0.42 - i * 0.14, 0.24 + i * 0.02, 0.61], [-0.56 - i * 0.16, 0.08 + i * 0.05, 0.66]], 0.3, 0.1, 0.025);
+      H([[PA, 1.32, 0.6], [PA - 0.08 - i * 0.06, 1.02, 0.78], [-0.22 - i * 0.12, 0.62 - i * 0.03, 0.72], [-0.42 - i * 0.14, 0.28 + i * 0.015, 0.61], [-0.56 - i * 0.15, 0.14 + i * 0.04, 0.62]], 0.3, 0.09, 0.05);
     }
-    // the other side of the part arcs out to the temple and leaves the forehead open
+    // the other side of the part arcs neatly to the temple and leaves the forehead open
     for (let i = 0; i < 3; i++) {
-      H([[PA + 0.05, 1.32, 0.6], [0.3 + i * 0.1, 1.02, 0.8], [0.62 + i * 0.12, 0.66, 0.76], [0.86 + i * 0.12, 0.44, 0.7], [1.02 + i * 0.12, 0.36, 0.78]], 0.24, 0.08, 0.02);
+      H([[PA + 0.05, 1.32, 0.6], [0.3 + i * 0.1, 1.02, 0.78], [0.62 + i * 0.12, 0.68, 0.74], [0.86 + i * 0.12, 0.46, 0.69], [1.0 + i * 0.12, 0.38, 0.72]], 0.24, 0.075, 0.045);
     }
-    // a few loose strands falling onto the forehead
-    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.7], [-0.04, 0.48, 0.62], [0.02, 0.33, 0.57]], 0.07, 0.045, 0.006);
-    H([[PA + 0.05, 1.2, 0.6], [0.16, 0.86, 0.7], [0.22, 0.56, 0.62], [0.3, 0.44, 0.585]], 0.06, 0.04, 0.006);
-    // messy tufts sticking up off the crown and a cowlick
-    for (let i = 0; i < 7; i++) { const az = -2.4 + i * 0.8 + jit(i, 0.2); H([[az, 1.3, 0.72], [az, 1.15, 0.92], [az + jit(i + 1, 0.2), 1.0, 1.0]], 0.22, 0.08, 0.02); }
-    H([[0.15, 1.42, 0.6], [0.2, 1.6, 0.78], [0.35, 1.66, 0.94], [0.5, 1.56, 0.98]], 0.08, 0.05, 0.006);
-    H([[-0.2, 1.42, 0.6], [-0.3, 1.58, 0.76], [-0.55, 1.55, 0.88]], 0.06, 0.04, 0.006);
+    // one soft strand on the forehead, like the drawing
+    H([[PA, 1.2, 0.6], [PA - 0.02, 0.85, 0.69], [-0.02, 0.52, 0.61], [0.02, 0.4, 0.58]], 0.07, 0.04, 0.01);
     // glossy grey highlights like the drawing
     const shineMat = basic(0x7f7988);
     [[-0.45, 0.95, 0.3], [-0.05, 1.12, -0.1], [0.5, 1.0, 0.25], [0.95, 0.75, 0.5], [-1.1, 0.8, -0.4], [2.6, 0.9, 0.2], [-2.7, 0.85, -0.2]].forEach(([az, el, rz]) => {
       const sh = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 6), shineMat); sh.scale.set(1.7, 0.42, 0.2);
-      const p = headPt(az, el, 0.95); sh.position.copy(p); sh.lookAt(p.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
+      const p = headPt(az, el, 0.885); sh.position.copy(p); sh.lookAt(p.clone().multiplyScalar(2)); sh.rotateZ(rz); hair.add(sh);
     });
 
     // Studio headphones (shown with the studio instrument unless a hat is worn)
@@ -1797,28 +1792,26 @@
     timeline: { key: "timeline", label: "Dòng thời gian", short: "Thời gian", inst: "acoustic", tint: 0x5e0712, fx: "tear", ride: "staff",
       tease: "Hai năm, mười hai bài hát. Có những ngày còn đang bị che kín." },
     quiz: { key: "quiz", label: "Đoán bài 5 giây", short: "Đoán bài", inst: "mic", tint: 0x9c0d22, fx: "rgb", ride: "rocket",
-      tease: "Một trò chơi nhỏ. Bạn nhớ giai điệu của PAT đến đâu?" },
+      tease: "Đủ năm ngôi sao rồi. Đoán đúng cả năm bài, một hộp quà sẽ hiện ra." },
     wardrobe: { key: "wardrobe", label: "Tủ đồ của PAT", short: "Tủ đồ", inst: "mic", tint: 0x7a0614, fx: "ink", ride: "wings",
       tease: "Một căn phòng đầy mũ, kính và những người bạn nhỏ." },
     producers: { key: "producers", label: "Người đứng sau beat", short: "Producer", inst: "studio", tint: 0x5a0812, fx: "whip", ride: "staff",
       tease: "Hai cái tên đứng sau mọi bản beat. Họ là ai?" },
     beatlab: { key: "beatlab", label: "Beat Lab", short: "Beat Lab", inst: "studio", tint: 0x8a0a1c, fx: "glitch", ride: "rocket",
       tease: "Đến lượt bạn làm producer." },
-    ticket: { key: "ticket", label: "Vé fan PAT", short: "Vé fan", inst: "mic", tint: 0xa3101f, fx: "tear", ride: "wings",
-      tease: "Một tấm vé mang tên bạn. Gần đến đích rồi." },
+    ticket: { key: "ticket", label: "Quà bất ngờ · Vé fan", short: "Vé fan", inst: "mic", tint: 0xa3101f, fx: "tear", ride: "wings",
+      tease: "Món quà bất ngờ cuối cùng, mang tên bạn." },
   };
   const STATIONS = [
     { key: "hero", label: "Khởi hành", short: "Khởi hành", inst: "mic", tint: 0x8a0a1c, fx: "dolly", ride: "run" },
     { key: "about", label: "Chân dung", short: "Chân dung", inst: "acoustic", tint: 0x6a0816, fx: "ink", ride: "run",
       tease: "Bức chân dung của một chàng trai từng không tin vào chính mình." },
     EXTRA.timeline,
-    TRACK_STOP(0), TRACK_STOP(1),
+    ...SINGLES.map((_, k) => TRACK_STOP(k)),
     EXTRA.quiz,
-    TRACK_STOP(2), TRACK_STOP(3),
+    { key: "gift", label: "Quà tặng · Nhảy hiphop", short: "Quà tặng", inst: "mic", tint: 0xb3142a, fx: "dolly", ride: "rocket",
+      tease: "Phần thưởng cho người nghe tinh. Hộp quà đang chờ được mở." },
     EXTRA.wardrobe,
-    ...SINGLES.slice(4).map((_, n) => TRACK_STOP(4 + n)),
-    { key: "gift", label: "Quà tặng", short: "Quà tặng", inst: "mic", tint: 0xb3142a, fx: "dolly", ride: "rocket",
-      tease: "Một hộp quà. Bên trong có gì, phải đi đủ năm ngôi sao mới biết." },
     { key: "ep", label: "EP 075", short: "EP 075", inst: "keytar", tint: 0x5e0712, fx: "tear", ride: "wings",
       tease: "Bảy cánh cửa, một con số: 075." },
     EXTRA.producers,
@@ -1827,10 +1820,15 @@
     ...C.ads.flatMap((_, k) => (k === 0 && C.ads.length > 1 ? [AD_STOP(0), EXTRA.beatlab] : [AD_STOP(k)])),
     { key: "studio", label: "Phòng thu & Ban nhạc", short: "Ban nhạc", inst: "studio", tint: 0x700a19, fx: "whip", ride: "run",
       tease: "Một căn phòng đầy nhạc cụ đang chờ bạn chạm vào." },
+    { key: "finale", label: "Lời cảm ơn", short: "Cảm ơn", inst: "acoustic", tint: 0xb3142a, fx: "dolly", ride: "finale",
+      tease: "Một lời cảm ơn, và một ngôi sao dành riêng cho bạn." },
     EXTRA.ticket,
-    { key: "finale", label: "Ngôi sao", short: "Ngôi sao", inst: "acoustic", tint: 0xb3142a, fx: "dolly", ride: "finale",
-      tease: "Ngôi sao cuối cùng. Và một lời cảm ơn." },
   ];
+  // every stop arrives with its own transition, none used twice
+  const FX_BY_KEY = { hero: "tunnel", about: "ink", timeline: "film", t0: "mask", t1: "shutter", t2: "vinyl", t3: "eq", t4: "whip", quiz: "crt", gift: "star", wardrobe: "blinds",
+    ep: "tear", producers: "split", mv: "matchcut", ad0: "rgb", beatlab: "pixel", ad1: "ripple", studio: "glitch", finale: "curtain", ticket: "dolly" };
+  const FX_SPARE = ["shutter", "eq", "vinyl", "pixel", "blinds", "ripple"];
+  STATIONS.forEach((st, n) => (st.fx = FX_BY_KEY[st.key] || FX_SPARE[n % FX_SPARE.length]));
   const SI = {}; STATIONS.forEach((st, i) => (SI[st.key] = i));
   const trackSt = (k) => SI["t" + k];
   const chapter = (i) => "Chương " + pad2(i + 1);
@@ -1992,8 +1990,8 @@
       [-1, 1].forEach((k) => { const bow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.08, 8, 20), bone); bow.position.set(k * 0.26, 1.15, 0); bow.rotation.set(0, Math.PI / 2, k * 0.6); gb.add(bow); });
       const q = textSprite("?", { size: 90, scale: 0.9, font: "'Big Shoulders Display', Arial", weight: 900 }); q.position.y = 2.1; gb.add(q);
       floatProp(gb, spot(SI.gift, 4.5, 3.2, 1.6), { spin: 0.3, amp: 0.35 });
-      clickable(gb, () => { gb.userData.wob = 1; Audio.pop(); if (state.station !== SI.gift) return; Tracks.allOpen ? (Gift.opened ? Gift.dance() : Gift.show()) : toast("Còn " + (SINGLES.length - Tracks.unlocked) + " ngôi sao nữa mới mở được hộp quà"); });
-      updaters.push((t) => { q.visible = !Gift.opened; gb.scale.setScalar(1 + (Tracks.allOpen && !Gift.opened ? Math.abs(Math.sin(t * 5)) * 0.08 : 0)); });
+      clickable(gb, () => { gb.userData.wob = 1; Audio.pop(); if (state.station !== SI.gift) return; Gift.opened ? Gift.dance() : toast("Đoán đúng cả 5 bài ở chặng Đoán bài để mở hộp quà"); });
+      updaters.push((t) => { q.visible = !Gift.opened; gb.scale.setScalar(1 + (!Gift.opened ? Math.abs(Math.sin(t * 5)) * 0.08 : 0)); });
     }
 
     // EP — piano keys arc (playable)
@@ -2455,7 +2453,7 @@
      ====================================================================== */
   const cam = {
     target: new THREE.Vector3(), tGoal: new THREE.Vector3(),
-    yaw: 0, pitch: 0.16, dist: 7, baseYaw: 0, uYaw: 0, uPitch: 0, zoom: 1, fov: 46, fovKick: 0, shake: 0, mode: "intro",
+    yaw: 0, pitch: 0.16, dist: 7, baseYaw: 0, uYaw: 0, uPitch: 0, zoom: 1, zoomGoal: null, fov: 46, fovKick: 0, shake: 0, mode: "intro",
   };
   function stationYaw(i) {
     const tng = curve.getTangent(stationT[i]);
@@ -2466,6 +2464,7 @@
     cam.target.lerp(cam.tGoal, k);
     const yaw = cam.baseYaw + cam.uYaw;
     const pitch = clamp(cam.pitch + cam.uPitch, -1.2, 1.35);
+    if (cam.zoomGoal != null) { cam.zoom += (cam.zoomGoal - cam.zoom) * (1 - Math.exp(-dt * 9)); if (Math.abs(cam.zoomGoal - cam.zoom) < 0.002) { cam.zoom = cam.zoomGoal; cam.zoomGoal = null; } }
     const d = cam.dist * cam.zoom * (isMobile() ? 1.3 : 1);
     const off = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(d);
     camera.position.copy(cam.target).add(off);
@@ -2602,35 +2601,83 @@
   };
   // guess the single from five seconds
   const Quiz = {
-    n: 0, score: 0, cur: -1, audio: null, answered: false,
-    bind() { $("#qzPlay").addEventListener("click", () => this.play()); this.next(); },
+    n: 0, score: 0, cur: -1, deck: [], audio: null, answered: false, done: false,
+    bind() {
+      $("#qzPlay").addEventListener("click", () => this.play());
+      $("#qzAgain").addEventListener("click", () => this.reset());
+      $("#qzBox").addEventListener("click", () => Reward.show());
+      this.reset();
+    },
+    // a fresh round: the five singles in a random order, each from a random spot in its highlight
+    reset() {
+      this.stopClip(); this.n = 0; this.score = 0; this.done = false;
+      this.deck = SINGLES.map((_, k) => k).sort(() => Math.random() - 0.5).slice(0, 5);
+      while (this.deck.length < 5) this.deck.push(Math.floor(Math.random() * SINGLES.length));
+      this.marks = [];
+      $("#qzAgain").hidden = true; $("#qzWin").hidden = true; $("#qzPlay").hidden = false;
+      $("#qzScore").textContent = "0 / 5 đúng";
+      this.next();
+    },
+    dots() { $("#qzDots").innerHTML = this.deck.map((_, n) => '<i class="' + (this.marks[n] === true ? "ok" : this.marks[n] === false ? "no" : n === this.n ? "now" : "") + '"></i>').join(""); },
     next() {
-      this.answered = false; this.cur = Math.floor(Math.random() * SINGLES.length);
+      this.answered = false; this.cur = this.deck[this.n];
       const opts = [this.cur]; while (opts.length < Math.min(3, SINGLES.length)) { const r = Math.floor(Math.random() * SINGLES.length); if (!opts.includes(r)) opts.push(r); }
       opts.sort(() => Math.random() - 0.5);
+      const t = C.tracks[SINGLES[this.cur]], h = Array.isArray(t.highlight) ? t.highlight : [30, 70];
+      this.at = h[0] + Math.random() * Math.max(0, h[1] - h[0] - 6);
       $("#qzOpts").innerHTML = opts.map((k) => '<button data-qa="' + k + '">' + esc(C.tracks[SINGLES[k]].title) + "</button>").join("");
       $$("[data-qa]").forEach((b) => b.addEventListener("click", () => this.answer(+b.dataset.qa, b)));
-      $("#qzNo").textContent = "Câu " + Math.min(this.n + 1, 5) + " / 5"; $("#qzMsg").textContent = ""; $("#qzPlay").textContent = "▶ Nghe 5 giây";
+      $("#qzNo").textContent = "Câu " + (this.n + 1) + " / 5"; $("#qzMsg").textContent = ""; $("#qzPlay").textContent = "▶ Nghe 5 giây";
+      this.dots();
     },
     play() {
       Audio.init(); this.stopClip();
-      const t = C.tracks[SINGLES[this.cur]]; if (!t || !t.audio) return;
+      const t = C.tracks[SINGLES[this.cur]]; if (!t || !t.audio || this.done) return;
       const a = new window.Audio(t.audio); this.audio = a; a.volume = 0.85;
-      const st = Array.isArray(t.highlight) ? t.highlight[0] + 4 : 30;
-      a.addEventListener("loadedmetadata", () => { a.currentTime = st; a.play().catch(() => {}); }, { once: true });
+      a.addEventListener("loadedmetadata", () => { a.currentTime = this.at; a.play().catch(() => {}); }, { once: true });
       BG.duck("quiz", true); $("#qzPlay").textContent = "♪ Đang phát..."; act("dance");
       this.to = setTimeout(() => this.stopClip(), 5000);
     },
-    stopClip() { clearTimeout(this.to); if (this.audio) { this.audio.pause(); this.audio.removeAttribute("src"); this.audio = null; } BG.duck("quiz", false); if (!this.answered) $("#qzPlay").textContent = "▶ Nghe lại"; },
+    stopClip() { clearTimeout(this.to); if (this.audio) { this.audio.pause(); this.audio.removeAttribute("src"); this.audio = null; } BG.duck("quiz", false); if (!this.answered && $("#qzPlay")) $("#qzPlay").textContent = "▶ Nghe lại"; },
     answer(k, btn) {
-      if (this.answered) return; this.answered = true; this.stopClip();
+      if (this.answered || this.done) return; this.answered = true; this.stopClip();
       const ok = k === this.cur; if (ok) this.score++;
+      this.marks[this.n] = ok;
       btn.classList.add(ok ? "ok" : "no"); $$("[data-qa]").forEach((b) => +b.dataset.qa === this.cur && b.classList.add("ok"));
-      $("#qzScore").textContent = this.score + " điểm"; ok ? (Audio.unlock(), emote("happy")) : emote("awkward");
-      this.n++;
-      if (this.n >= 5) { $("#qzMsg").textContent = this.score >= 4 ? "Fan cứng rồi! " + this.score + "/5 câu đúng." : this.score + "/5 câu đúng. Nghe thêm vài vòng ở các ngôi sao rồi thử lại nhé."; store.set("quizBest", Math.max(this.score, store.get("quizBest", 0))); this.n = 0; this.score = 0; setTimeout(() => this.next(), 2600); return; }
+      $("#qzScore").textContent = this.score + " / 5 đúng"; ok ? (Audio.unlock(), emote("happy")) : emote("awkward");
+      this.n++; this.dots();
+      if (this.n >= 5) { setTimeout(() => this.finish(), 1200); $("#qzMsg").textContent = ok ? "Chuẩn luôn!" : "Bài này là " + C.tracks[SINGLES[this.cur]].title + "."; return; }
       $("#qzMsg").textContent = ok ? "Chuẩn luôn!" : "Bài này là " + C.tracks[SINGLES[this.cur]].title + ".";
-      setTimeout(() => this.next(), 1600);
+      setTimeout(() => this.next(), 1500);
+    },
+    finish() {
+      this.done = true; $("#qzOpts").innerHTML = ""; $("#qzPlay").hidden = true;
+      store.set("quizBest", Math.max(this.score, store.get("quizBest", 0)));
+      if (this.score === 5) {
+        $("#qzMsg").textContent = "Đúng cả 5/5! Bạn là fan cứng của PAT. Một hộp quà vừa xuất hiện.";
+        $("#qzWin").hidden = false; Audio.unlock(); flash(0.3); emote("love"); say("Có quà cho bạn nè!");
+        PAT.head.getWorldPosition(_v); burst(_v, 24, { tex: TEX.star, speed: 2.6, size: 0.28, life: 1.1 });
+      } else {
+        $("#qzMsg").textContent = this.score + "/5 câu đúng. Phải đúng cả 5 câu mới mở được hộp quà. Thử đề mới nhé!";
+        $("#qzAgain").hidden = false;
+      }
+    },
+  };
+  // the reward notice behind the quiz gift box
+  const Reward = {
+    show() {
+      const box = $("#qzBox"); if (box.classList.contains("open")) return;
+      Audio.init(); box.classList.add("open"); Audio.unlock(); flash(0.4);
+      setTimeout(() => {
+        box.classList.remove("open");
+        $("#reward").classList.add("on"); $("#reward").setAttribute("aria-hidden", "false"); state.modal = true;
+      }, 900);
+    },
+    go() {
+      $("#reward").classList.remove("on"); $("#reward").setAttribute("aria-hidden", "true"); state.modal = false;
+      Gift.opened = true; store.set("giftOpened", true); syncEPGate(); Tracks.renderList();
+      Gift.pendingDance = true;
+      goTo(SI.gift, { force: true });
     },
   };
   // 4 × 8 step sequencer
@@ -2678,7 +2725,7 @@
       g.fillStyle = "#e0102c"; g.font = "800 22px 'Be Vietnam Pro', Arial"; g.fillText("VÉ FAN · PHƯƠNG ANH TÚ · PAT", 285, 62);
       g.fillStyle = "#08070a"; g.font = "italic 300 62px 'Fraunces', Georgia"; g.fillText(name.slice(0, 24), 285, 150);
       g.font = "600 24px 'Be Vietnam Pro', Arial"; g.fillStyle = "#3a3236";
-      const lines = [Tracks.unlocked + " / " + SINGLES.length + " ngôi sao đã thắp", Gift.opened ? "Đã mở hộp quà và EP 075" : "Hộp quà vẫn đang chờ", "Đã đi " + Visited.set.size + " / " + STATIONS.length + " chặng"];
+      const lines = [Tracks.unlocked + " / " + SINGLES.length + " ngôi sao đã thắp", Gift.opened ? "Đoán đúng 5/5, đã mở hộp quà và EP 075" : "Hộp quà vẫn đang chờ", "Đã đi " + Visited.set.size + " / " + STATIONS.length + " chặng"];
       lines.forEach((l, k) => g.fillText("★ " + l, 285, 212 + k * 40));
       g.fillStyle = "#8a8286"; g.font = "500 18px 'Be Vietnam Pro', Arial"; g.fillText("ADMIT ONE · " + new Date().toLocaleDateString("vi-VN"), 285, h - 28);
     },
@@ -2687,7 +2734,7 @@
   const Visited = {
     set: new Set([0]),
     has(i) { return this.set.has(i); },
-    add(i) { if (this.set.has(i)) return; this.set.add(i); store.set("visited", [...this.set]); MiniMap.label(); },
+    add(i) { if (this.set.has(i)) return; this.set.add(i); store.set("visited7", [...this.set]); MiniMap.label(); },
   };
 
   function buildPanels() {
@@ -2714,8 +2761,6 @@
       '<div class="gal rv" id="gal"></div><div class="gal-ui rv"><div class="gal-dots" id="galDots"></div><span class="gal-hint">Vuốt trái · phải</span></div>' +
       (A.about || []).map((p) => '<p class="body-t rv" data-tx>' + esc(p) + "</p>").join("") +
       (A.quote ? '<blockquote class="quote rv" data-tx>' + esc(A.quote) + "</blockquote>" : "") +
-      '<figure class="chibi-card rv"><img class="cc-2d" src="photos/pat-chibi.png" alt="Chibi PAT, hình mẫu 2D"><figcaption><b>Chibi PAT</b><span>Nhân vật đại diện của PAT, dựng 3D từ chính hình mẫu này. Kéo nhân vật trên sân khấu để xoay 360°.</span></figcaption>' +
-      '<img class="cc-angles" src="photos/pat-chibi-angles.jpg" alt="Chibi PAT ở nhiều góc nhìn: chính diện, nghiêng, phía sau" loading="lazy"></figure>' +
       teaser(SI.about) +
       "</section>"
     );
@@ -2733,9 +2778,12 @@
       '<section class="panel" data-st="' + SI.quiz + '" aria-label="Đoán bài 5 giây">' +
       '<div class="eyebrow rv">' + chapter(SI.quiz) + ' · Trò chơi</div>' +
       '<h2 class="p-title rv" data-tx>Đoán bài <em>5 giây</em></h2>' +
-      '<p class="body-t rv">PAT phát 5 giây của một single bất kỳ. Bạn chọn đúng tên bài. Năm câu, xem bạn nhớ giai điệu của PAT đến đâu.</p>' +
-      '<div class="quiz rv" id="quiz"><div class="qz-top"><b id="qzNo">Câu 1 / 5</b><span id="qzScore">0 điểm</span></div>' +
-      '<button class="chip-btn chip-hot qz-play" id="qzPlay">▶ Nghe 5 giây</button><div class="qz-opts" id="qzOpts"></div><p class="qz-msg" id="qzMsg"></p></div>' +
+      '<p class="body-t rv">Bạn vừa đi qua cả năm ngôi sao. Giờ PAT phát 5 giây ngẫu nhiên của từng bài, bạn chọn đúng tên. Mỗi lần quay lại là một đề mới. Đúng cả năm câu, một hộp quà sẽ hiện ra.</p>' +
+      '<div class="quiz rv" id="quiz"><div class="qz-top"><b id="qzNo">Câu 1 / 5</b><span id="qzScore">0 / 5 đúng</span></div>' +
+      '<div class="qz-dots" id="qzDots"></div>' +
+      '<button class="chip-btn chip-hot qz-play" id="qzPlay">▶ Nghe 5 giây</button><div class="qz-opts" id="qzOpts"></div><p class="qz-msg" id="qzMsg"></p>' +
+      '<button class="chip-btn qz-again" id="qzAgain" hidden>↻ Chơi lại với đề mới</button>' +
+      '<div class="qz-win" id="qzWin" hidden><button class="gift-box qz-box" id="qzBox" aria-label="Mở hộp quà"><span class="gb-lid"></span><span class="gb-body"></span><span class="gb-rib"></span><span class="gb-bow"></span></button><p>Chạm vào hộp quà</p></div></div>' +
       teaser(SI.quiz) + "</section>"
     );
     // tủ đồ
@@ -2774,10 +2822,8 @@
       '<section class="panel" data-st="' + SI.gift + '" aria-label="Quà tặng">' +
       '<div class="eyebrow rv">' + chapter(SI.gift) + ' · Quà tặng</div>' +
       '<h2 class="p-title rv" data-tx>Hộp quà <em>hiphop</em></h2>' +
-      '<p class="body-t rv">Năm ngôi sao, năm chặng đời. Ai đi đủ năm ngôi sao sẽ được PAT tặng một màn breakdance 30 giây ngay trên đĩa than này. Nhảy xong, cánh cửa EP 075 sẽ mở.</p>' +
+      '<p class="body-t rv">Phần thưởng cho người đoán đúng cả năm bài: PAT tặng bạn một màn breakdance hiphop 30 giây ngay trên đĩa than này, trên nền nhạc của chính PAT. Nhảy xong, mình ghé tủ đồ, rồi cánh cửa EP 075 sẽ mở.</p>' +
       '<ul class="moves rv">' + ["Toprock", "Windmill", "Headspin", "1990", "Airflare", "Halo", "Freeze"].map((m, n) => '<li style="--n:' + n + '">' + m + "</li>").join("") + "</ul>" +
-      '<div class="unlock-meta rv"><b id="unCount">0</b><span>/ ' + SINGLES.length + " ngôi sao đã sáng</span></div>" +
-      '<ol class="gift-stars rv" id="giftStars"></ol>' +
       '<button class="chip-btn chip-hot gift-go rv" id="btnGift">Mở hộp quà</button>' +
       teaser(SI.gift) +
       "</section>"
@@ -2862,9 +2908,9 @@
     // vé fan: the viewer's own ticket, saved as an image
     html.push(
       '<section class="panel" data-st="' + SI.ticket + '" aria-label="Vé fan PAT">' +
-      '<div class="eyebrow rv">' + chapter(SI.ticket) + ' · Vé fan</div>' +
+      '<div class="eyebrow rv">' + chapter(SI.ticket) + ' · Quà bất ngờ cuối cùng</div>' +
       '<h2 class="p-title rv" data-tx>Vé fan <em>của bạn</em></h2>' +
-      '<p class="body-t rv">Bạn đã đi gần hết hành trình. Ghi tên vào đây, PAT in cho bạn một tấm vé ghi lại số ngôi sao bạn đã thắp và những gì bạn đã mở khoá. Lưu về máy để giữ làm kỷ niệm.</p>' +
+      '<p class="body-t rv">Món quà bất ngờ cuối cùng của hành trình. Ghi tên vào đây, PAT in cho bạn một tấm vé ghi lại số ngôi sao bạn đã thắp, phần quà bạn đã mở và những chặng bạn đã đi qua. Lưu về máy để giữ làm kỷ niệm.</p>' +
       '<label class="fan-in rv"><span>Tên của bạn</span><input id="fanName" maxlength="24" placeholder="Nhập tên" autocomplete="off"></label>' +
       '<canvas class="fan-tk rv" id="fanTk" width="900" height="380"></canvas>' +
       '<div class="rv"><button class="chip-btn chip-hot" id="fanSave">Lưu vé về máy</button></div>' +
@@ -2873,7 +2919,7 @@
     // 6 finale
     html.push(
       '<section class="panel" data-st="' + SI.finale + '" aria-label="Lời cảm ơn">' +
-      '<div class="eyebrow rv">' + chapter(SI.finale) + ' · Ngôi sao</div>' +
+      '<div class="eyebrow rv">' + chapter(SI.finale) + ' · Lời cảm ơn</div>' +
       '<h2 class="p-title rv" data-tx>Cảm ơn <em>bạn</em></h2>' +
       '<p class="thanks rv" data-tx>' + esc(C.thanks || "") + "</p>" +
       (C.artist.mission ? '<p class="mission rv">' + esc(C.artist.mission) + "</p>" : "") +
@@ -2882,6 +2928,7 @@
       '<a class="zalo-cta rv" href="' + esc(zaloHref()) + '" target="_blank" rel="noopener"><i>Zalo</i>Gửi lời nhắn cho PAT</a>' +
       '<div><button class="star-cta rv" id="starCta">Chạm vào ngôi sao để xem mọi cách liên hệ</button></div>' +
       contactCard() +
+      teaser(SI.finale) +
       pubLine() +
       "</section>"
     );
@@ -2891,11 +2938,12 @@
     Band.bind();
     $$("[data-ep-track]").forEach((b) => b.addEventListener("click", () => Tracks.openEP(+b.dataset.epTrack)));
     $("#starCta").addEventListener("click", openContact);
+    $("#rewardGo").addEventListener("click", () => Reward.go());
     $$("[data-go]").forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
     $$("[data-next]").forEach((b) => b.addEventListener("click", () => next()));
     $$("[data-go-locked]").forEach((b) => b.addEventListener("click", () => goTo(trackSt(Math.min(Tracks.unlocked, SINGLES.length - 1)))));
     $$("[data-hl]").forEach((b) => b.addEventListener("click", () => Tracks.tryOpen(+b.dataset.hl)));
-    $("#btnGift").addEventListener("click", () => { if (!Tracks.allOpen) goTo(trackSt(Tracks.unlocked)); else if (!Gift.opened) Gift.show(); else Gift.dance(); });
+    $("#btnGift").addEventListener("click", () => { if (!Gift.opened) goTo(SI.quiz); else Gift.dance(); });
     OnAir.bind();
     Quiz.bind(); BeatLab.bind(); FanTicket.bind();
     $$("[data-qeq]").forEach((b) => b.addEventListener("click", () => { Audio.init(); equip(b.dataset.qeq); act("wink"); }));
@@ -3094,7 +3142,7 @@
       if (stay) return;
       setInstrument(STATIONS[state.station].inst);
       emote("happy");
-      setTimeout(() => goTo(SI.ep, { force: true }), 1200);
+      setTimeout(() => state.station === SI.gift && goTo(SI.gift + 1), 1200);
     },
   };
 
@@ -3109,7 +3157,7 @@
         $$("[data-go]", gs).forEach((b) => b.addEventListener("click", () => goTo(+b.dataset.go)));
       }
       const bg = $("#btnGift");
-      if (bg) bg.textContent = !this.allOpen ? "Còn " + (SINGLES.length - this.unlocked) + " ngôi sao · đi mở tiếp" : Gift.opened ? "▶ Xem PAT breakdance lại" : "🎁 Mở hộp quà";
+      if (bg) bg.textContent = Gift.opened ? "▶ Xem PAT breakdance lại" : "🎁 Về chặng Đoán bài để mở hộp quà";
       const uc = $("#unCount"); if (uc) uc.textContent = this.unlocked;
       if (constelLine) constelLine.geometry.setDrawRange(0, this.unlocked);
     },
@@ -3134,7 +3182,7 @@
     },
     // EP tracks open freely once the gift has been opened
     openEP(ti) {
-      if (!Gift.opened) { toast("Đi đủ " + SINGLES.length + " ngôi sao và mở hộp quà để nhận EP 075"); emote("shy"); return; }
+      if (!Gift.opened) { toast("Đoán đúng cả 5 bài ở chặng Đoán bài để mở hộp quà và nhận EP 075"); emote("shy"); return; }
       Ticket.open(ti, false);
     },
   };
@@ -3389,6 +3437,16 @@
     await sleep(reduced ? 60 : TX_IN[kind] + 260);
     return () => { w.classList.remove("in"); w.classList.add("out"); if (kind === "rgb") glitch(); setTimeout(() => (w.className = "tx"), 800); };
   }
+  const FX2 = { tunnel: 620, film: 560, crt: 560, star: 600, blinds: 640, pixel: 660, ripple: 700, curtain: 640, split: 520 };
+  async function fx2Cut(kind, label) {
+    const w = $("#fx2"); w.className = "fx2 on " + kind; $(".f-label", w).textContent = label;
+    const n = kind === "blinds" ? 10 : kind === "pixel" ? 96 : kind === "ripple" ? 5 : 0;
+    $(".f-cells", w).innerHTML = Array.from({ length: n }, (_, i) => '<i style="--i:' + i + ";--d:" + Math.round(Math.random() * 380) + 'ms"></i>').join("");
+    void w.offsetWidth; w.classList.add("in");
+    Audio.swoosh(kind === "crt" ? 0.5 : kind === "star" || kind === "tunnel" ? 1 : 0.7);
+    await sleep(reduced ? 60 : FX2[kind] + 220);
+    return () => { w.classList.remove("in"); w.classList.add("out"); setTimeout(() => (w.className = "fx2"), 950); };
+  }
   function glitch() { document.body.classList.remove("glitching"); void document.body.offsetWidth; document.body.classList.add("glitching"); cam.shake = 0.25; setTimeout(() => document.body.classList.remove("glitching"), 600); }
   function projectToScreen(v) { const p = v.clone().project(camera); return [(p.x * 0.5 + 0.5) * 100, (-p.y * 0.5 + 0.5) * 100]; }
 
@@ -3415,7 +3473,9 @@
     $("#nextLabel").textContent = i === STATIONS.length - 1 ? "Xuất phát điểm" : "Đi tiếp";
     U.tint.value.set(STATIONS[i].tint);
     if (i === SI.finale && finale.mode === "idle") { finale.mode = "orbit"; finale.t = 0; finale.flashed = false; }
-    if (i === SI.gift) { Tracks.renderList(); if (Tracks.allOpen && !Gift.opened) setTimeout(() => state.station === i && !state.modal && Gift.show(), 1800); }
+    if (i === SI.gift) { Tracks.renderList(); if (Gift.pendingDance) { Gift.pendingDance = false; setTimeout(() => state.station === i && Gift.dance(), 700); } }
+    if (i === SI.quiz) Quiz.reset();
+    if (i !== SI.quiz && Quiz.audio) Quiz.stopClip();
     const st = STATIONS[i];
     if (st.track != null) setTimeout(() => state.station === i && Tracks.visit(st.k), 900);
     if (i === SI.timeline) Timeline.render();
@@ -3445,6 +3505,7 @@
     if (fx === "mask") reveal = await maskCut(STATIONS[j].short);
     else if (fx === "shutter" || fx === "vinyl" || fx === "eq") reveal = await wipe(fx, STATIONS[j].short);
     else if (TX_IN[fx]) reveal = await cut(fx, STATIONS[j].short);
+    else if (FX2[fx]) reveal = await fx2Cut(fx, STATIONS[j].short);
     if (fx === "glitch") glitch();
     const y0 = cam.baseYaw, y1 = stationYaw(j);
     let dy = y1 - y0; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -3687,7 +3748,7 @@
       mouse.x = (e.clientX / innerWidth) * 2 - 1; mouse.y = -(e.clientY / innerHeight) * 2 + 1;
       if (PAT) PAT.look.set(mouse.x, mouse.y);
       if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pts.size === 2) { const [a, b] = Array.from(pts.values()); const d = Math.hypot(a.x - b.x, a.y - b.y); cam.zoom = clamp(zoom0 * (pinch0 / d), 0.45, 2.4); return; }
+      if (pts.size === 2) { const [a, b] = Array.from(pts.values()); const d = Math.hypot(a.x - b.x, a.y - b.y); cam.zoomGoal = null; cam.zoom = clamp(zoom0 * (pinch0 / d), 0.45, 2.4); return; }
       if (!down) return;
       const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
       moved += Math.abs(dx) + Math.abs(dy);
@@ -3704,15 +3765,11 @@
     canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
     canvas.addEventListener("pointerleave", () => { mouse.set(-9, -9); });
 
-    let wheelLock = 0, acc = 0;
     window.addEventListener("wheel", (e) => {
-      if (state.modal) return;
-      if (e.ctrlKey || e.altKey) { e.preventDefault(); cam.zoom = clamp(cam.zoom * (1 + e.deltaY * 0.002), 0.45, 2.4); return; }
-      if (state.phase !== "live") return;
-      acc += e.deltaY;
-      const now = performance.now();
-      if (now < wheelLock) { acc = 0; return; }
-      if (Math.abs(acc) > 90) { acc > 0 ? next() : prev(); acc = 0; wheelLock = now + 1500; }
+      if (state.modal || state.phase !== "live") return;
+      e.preventDefault();
+      const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+      cam.zoomGoal = clamp((cam.zoomGoal == null ? cam.zoom : cam.zoomGoal) * Math.exp(clamp(dy, -240, 240) * 0.0008), 0.45, 2.4);
     }, { passive: false });
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && state.wardrobe) { Wardrobe.close(); return; }
@@ -3721,8 +3778,8 @@
       if (state.phase !== "live" || e.target.closest("input,textarea")) return;
       if (e.key === "ArrowRight" || e.key === "PageDown") next();
       if (e.key === "ArrowLeft" || e.key === "PageUp") prev();
-      if (e.key === "+" || e.key === "=") cam.zoom = clamp(cam.zoom * 0.85, 0.45, 2.4);
-      if (e.key === "-") cam.zoom = clamp(cam.zoom * 1.18, 0.45, 2.4);
+      if (e.key === "+" || e.key === "=") cam.zoomGoal = clamp(cam.zoom * 0.85, 0.45, 2.4);
+      if (e.key === "-") cam.zoomGoal = clamp(cam.zoom * 1.18, 0.45, 2.4);
     });
     // cursor
     const cur = $("#cursor");
@@ -3733,7 +3790,7 @@
     $("#btnPrev").addEventListener("click", prev);
     $("#btnZoomIn").addEventListener("click", () => tweenZoom(cam.zoom * 0.75));
     $("#btnZoomOut").addEventListener("click", () => tweenZoom(cam.zoom * 1.3));
-    $("#btnView").addEventListener("click", () => { const a = cam.uYaw, b = cam.uPitch, z = cam.zoom; tween(900, (p) => { const e = ease.io(p); cam.uYaw = a * (1 - e); cam.uPitch = b * (1 - e); cam.zoom = lerp(z, 1, e); }); });
+    $("#btnView").addEventListener("click", () => { cam.zoomGoal = null; const a = cam.uYaw, b = cam.uPitch, z = cam.zoom; tween(900, (p) => { const e = ease.io(p); cam.uYaw = a * (1 - e); cam.uPitch = b * (1 - e); cam.zoom = lerp(z, 1, e); }); });
     $("#btnSound").addEventListener("click", () => {
       Audio.init();
       const m = !Audio.muted; Audio.setMuted(m);
@@ -3758,7 +3815,7 @@
     window.addEventListener("resize", onResize);
   }
   const introSpin = { v: 0 };
-  function tweenZoom(z) { const a = cam.zoom; z = clamp(z, 0.45, 2.4); tween(500, (p) => (cam.zoom = lerp(a, z, ease.out(p)))); }
+  function tweenZoom(z) { cam.zoomGoal = null; const a = cam.zoom; z = clamp(z, 0.45, 2.4); tween(500, (p) => (cam.zoom = lerp(a, z, ease.out(p)))); }
   function closeModals() { if ($("#ticketModal").classList.contains("on")) Ticket.close(); $("#contactModal").classList.remove("on"); $("#mvModal").classList.remove("on"); state.modal = false; }
 
   function clickAt(x, y) {
@@ -3829,8 +3886,8 @@
     await loadImages();
     if (window.PAT_PEAKS) C.tracks.forEach((t) => { if (t.peaks && typeof t.peaks === "string") t.peaks = window.PAT_PEAKS[t.peaks] || null; });
     Tracks.unlocked = clamp(store.get("unlockedSingles", 0), 0, SINGLES.length);
-    (store.get("visited", []) || []).forEach((n) => n < STATIONS.length && Visited.set.add(n));
-    Gift.opened = !!store.get("giftOpened", false) && Tracks.allOpen;
+    (store.get("visited7", []) || []).forEach((n) => n < STATIONS.length && Visited.set.add(n));
+    Gift.opened = !!store.get("giftOpened", false);
     progress(0.42, "Dựng ngân hà");
     await frame();
 

@@ -27,9 +27,11 @@ Từ đó mỗi commit lên nhánh `pat-3d-site` sẽ tự lên link chính sau 
 `artist.mission` là câu "Chỉ cần bản thân muốn, mọi thứ đều có thể thực hiện…". Câu này hiện ở phần mở đầu và chương cuối.
 
 ## Hành trình 20 chặng
-Khởi hành → Chân dung → **Dòng thời gian** → Track 01, Track 02 → **Đoán bài 5 giây** → Track 03, Track 04 → **Tủ đồ của PAT** → Track 05 → Quà tặng (breakdance) → EP 075 → **Người đứng sau beat** (Karrot, souL) → Music Video → Nhạc quảng cáo 01 → **Beat Lab** → Nhạc quảng cáo 02 → Phòng thu → **Vé fan** → Ngôi sao.
+Khởi hành → Chân dung → Dòng thời gian → 5 chặng Track (mỗi single một chặng) → **Đoán bài 5 giây** → **Quà tặng: nhảy hiphop** → Tủ đồ của PAT → EP 075 → Người đứng sau beat → Music Video → Nhạc quảng cáo 01 → Beat Lab → Nhạc quảng cáo 02 → Phòng thu → **Lời cảm ơn** → **Quà bất ngờ cuối cùng: Vé fan**.
 
-Sáu chặng mới (in đậm) xen giữa các track để nhịp lúc nghe, lúc chơi: dòng thời gian hé lộ dần từng mốc khi người xem đi tới; đoán bài phát 5 giây highlight từ chính file nhạc; tủ đồ cho mặc nhanh phụ kiện và đổi cảm xúc; Beat Lab là bàn 4 x 8 pad (kick, snare, hi-hat, bass, 96 BPM); vé fan ghi tên người xem, số sao đã thắp, số chặng đã đi và cho lưu về máy dạng PNG. Thêm single hay quảng cáo vào `content.js` thì web tự thêm chặng. Cuối mỗi chặng có một dòng gợi ý bí mật về chặng sau; bản đồ góc phải chỉ hiện "?" cho những chặng chưa tới.
+- **Đoán bài:** mỗi lần vào chặng là một đề mới: 5 single theo thứ tự ngẫu nhiên, mỗi bài phát 5 giây ở một điểm ngẫu nhiên trong đoạn highlight, 3 lựa chọn. Đúng cả 5/5 thì hộp quà hiện ra; bấm vào sẽ hiện thông báo phần thưởng (PAT nhảy breakdance, mở khoá EP 075, ghi "5/5" lên vé fan), bấm "Nhận quà" là bay sang chặng Quà tặng và chibi nhảy ngay. Nhảy xong tự sang Tủ đồ, rồi EP. Sai câu nào thì có nút "Chơi lại với đề mới".
+- **Chuyển chặng:** 20 chặng là 20 kiểu chuyển cảnh khác nhau, không lặp lại (đường hầm, mực loang, cuộn phim, mặt nạ, rèm sáo, đĩa than, cột EQ, lia nhanh, TV tắt, ngôi sao, lá sách tủ đồ, giấy xé, chém chéo, match cut, nhiễu RGB, khảm pixel, sóng âm, glitch, rèm sân khấu, dolly zoom). Đổi trong `FX_BY_KEY` ở `app.js`.
+- **Lăn chuột** để phóng to, thu nhỏ; đi chặng bằng nút "Đi tiếp", phím mũi tên hoặc vuốt.
 
 ## Chibi
 Chibi 3D dựng theo hình mẫu 2D bạn gửi (áo dạ đen cúc vàng, cổ tay lông, tóc rẽ ngôi, khuyên tai), không có má hồng. Chương Chân dung có thẻ "Chibi PAT" gồm hình mẫu 2D và bảng nhiều góc nhìn (`photos/pat-chibi.png`, `photos/pat-chibi-angles.jpg`).

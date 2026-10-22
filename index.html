@@ -672,6 +672,84 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 .fan-in input{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(8,7,10,.6);color:inherit;font:inherit;font-size:16px}
 .fan-in input:focus{outline:none;border-color:var(--ember)}
 .fan-tk{display:block;width:100%;height:auto;margin:0 0 12px;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+
+/* round 7: quiz reward, nine new transitions */
+.qz-dots{display:flex;gap:6px;margin:0 0 12px}
+.qz-dots i{width:22px;height:6px;border-radius:3px;background:rgba(255,255,255,.14)}
+.qz-dots i.now{background:rgba(255,255,255,.5)}.qz-dots i.ok{background:#3ad08a}.qz-dots i.no{background:var(--blood)}
+.qz-again{margin-top:10px}
+.qz-win{display:grid;justify-items:center;gap:4px;margin-top:8px}
+.qz-win[hidden],.qz-again[hidden]{display:none}
+.qz-win p{margin:0;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ember)}
+.qz-box{transform:scale(.62);margin:-22px 0 -30px;cursor:pointer}
+.rw-list{list-style:none;margin:10px 0 8px;padding:0;display:grid;gap:8px;max-width:440px;text-align:left}
+.rw-list li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(8,7,10,.6);border:1px solid rgba(255,74,92,.4);font-size:14px;opacity:0;transform:translateY(12px)}
+.reward.on .rw-list li{animation:rwIn .5s var(--ease) forwards}
+.reward.on .rw-list li:nth-child(2){animation-delay:.15s}.reward.on .rw-list li:nth-child(3){animation-delay:.3s}
+.rw-list b{font-size:22px;text-align:center}
+@keyframes rwIn{to{opacity:1;transform:none}}
+.rw-go{margin-top:6px}
+#fx2{position:fixed;inset:0;z-index:46;pointer-events:none;display:none;overflow:hidden}
+#fx2.on{display:block}
+#fx2 .f-a,#fx2 .f-b,#fx2 .f-cells{position:absolute;inset:0}
+#fx2 .f-label{position:absolute;inset:0;display:grid;place-items:center;z-index:5;font-family:var(--f-poster);font-weight:900;font-size:clamp(40px,9vw,140px);text-transform:uppercase;letter-spacing:.04em;color:var(--bone);opacity:0;transition:opacity .3s .25s;text-align:center;padding:0 16px}
+#fx2.in .f-label{opacity:1}#fx2.out .f-label{opacity:0;transition-delay:0s}
+/* tunnel: rings spiral in from the centre */
+#fx2.tunnel .f-a{inset:auto;left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;border-radius:50%;background:repeating-radial-gradient(circle,#08070a 0 3vmax,#7a0614 3vmax 3.5vmax,#08070a 3.5vmax 6vmax,var(--blood) 6vmax 6.4vmax);transform:scale(0) rotate(-90deg)}
+#fx2.tunnel.in .f-a{animation:tunIn .62s cubic-bezier(.7,0,.3,1) both}#fx2.tunnel.out .f-a{animation:tunOut .8s cubic-bezier(.5,0,.3,1) both}
+@keyframes tunIn{to{transform:scale(1) rotate(0)}}@keyframes tunOut{from{transform:scale(1)}to{transform:scale(3) rotate(60deg);opacity:0}}
+/* film: a strip of film rolls up through the frame */
+#fx2.film .f-a{background:repeating-linear-gradient(180deg,transparent 0 24vh,rgba(245,240,234,.22) 24vh calc(24vh + 3px)),linear-gradient(90deg,#0b0a0d 0 8%,#1c0509 8% 92%,#0b0a0d 92%);transform:translateY(100%)}
+#fx2.film .f-b{transform:translateY(100%)}
+#fx2.film .f-b::before,#fx2.film .f-b::after{content:"";position:absolute;top:0;bottom:0;width:16px;left:3%;background:repeating-linear-gradient(180deg,#e9e1d6 0 14px,transparent 14px 32px);border-radius:3px}
+#fx2.film .f-b::after{left:auto;right:3%}
+#fx2.film.in .f-a,#fx2.film.in .f-b{animation:filmIn .56s cubic-bezier(.6,0,.3,1) both}
+#fx2.film.out .f-a,#fx2.film.out .f-b{animation:filmOut .75s cubic-bezier(.6,0,.3,1) both}
+@keyframes filmIn{from{transform:translateY(100%)}to{transform:none}}@keyframes filmOut{from{transform:none}to{transform:translateY(-100%)}}
+/* crt: the old TV switches off to a line, then back on */
+#fx2.crt .f-a{background:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px),#050406;opacity:0}
+#fx2.crt .f-b{background:#f5f0ea;box-shadow:0 0 80px #fff;opacity:0}
+#fx2.crt.in .f-a{animation:fadeI .2s both}#fx2.crt.in .f-b{animation:crtIn .56s cubic-bezier(.7,0,.3,1) both}
+#fx2.crt.out .f-b{animation:crtOut .6s cubic-bezier(.5,0,.3,1) both}#fx2.crt.out .f-a{animation:fadeO .4s .3s both}
+@keyframes crtIn{0%{opacity:.9;transform:scale(1,1)}55%{opacity:1;transform:scale(1,.006)}100%{opacity:1;transform:scale(0,.006)}}
+@keyframes crtOut{0%{opacity:1;transform:scale(0,.006)}45%{opacity:1;transform:scale(1,.006)}100%{opacity:0;transform:scale(1,1)}}
+@keyframes fadeI{from{opacity:0}to{opacity:1}}@keyframes fadeO{from{opacity:1}to{opacity:0}}
+#fx2.crt .f-label{text-shadow:0 0 18px rgba(255,255,255,.6)}
+/* star: a spinning star opens over the screen */
+#fx2.star .f-a{inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;margin:-50vmax 0 0 -50vmax;background:var(--blood);clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);transform:scale(0) rotate(-140deg)}
+#fx2.star .f-b{inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;margin:-50vmax 0 0 -50vmax;background:#f5f0ea;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);transform:scale(0);z-index:-1}
+#fx2.star.in .f-a{animation:starIn .6s cubic-bezier(.7,0,.3,1) .05s both}#fx2.star.in .f-b{animation:starIn2 .5s cubic-bezier(.7,0,.3,1) both}
+#fx2.star.out .f-a{animation:starOut .7s cubic-bezier(.6,0,.3,1) both}#fx2.star.out .f-b{opacity:0}
+@keyframes starIn{to{transform:scale(4.8) rotate(0)}}@keyframes starIn2{to{transform:scale(4.6) rotate(-20deg)}}
+@keyframes starOut{from{transform:scale(4.8)}to{transform:scale(0) rotate(160deg)}}
+/* blinds: wardrobe louvres turn closed, then open */
+#fx2.blinds .f-cells{display:flex;perspective:1400px}
+#fx2.blinds .f-cells i{flex:1;background:linear-gradient(90deg,#08070a,#2a0309 70%,#5a0412);transform:rotateY(90deg);transition:transform .5s cubic-bezier(.7,0,.2,1) calc(var(--i)*32ms)}
+#fx2.blinds.in .f-cells i{transform:rotateY(0)}#fx2.blinds.out .f-cells i{transform:rotateY(-90deg)}
+/* pixel: the screen dissolves into a mosaic */
+#fx2.pixel .f-cells{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(8,1fr)}
+#fx2.pixel .f-cells i{background:#08070a;transform:scale(0);transition:transform .22s steps(3) var(--d)}
+#fx2.pixel .f-cells i:nth-child(7n+3),#fx2.pixel .f-cells i:nth-child(11n+5){background:var(--blood)}
+#fx2.pixel.in .f-cells i{transform:scale(1.04)}#fx2.pixel.out .f-cells i{transform:scale(0)}
+/* ripple: sound waves spread from the centre */
+#fx2.ripple .f-cells i{position:absolute;left:50%;top:50%;width:24vmax;height:24vmax;margin:-12vmax 0 0 -12vmax;border-radius:50%;background:var(--blood);transform:scale(0);animation:none}
+#fx2.ripple .f-cells i:nth-child(2){background:#2a0309}#fx2.ripple .f-cells i:nth-child(3){background:#e0102c}#fx2.ripple .f-cells i:nth-child(4){background:#120306}#fx2.ripple .f-cells i:nth-child(5){background:#08070a}
+#fx2.ripple.in .f-cells i{animation:ripIn .62s cubic-bezier(.6,0,.3,1) calc(var(--i)*70ms) both}
+#fx2.ripple.out .f-cells i{transform:scale(8);transition:opacity .55s;opacity:0}
+@keyframes ripIn{from{transform:scale(0)}to{transform:scale(8)}}
+/* curtain: stage curtains close and part again */
+#fx2.curtain .f-a,#fx2.curtain .f-b{background:linear-gradient(0deg,#c9a24a 0 6px,transparent 6px),repeating-linear-gradient(90deg,#3a020b 0,#8a0a1c 2.2vw,#5a0412 3.4vw,#3a020b 4.6vw);box-shadow:0 0 50px rgba(0,0,0,.7)}
+#fx2.curtain .f-a{right:50%;transform:translateX(-100%)}#fx2.curtain .f-b{left:50%;transform:translateX(100%)}
+#fx2.curtain.in .f-a,#fx2.curtain.in .f-b{animation:curIn .64s cubic-bezier(.6,0,.3,1) both}
+#fx2.curtain.out .f-a{animation:curOutA .85s cubic-bezier(.6,0,.3,1) both}#fx2.curtain.out .f-b{animation:curOutB .85s cubic-bezier(.6,0,.3,1) both}
+@keyframes curIn{to{transform:none}}@keyframes curOutA{to{transform:translateX(-100%) skewX(4deg)}}@keyframes curOutB{to{transform:translateX(100%) skewX(-4deg)}}
+/* split: two diagonal halves slam shut */
+#fx2.split .f-a{background:#08070a;clip-path:polygon(0 0,100% 0,0 100%);transform:translate(-70%,-70%)}
+#fx2.split .f-b{background:var(--blood);clip-path:polygon(100% 0,100% 100%,0 100%);transform:translate(70%,70%)}
+#fx2.split.in .f-a,#fx2.split.in .f-b{animation:curIn .52s cubic-bezier(.8,0,.3,1) both}
+#fx2.split.out .f-a{animation:splA .7s cubic-bezier(.6,0,.3,1) both}#fx2.split.out .f-b{animation:splB .7s cubic-bezier(.6,0,.3,1) both}
+@keyframes splA{to{transform:translate(-70%,-70%)}}@keyframes splB{to{transform:translate(70%,70%)}}
+@media (prefers-reduced-motion:reduce){#fx2 *{animation-duration:.01s!important;transition-duration:.01s!important}}
 </style>
 
 <canvas id="stage" aria-label="Không gian 3D tương tác của Phương Anh Tú"></canvas>
@@ -680,6 +758,7 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
 <div id="flash"></div>
 <div class="glitch-bars"></div>
 <div id="mask"><span>PAT</span></div>
+<div class="fx2" id="fx2" aria-hidden="true"><div class="f-a"></div><div class="f-b"></div><div class="f-cells"></div><span class="f-label"></span></div>
 <div class="tx" id="tx" aria-hidden="true"><div class="tx-a"></div><div class="tx-b"></div><span class="tx-label"></span></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="inkf"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="90"/></filter></svg>
 <div id="wipe" class="wipe" aria-hidden="true"><div class="wp-bars"></div><div class="wp-disc"></div><span class="wp-label"></span></div>
@@ -734,7 +813,7 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
   <div class="step-count"><b id="stepNow">01</b> / <span id="stepAll">07</span></div>
   <button class="nav-btn primary" id="btnNext"><span id="nextLabel">Đi tiếp</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
 </div>
-<div class="hint">Kéo để nhìn quanh · Cuộn để đi tiếp · Chạm vào mọi thứ</div>
+<div class="hint">Kéo để nhìn quanh · Lăn chuột để phóng to, thu nhỏ · Chạm vào mọi thứ</div>
 
 <main id="panels"></main>
 
@@ -779,6 +858,18 @@ h2.p-title em{font-style:normal;font-weight:800;color:var(--blood)}
     <h3>Món quà bất ngờ <em>dành cho bạn</em></h3>
     <button class="gift-box" id="giftOpen" aria-label="Mở hộp quà"><span class="gb-lid"></span><span class="gb-body"></span><span class="gb-rib"></span><span class="gb-bow"></span></button>
     <p>Chạm vào hộp quà để mở</p>
+  </div>
+</div>
+<div class="gift reward" id="reward" aria-hidden="true" role="dialog" aria-label="Phần thưởng">
+  <div class="gift-card">
+    <div class="eyebrow" style="justify-content:center">5 / 5 câu đúng</div>
+    <h3>Phần thưởng <em>của bạn</em></h3>
+    <ul class="rw-list">
+      <li><b>🕺</b><span>PAT nhảy breakdance hiphop 30 giây tặng riêng bạn, trên nền nhạc của PAT</span></li>
+      <li><b>🔓</b><span>Mở khoá EP 075, bảy bài hát sau cánh cửa</span></li>
+      <li><b>⭐</b><span>Ghi "fan cứng 5/5" lên tấm vé fan cuối hành trình</span></li>
+    </ul>
+    <button class="chip-btn chip-hot rw-go" id="rewardGo">Nhận quà · Xem PAT nhảy</button>
   </div>
 </div>
 <div class="dance-bar" id="danceBar" aria-live="polite">
